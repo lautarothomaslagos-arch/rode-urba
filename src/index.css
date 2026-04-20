@@ -509,3 +509,44 @@ body {
   text-align: left !important;
   order: 2 !important;
 }
+
+/* ===== RESPONSIVE MEJORADO ===== */
+@media (max-width: 480px) {
+  .navbar { height: 52px; padding: 0 12px; }
+  .navbar-logo img { width: 32px; height: 32px; }
+  .navbar-logo-text .brand { font-size: 17px; }
+  .navbar-menu a, .navbar-menu button { padding: 5px 8px; font-size: 12px; }
+  .avatar-circle { width: 28px; height: 28px; font-size: 11px; }
+  .container { padding: 10px; }
+  .hero { padding: 24px 16px; border-radius: 12px; }
+  .hero h1 { font-size: 24px; }
+  .hero p { font-size: 13px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-numero { font-size: 22px; }
+  .partido-fila { gap: 6px; }
+  .equipo-escudo { width: 28px; height: 28px; font-size: 9px; }
+  .equipo-lado .equipo-nombre { font-size: 11px; }
+  .marcador-resultado { font-size: 14px; padding: 3px 8px; }
+  .score-input { font-size: 20px; padding: 8px 4px; }
+  .tabs-box { padding: 4px; gap: 4px; }
+  .tab-btn { padding: 7px 10px; font-size: 12px; }
+  .ranking-row { grid-template-columns: 32px 1fr auto; gap: 8px; padding: 10px 12px; }
+  .ranking-pts { font-size: 18px; }
+  .punt-valor { font-size: 22px; }
+  .card { padding: 12px; border-radius: 8px; }
+  .page-title { font-size: 20px; }
+}
+
+@media (max-width: 360px) {
+  .navbar-logo-text .sub { display: none; }
+  .hero h1 { font-size: 20px; }
+  .tab-btn { padding: 6px 8px; font-size: 11px; }
+}
+
+/* Touch targets más grandes en móvil */
+@media (hover: none) {
+  .btn { min-height: 44px; }
+  .tab-btn { min-height: 38px; }
+  .score-input { min-height: 50px; }
+  .form-input, .form-select { min-height: 44px; }
+}
