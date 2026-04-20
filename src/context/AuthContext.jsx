@@ -9,53 +9,71 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      if (session?.user) cargarPerfil(session.user.id)
-      else setLoading(false)
+      if (session?.user) {
+        cargarPerfil(session.user.id)
+      } else {
+        setLoading(false)
+      }
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Escuchar cambios de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) cargarPerfil(session.user.id)
-      else { setPerfil(null); setLoading(false) }
+      if (session?.user) {
+        await cargarPerfil(session.user.id)
+      } else {
+        setPerfil(null)
+        setLoading(false)
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
   async function cargarPerfil(userId) {
-    const { data } = await supabase
-      .from('perfiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setPerfil(data)
-    setLoading(false)
-  }
-
-  async function signUp({ email, password, username, nombreCompleto }) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username, nombre_completo: nombreCompleto }
-      }
-    })
-    return { data, error }
+    try {
+      const { data } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      setPerfil(data)
+    } catch (e) {
+      console.error('Error cargando perfil:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function signIn({ email, password }) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    return { data, error }
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error }
+  }
+
+  async function signUp({ email, password, username, nombreCompleto }) {
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (!error && data.user) {
+      await supabase.from('perfiles').upsert({
+        id: data.user.id,
+        username,
+        nombre_completo: nombreCompleto || '',
+        es_admin: false,
+      })
+    }
+    return { error }
   }
 
   async function signOut() {
     await supabase.auth.signOut()
+    setUser(null)
+    setPerfil(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, perfil, loading, signUp, signIn, signOut, cargarPerfil }}>
+    <AuthContext.Provider value={{ user, perfil, loading, signIn, signUp, signOut, cargarPerfil }}>
       {children}
     </AuthContext.Provider>
   )

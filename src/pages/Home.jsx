@@ -29,22 +29,21 @@ export default function Home() {
         padding:'48px 20px 60px',
         textAlign:'center',
       }}>
-        {/* Fondo decorativo */}
         <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at 50% 0%, rgba(139,0,0,0.3) 0%, transparent 70%)',pointerEvents:'none'}} />
         <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(201,162,39,0.03) 40px,rgba(201,162,39,0.03) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(201,162,39,0.03) 40px,rgba(201,162,39,0.03) 41px)',pointerEvents:'none'}} />
 
         <div style={{position:'relative',zIndex:1,maxWidth:600,margin:'0 auto'}}>
-          {/* Logo */}
-          <div style={{marginBottom:20}}>
+          {/* Logo más grande, sin borde dorado */}
+          <div style={{marginBottom:24}}>
             <img src="/logo.png" alt="Pick&Go"
-              style={{width:140,height:140,objectFit:'contain',borderRadius:28,
-                border:'2px solid rgba(201,162,39,0.6)',
-                boxShadow:'0 0 40px rgba(139,0,0,0.5), 0 0 80px rgba(201,162,39,0.15)',
-                filter:'drop-shadow(0 0 20px rgba(201,162,39,0.3))'
+              style={{
+                width:240, height:240,
+                objectFit:'contain',
+                borderRadius:36,
+                filter:'drop-shadow(0 0 30px rgba(139,0,0,0.6)) drop-shadow(0 0 60px rgba(201,162,39,0.2))',
               }} />
           </div>
 
-          {/* Título */}
           <div style={{fontSize:'clamp(36px,8vw,64px)',fontWeight:700,letterSpacing:3,lineHeight:1,
             background:'linear-gradient(135deg, #fff 0%, #C9A227 50%, #fff 100%)',
             WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',marginBottom:8}}>
@@ -53,23 +52,18 @@ export default function Home() {
           <div style={{fontSize:'clamp(14px,3vw,18px)',color:'rgba(201,162,39,0.8)',letterSpacing:6,textTransform:'uppercase',marginBottom:8}}>
             Prode URBA 2026
           </div>
-          <div style={{fontSize:'clamp(12px,2.5vw,15px)',color:'rgba(255,255,255,0.5)',letterSpacing:2,marginBottom:32}}>
+          <div style={{fontSize:'clamp(12px,2.5vw,15px)',color:'rgba(255,255,255,0.5)',letterSpacing:2,marginBottom:36}}>
             Top 14 · Primera A · Primera B · Primera C · Segunda
           </div>
 
-          {/* Botones */}
           {user ? (
             <button onClick={() => navigate('/prode')} style={{
               background:'linear-gradient(135deg,#C9A227,#9a7a1a)',
               color:'#0d1117', border:'none', borderRadius:50,
-              padding:'14px 48px', fontSize:18, fontWeight:700,
+              padding:'16px 56px', fontSize:20, fontWeight:700,
               letterSpacing:2, cursor:'pointer', fontFamily:"'Rajdhani',sans-serif",
               boxShadow:'0 4px 24px rgba(201,162,39,0.4)',
-              transition:'all 0.2s',
-            }}
-            onMouseOver={e => e.target.style.transform='translateY(-2px)'}
-            onMouseOut={e => e.target.style.transform='translateY(0)'}
-            >
+            }}>
               IR A PREDECIR
             </button>
           ) : (
@@ -80,45 +74,28 @@ export default function Home() {
                 padding:'14px 36px', fontSize:16, fontWeight:700,
                 letterSpacing:1, cursor:'pointer', fontFamily:"'Rajdhani',sans-serif",
                 boxShadow:'0 4px 24px rgba(201,162,39,0.4)',
-              }}>
-                CREAR CUENTA GRATIS
-              </button>
+              }}>CREAR CUENTA GRATIS</button>
               <button onClick={() => navigate('/login')} style={{
-                background:'transparent',
-                color:'white', border:'2px solid rgba(255,255,255,0.3)', borderRadius:50,
+                background:'transparent', color:'white',
+                border:'2px solid rgba(255,255,255,0.3)', borderRadius:50,
                 padding:'12px 36px', fontSize:16, fontWeight:600,
                 letterSpacing:1, cursor:'pointer', fontFamily:"'Rajdhani',sans-serif",
-              }}>
-                INGRESAR
-              </button>
+              }}>INGRESAR</button>
             </div>
           )}
         </div>
-
-        {/* Línea decorativa inferior */}
         <div style={{position:'absolute',bottom:0,left:0,right:0,height:2,background:'linear-gradient(90deg,transparent,#C9A227,transparent)'}} />
       </div>
 
-      {/* SISTEMA DE PUNTOS */}
+      {/* PUNTOS */}
       <div style={{padding:'40px 16px 24px',maxWidth:900,margin:'0 auto'}}>
         <div style={{textAlign:'center',marginBottom:24}}>
           <div style={{fontSize:11,letterSpacing:4,color:'rgba(201,162,39,0.7)',marginBottom:6}}>SISTEMA DE PUNTUACIÓN</div>
           <div style={{width:40,height:2,background:'linear-gradient(90deg,transparent,#C9A227,transparent)',margin:'0 auto'}} />
         </div>
-
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:12}}>
           {PUNTOS.map((p,i) => (
-            <div key={i} style={{
-              background:p.bg,
-              border:`1px solid ${p.color}33`,
-              borderRadius:16, padding:'20px 16px',
-              textAlign:'center',
-              backdropFilter:'blur(10px)',
-              transition:'transform 0.2s',
-            }}
-            onMouseOver={e => e.currentTarget.style.transform='translateY(-4px)'}
-            onMouseOut={e => e.currentTarget.style.transform='translateY(0)'}
-            >
+            <div key={i} style={{background:p.bg,border:`1px solid ${p.color}33`,borderRadius:16,padding:'20px 16px',textAlign:'center'}}>
               <div style={{fontSize:28,marginBottom:8}}>{p.icon}</div>
               <div style={{display:'flex',alignItems:'baseline',justifyContent:'center',gap:4,marginBottom:6}}>
                 <span style={{fontSize:36,fontWeight:700,color:p.color,fontFamily:"'Rajdhani',sans-serif"}}>{p.valor}</span>
@@ -130,47 +107,27 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CÓMO FUNCIONA */}
+      {/* PASOS */}
       <div style={{padding:'16px 16px 48px',maxWidth:900,margin:'0 auto'}}>
-        <div style={{
-          background:'rgba(255,255,255,0.03)',
-          border:'1px solid rgba(201,162,39,0.15)',
-          borderRadius:20, padding:'28px 24px',
-        }}>
+        <div style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(201,162,39,0.15)',borderRadius:20,padding:'28px 24px'}}>
           <div style={{textAlign:'center',marginBottom:28}}>
             <div style={{fontSize:11,letterSpacing:4,color:'rgba(201,162,39,0.7)',marginBottom:6}}>¿CÓMO FUNCIONA?</div>
             <div style={{width:40,height:2,background:'linear-gradient(90deg,transparent,#C9A227,transparent)',margin:'0 auto'}} />
           </div>
-
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:20}}>
             {PASOS.map((p,i) => (
               <div key={i} style={{textAlign:'center',padding:'0 8px'}}>
-                <div style={{
-                  width:56,height:56,borderRadius:'50%',
-                  background:'linear-gradient(135deg,rgba(139,0,0,0.4),rgba(26,10,0,0.8))',
-                  border:'1px solid rgba(201,162,39,0.3)',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  fontSize:24,margin:'0 auto 12px',
-                  boxShadow:'0 4px 16px rgba(139,0,0,0.3)',
-                }}>
+                <div style={{width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,rgba(139,0,0,0.4),rgba(26,10,0,0.8))',border:'1px solid rgba(201,162,39,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,margin:'0 auto 12px',boxShadow:'0 4px 16px rgba(139,0,0,0.3)'}}>
                   {p.icon}
                 </div>
-                <div style={{
-                  fontSize:11,fontWeight:700,letterSpacing:1,
-                  color:'rgba(201,162,39,0.6)',marginBottom:4,
-                }}>PASO {i+1}</div>
-                <div style={{fontSize:15,fontWeight:600,color:'white',marginBottom:6,fontFamily:"'Rajdhani',sans-serif",letterSpacing:0.5}}>
-                  {p.titulo}
-                </div>
-                <div style={{fontSize:12,color:'rgba(255,255,255,0.45)',lineHeight:1.5}}>
-                  {p.desc}
-                </div>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:'rgba(201,162,39,0.6)',marginBottom:4}}>PASO {i+1}</div>
+                <div style={{fontSize:15,fontWeight:600,color:'white',marginBottom:6,fontFamily:"'Rajdhani',sans-serif"}}>{p.titulo}</div>
+                <div style={{fontSize:12,color:'rgba(255,255,255,0.45)',lineHeight:1.5}}>{p.desc}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
-
     </div>
   )
 }
