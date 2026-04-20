@@ -550,3 +550,9 @@ body {
   .score-input { min-height: 50px; }
   .form-input, .form-select { min-height: 44px; }
 }
+
+/* Fix overflow horizontal */
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
