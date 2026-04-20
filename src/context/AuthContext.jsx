@@ -9,74 +9,49 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let mounted = true
-
-    async function init() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!mounted) return
-        if (session?.user) {
-          setUser(session.user)
-          await cargarPerfil(session.user.id)
-        }
-      } catch(e) {
-        console.error('Auth init error:', e)
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    }
-
-    init()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user)
-        setLoading(true)
-        await cargarPerfil(session.user.id)
-        setLoading(false)
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null)
-        setPerfil(null)
-        setLoading(false)
-      } else if (event === 'PASSWORD_RECOVERY') {
-        setUser(session?.user ?? null)
+    // Inicializar sesión
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        cargarPerfil(session.user.id).finally(() => setLoading(false))
+      } else {
         setLoading(false)
       }
     })
 
-    return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
+    // Escuchar cambios — NO setLoading aquí para no bloquear navegación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        setUser(session.user)
+        cargarPerfil(session.user.id)
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setPerfil(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function cargarPerfil(userId) {
     try {
-      const { data, error } = await supabase
-        .from('perfiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle()
-      if (!error && data) setPerfil(data)
+      const { data } = await supabase.from('perfiles').select('*').eq('id', userId).maybeSingle()
+      if (data) setPerfil(data)
     } catch(e) {
       console.error('Error perfil:', e)
     }
   }
 
   async function signIn({ email, password }) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error }
+    return await supabase.auth.signInWithPassword({ email, password })
   }
 
   async function signUp({ email, password, username, nombreCompleto }) {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (!error && data.user) {
       await supabase.from('perfiles').upsert({
-        id: data.user.id,
-        username,
-        nombre_completo: nombreCompleto || '',
-        es_admin: false,
+        id: data.user.id, username,
+        nombre_completo: nombreCompleto || '', es_admin: false,
       })
     }
     return { error }
@@ -88,16 +63,18 @@ export function AuthProvider({ children }) {
     setPerfil(null)
   }
 
+  if (loading) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d1117'}}>
+      <div style={{textAlign:'center'}}>
+        <img src="/logo.png" alt="Pick&Go" style={{width:80,height:80,borderRadius:16,marginBottom:16,objectFit:'contain'}} />
+        <div style={{color:'rgba(201,162,39,0.8)',fontFamily:'Rajdhani,sans-serif',letterSpacing:3,fontSize:14}}>Cargando...</div>
+      </div>
+    </div>
+  )
+
   return (
     <AuthContext.Provider value={{ user, perfil, loading, signIn, signUp, signOut, cargarPerfil }}>
-      {!loading ? children : (
-        <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d1117'}}>
-          <div style={{textAlign:'center'}}>
-            <img src="/logo.png" alt="Pick&Go" style={{width:80,height:80,borderRadius:16,marginBottom:16,objectFit:'contain'}} />
-            <div style={{color:'rgba(201,162,39,0.8)',fontFamily:'Rajdhani,sans-serif',letterSpacing:3}}>Cargando...</div>
-          </div>
-        </div>
-      )}
+      {children}
     </AuthContext.Provider>
   )
 }
