@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const CAT_LABELS = { 1: 'Top 14', 2: 'Primera A', 3: 'Primera B', 4: 'Primera C' }
+const CAT_LABELS = { 1: 'Top 14', 2: 'Primera A', 3: 'Primera B', 4: 'Primera C', 5: 'Segunda División' }
 
 export default function Admin() {
   const [seccion, setSeccion] = useState('fechas')
@@ -69,7 +69,7 @@ function AdminFechas() {
           <div className="form-group">
             <label className="form-label">Categoría</label>
             <select className="form-select" value={form.categoria_id} onChange={e => setForm({...form, categoria_id: e.target.value})}>
-              {[1,2,3,4].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+              {[1,2,3,4,5].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
             </select>
           </div>
           <div className="form-group">
@@ -322,7 +322,7 @@ function AdminEquipos() {
     else setMsg('Error: ' + error.message)
   }
 
-  const porCategoria = [1,2,3,4].map(cat => ({
+  const porCategoria = [1,2,3,4,5].map(cat => ({
     cat,
     equipos: equipos.filter(e => e.categoria_id === cat)
   }))
@@ -344,7 +344,7 @@ function AdminEquipos() {
           <div className="form-group">
             <label className="form-label">Categoría</label>
             <select className="form-select" value={form.categoria_id} onChange={e => setForm({...form, categoria_id: e.target.value})}>
-              {[2,3,4].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+              {[2,3,4,5].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
             </select>
           </div>
         </div>
