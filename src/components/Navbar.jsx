@@ -37,6 +37,7 @@ export default function Navbar() {
               <Link to="/prode" className={isActive('/prode')}>Predecir</Link>
               <Link to="/ranking" className={isActive('/ranking')}>Ranking</Link>
               <Link to="/resultados" className={isActive('/resultados')}>Resultados</Link>
+              <Link to="/grupos" className={isActive('/grupos')}>Grupos</Link>
               {perfil?.es_admin && <Link to="/admin" className={isActive('/admin')}>Admin</Link>}
               <Link to="/perfil" style={{display:'flex',alignItems:'center',gap:6,textDecoration:'none',padding:'4px 8px',borderRadius:8}}>
                 <div className="avatar-circle" title={perfil?.username}>
