@@ -113,7 +113,26 @@ export default function Perfil() {
           </button>
         </form>
       </div>
-
+{/* INVITAR AMIGOS */}
+<div className="card">
+  <div className="card-header">
+    <span className="card-title">👥 Invitá a un amigo</span>
+  </div>
+  <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>
+    ¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.
+  </p>
+  <button
+    className="btn btn-primary"
+    onClick={() => {
+      const mensaje = encodeURIComponent(
+        "Ey, estoy jugando Pick&Go, un prode de rugby de la URBA 🏉 Predecís los resultados de Top 14, Primera A, B, C y Segunda, hay ranking semanal y anual.\n\nBajatela:\n📱 Android: Chrome → pickandgo-prode.vercel.app → \"Agregar a pantalla de inicio\"\n🍎 iPhone: Safari → pickandgo-prode.vercel.app → botón compartir → \"Agregar a pantalla de inicio\"\n\n¡Sumate y a ver quién gana! 🏆"
+      )
+      window.open(`https://wa.me/?text=${mensaje}`, '_blank')
+    }}
+  >
+    📲 Invitar por WhatsApp
+  </button>
+</div>
       {/* NOTIFICACIONES */}
       <div className="card">
         <div className="card-header">
