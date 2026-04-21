@@ -8,6 +8,7 @@ import Ranking from './pages/Ranking'
 import Resultados from './pages/Resultados'
 import Admin from './pages/Admin'
 import Perfil from './pages/Perfil'
+import Grupos from './pages/Grupos'
 import NuevaContrasena from './pages/NuevaContrasena'
 import './index.css'
 
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/ranking" element={<PrivateRoute><Ranking /></PrivateRoute>} />
         <Route path="/resultados" element={<PrivateRoute><Resultados /></PrivateRoute>} />
         <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
+        <Route path="/grupos" element={<PrivateRoute><Grupos /></PrivateRoute>} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
