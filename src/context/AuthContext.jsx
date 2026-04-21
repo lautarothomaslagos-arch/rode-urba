@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
   if (loading) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d1117'}}>
       <div style={{textAlign:'center'}}>
-        <img src="/logo.png" alt="Pick&Go" style={{width:80,height:80,borderRadius:16,marginBottom:16,objectFit:'contain'}} />
+        <img src="/logo.png" alt="Pick&Go" style={{width:200,height:200,borderRadius:32,marginBottom:16,objectFit:'contain'}} />
         <div style={{color:'rgba(201,162,39,0.8)',fontFamily:'Rajdhani,sans-serif',letterSpacing:3,fontSize:14}}>Cargando...</div>
       </div>
     </div>

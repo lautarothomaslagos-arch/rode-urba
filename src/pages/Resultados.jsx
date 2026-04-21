@@ -1,19 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { PartidoCardResultado } from '../components/PartidoCard'
 
 const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C', 5:'Segunda Div.' }
 const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c', 5:'cat-segunda' }
-
-function Escudo({ equipo }) {
-  if (!equipo) return null
-  const ini = equipo.nombre_corto || equipo.nombre?.substring(0,3).toUpperCase()
-  return (
-    <div className="equipo-escudo" title={equipo.nombre}>
-      {equipo.escudo_url ? <img src={equipo.escudo_url} alt={equipo.nombre} /> : ini}
-    </div>
-  )
-}
 
 export default function Resultados() {
   const { user } = useAuth()
@@ -30,8 +21,10 @@ export default function Resultados() {
 
   async function cargarFechas(c) {
     setLoading(true)
-    const { data } = await supabase.from('fechas').select('*').eq('categoria_id',c).eq('resultados_cargados',true).order('numero',{ascending:false})
-    setFechas(data||[])
+    const { data } = await supabase.from('fechas').select('*')
+      .eq('categoria_id', c).eq('resultados_cargados', true)
+      .order('numero', { ascending: false })
+    setFechas(data || [])
     if (data?.length) setFechaId(data[0].id)
     else { setFechaId(null); setPartidos([]); setLoading(false) }
   }
@@ -40,12 +33,16 @@ export default function Resultados() {
     setLoading(true)
     const { data: pts } = await supabase.from('partidos')
       .select('*, equipo_local:equipo_local_id(id,nombre,nombre_corto,escudo_url), equipo_visitante:equipo_visitante_id(id,nombre,nombre_corto,escudo_url)')
-      .eq('fecha_id',fid).order('id')
-    setPartidos(pts||[])
+      .eq('fecha_id', fid).order('id')
+    setPartidos(pts || [])
     if (pts?.length && user) {
-      const { data: pr } = await supabase.from('predicciones').select('*').eq('usuario_id',user.id).in('partido_id',pts.map(p=>p.id))
-      const m = {}; pr?.forEach(p => { m[p.partido_id] = { local:p.goles_local, visitante:p.goles_visitante } }); setPreds(m)
-      const { data: pf } = await supabase.from('puntos_fecha').select('*').eq('usuario_id',user.id).eq('fecha_id',fid).single()
+      const { data: pr } = await supabase.from('predicciones').select('*')
+        .eq('usuario_id', user.id).in('partido_id', pts.map(p => p.id))
+      const m = {}
+      pr?.forEach(p => { m[p.partido_id] = { local: p.goles_local, visitante: p.goles_visitante } })
+      setPreds(m)
+      const { data: pf } = await supabase.from('puntos_fecha').select('*')
+        .eq('usuario_id', user.id).eq('fecha_id', fid).single()
       setPuntosFecha(pf)
     }
     setLoading(false)
@@ -68,7 +65,9 @@ export default function Resultados() {
       {fechas.length > 0 && (
         <div className="tabs-box" style={{marginBottom:16}}>
           {fechas.map(f => (
-            <button key={f.id} className={`tab-btn ${fechaId===f.id?'active':''}`} onClick={() => setFechaId(f.id)}>Fecha {f.numero}</button>
+            <button key={f.id} className={`tab-btn ${fechaId===f.id?'active':''}`} onClick={() => setFechaId(f.id)}>
+              Fecha {f.numero}
+            </button>
           ))}
         </div>
       )}
@@ -95,9 +94,9 @@ export default function Resultados() {
           </div>
           <div className="puntos-resumen">
             {[
-              {v:puntosFecha.puntos_exactos, l:'Exactos'},
-              {v:puntosFecha.puntos_signo, l:'Signo'},
-              {v:(puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0), l:'Bonus'},
+              {v: puntosFecha.puntos_exactos, l:'Exactos'},
+              {v: puntosFecha.puntos_signo, l:'Signo'},
+              {v: (puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0), l:'Bonus'},
             ].map((p,i) => (
               <div key={i} className="punt-item" style={{background:'rgba(255,255,255,0.1)'}}>
                 <div className="punt-valor" style={{color:i===2?'var(--dorado)':'white'}}>{p.v}</div>
@@ -109,42 +108,13 @@ export default function Resultados() {
         </div>
       )}
 
-      {!loading && partidos.map(partido => {
-        const pred = preds[partido.id]
-        let claseCard = partido.es_especial ? "partido-card especial" : "partido-card"
-        let badge = null
-        if (pred !== undefined) {
-          const exacto = pred.local===partido.resultado_local && pred.visitante===partido.resultado_visitante
-          const signo = !exacto && ((pred.local>pred.visitante && partido.resultado_local>partido.resultado_visitante)||(pred.local<pred.visitante && partido.resultado_local<partido.resultado_visitante)||(pred.local===pred.visitante && partido.resultado_local===partido.resultado_visitante))
-          if (exacto) { claseCard+=' acertado-exacto'; badge=<span className="resultado-badge badge-exacto">+3 exacto</span> }
-          else if (signo) { claseCard+=' acertado-signo'; badge=<span className="resultado-badge badge-signo">+1 signo</span> }
-          else { claseCard+=' fallado'; badge=<span className="resultado-badge badge-nada">0 pts</span> }
-        }
-        return (
-          <div key={partido.id} className={claseCard}>
-            {partido.es_especial && <div className="partido-especial-badge">⭐ PARTIDO ESPECIAL — Puntaje doble</div>}
-            <div className="partido-fila">
-              <div className="equipo-lado local">
-                <span className="equipo-nombre">{partido.equipo_local?.nombre}</span>
-                <Escudo equipo={partido.equipo_local} />
-              </div>
-              <div className="marcador-central">
-                <div className="marcador-resultado">{partido.resultado_local} — {partido.resultado_visitante}</div>
-              </div>
-              <div className="equipo-lado visitante">
-                <Escudo equipo={partido.equipo_visitante} />
-                <span className="equipo-nombre">{partido.equipo_visitante?.nombre}</span>
-              </div>
-            </div>
-            <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
-              {pred !== undefined
-                ? <><span>Tu pred: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
-                : <span>Sin predicción cargada</span>
-              }
-            </div>
-          </div>
-        )
-      })}
+      {!loading && partidos.map(partido => (
+        <PartidoCardResultado
+          key={partido.id}
+          partido={partido}
+          pred={preds[partido.id]}
+        />
+      ))}
     </div>
   )
 }

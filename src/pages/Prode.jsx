@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { PartidoCardPrediccion } from '../components/PartidoCard'
 
 const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C', 5:'Segunda Div.' }
 const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c', 5:'cat-segunda' }
@@ -8,16 +9,6 @@ const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-
 function estaAbierto(cierre) {
   if (!cierre) return true
   return new Date() < new Date(cierre)
-}
-
-function Escudo({ equipo }) {
-  if (!equipo) return null
-  const ini = equipo.nombre_corto || equipo.nombre?.substring(0,3).toUpperCase()
-  return (
-    <div className="equipo-escudo" title={equipo.nombre}>
-      {equipo.escudo_url ? <img src={equipo.escudo_url} alt={equipo.nombre} /> : ini}
-    </div>
-  )
 }
 
 export default function Prode() {
@@ -36,21 +27,12 @@ export default function Prode() {
 
   async function cargarFechas(c) {
     setLoading(true)
-    // Solo fechas NO jugadas (resultados_cargados = false) — para predecir
     const { data } = await supabase.from('fechas')
-      .select('*')
-      .eq('categoria_id', c)
-      .eq('activa', true)
-      .eq('resultados_cargados', false)
-      .order('numero')
+      .select('*').eq('categoria_id', c).eq('activa', true)
+      .eq('resultados_cargados', false).order('numero')
     setFechas(data || [])
-    if (data?.length) {
-      setFechaId(data[0].id)
-    } else {
-      setFechaId(null)
-      setPartidos([])
-      setLoading(false)
-    }
+    if (data?.length) setFechaId(data[0].id)
+    else { setFechaId(null); setPartidos([]); setLoading(false) }
   }
 
   async function cargarPartidos(fid) {
@@ -77,11 +59,7 @@ export default function Prode() {
   async function guardar() {
     setGuardando(true)
     const fi = fechas.find(f => f.id === fechaId)
-    if (!estaAbierto(fi?.cierre_predicciones)) {
-      alert('Las predicciones están cerradas')
-      setGuardando(false)
-      return
-    }
+    if (!estaAbierto(fi?.cierre_predicciones)) { alert('Las predicciones están cerradas'); setGuardando(false); return }
     const upserts = Object.entries(preds)
       .filter(([, v]) => v.local !== undefined && v.visitante !== undefined)
       .map(([pid, v]) => ({
@@ -108,9 +86,7 @@ export default function Prode() {
 
       <div className="tabs-box">
         {[1,2,3,4,5].map(c => (
-          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>
-            {CATS[c]}
-          </button>
+          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
         ))}
       </div>
 
@@ -130,7 +106,7 @@ export default function Prode() {
         <div className="empty-state">
           <div className="empty-icon">✅</div>
           <div className="empty-title">No hay fechas activas para predecir</div>
-          <p style={{fontSize:13,color:'var(--texto-suave)'}}>Los resultados de las fechas jugadas están en la sección <strong>Resultados</strong></p>
+          <p style={{fontSize:13,color:'var(--texto-suave)'}}>Los resultados están en la sección <strong>Resultados</strong></p>
         </div>
       )}
 
@@ -158,46 +134,15 @@ export default function Prode() {
         </div>
       )}
 
-      {!loading && partidos.map(partido => {
-        const pred = preds[partido.id] || {}
-        return (
-          <div key={partido.id} className="partido-card">
-            {partido.es_especial && <div className="partido-especial-badge">⭐ PARTIDO ESPECIAL — Puntaje doble</div>}
-            <div className="partido-fila">
-              <div className="equipo-lado local">
-                <span className="equipo-nombre">{partido.equipo_local?.nombre}</span>
-                <Escudo equipo={partido.equipo_local} />
-              </div>
-              <div className="marcador-central">
-                <div className="vs-badge">VS</div>
-              </div>
-              <div className="equipo-lado visitante">
-                <Escudo equipo={partido.equipo_visitante} />
-                <span className="equipo-nombre">{partido.equipo_visitante?.nombre}</span>
-              </div>
-            </div>
-
-            {abierto ? (
-              <div className="prediccion-inputs">
-                <input type="number" className="score-input" min="0" max="120"
-                  value={pred.local ?? ''} placeholder="0"
-                  onChange={e => updPred(partido.id, 'local', e.target.value)} />
-                <span className="score-separator">—</span>
-                <input type="number" className="score-input" min="0" max="120"
-                  value={pred.visitante ?? ''} placeholder="0"
-                  onChange={e => updPred(partido.id, 'visitante', e.target.value)} />
-              </div>
-            ) : (
-              <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
-                {pred.local !== undefined
-                  ? <>Tu predicción: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></>
-                  : 'Sin predicción cargada'
-                }
-              </div>
-            )}
-          </div>
-        )
-      })}
+      {!loading && partidos.map(partido => (
+        <PartidoCardPrediccion
+          key={partido.id}
+          partido={partido}
+          pred={preds[partido.id]}
+          abierto={abierto}
+          onUpdate={updPred}
+        />
+      ))}
 
       {!loading && partidos.length > 0 && abierto && (
         <div className="sticky-save">
