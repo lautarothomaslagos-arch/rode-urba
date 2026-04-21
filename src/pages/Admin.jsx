@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const CAT_LABELS = { 1: 'Top 14', 2: 'Primera A', 3: 'Primera B', 4: 'Primera C' }
+const CAT_LABELS = { 1: 'Top 14', 2: 'Primera A', 3: 'Primera B', 4: 'Primera C', 5: 'Segunda División' }
 
 export default function Admin() {
   const [seccion, setSeccion] = useState('fechas')
@@ -69,7 +69,7 @@ function AdminFechas() {
           <div className="form-group">
             <label className="form-label">Categoría</label>
             <select className="form-select" value={form.categoria_id} onChange={e => setForm({...form, categoria_id: e.target.value})}>
-              {[1,2,3,4].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+              {[1,2,3,4,5].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
             </select>
           </div>
           <div className="form-group">
@@ -113,7 +113,7 @@ function AdminPartidos() {
   const [equipos, setEquipos] = useState([])
   const [fechaId, setFechaId] = useState('')
   const [partidos, setPartidos] = useState([])
-  const [form, setForm] = useState({ local: '', visitante: '', hora: '' })
+  const [form, setForm] = useState({ local: '', visitante: '', hora: '', especial: false })
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
@@ -139,7 +139,8 @@ function AdminPartidos() {
       fecha_id: parseInt(fechaId),
       equipo_local_id: parseInt(form.local),
       equipo_visitante_id: parseInt(form.visitante),
-      hora_estimada: form.hora || null
+      hora_estimada: form.hora || null,
+      es_especial: form.especial
     })
     if (!error) { setMsg('Partido agregado'); cargarPartidos() }
     else setMsg('Error: ' + error.message)
@@ -190,15 +191,37 @@ function AdminPartidos() {
             </div>
           </div>
         )}
+        {fechaId && (
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12,padding:'10px 14px',background:'rgba(201,162,39,0.1)',borderRadius:8,border:'1px solid rgba(201,162,39,0.3)'}}>
+            <input type="checkbox" id="especial" checked={form.especial}
+              onChange={e => setForm({...form, especial: e.target.checked})}
+              style={{width:18,height:18,cursor:'pointer'}} />
+            <label htmlFor="especial" style={{fontSize:14,fontWeight:600,cursor:'pointer',color:'var(--dorado-oscuro)'}}>
+              ⭐ Partido especial (puntaje doble)
+            </label>
+          </div>
+        )}
         {fechaId && <button className="btn btn-primary" onClick={agregarPartido}>Agregar partido</button>}
       </div>
 
       {partidos.length > 0 && (
         <div className="card" style={{padding:0}}>
           {partidos.map(p => (
-            <div key={p.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:'1px solid var(--gris-borde)'}}>
-              <span style={{fontSize:14}}>{p.equipo_local?.nombre} vs {p.equipo_visitante?.nombre}</span>
-              <button className="btn btn-small btn-danger" onClick={() => eliminarPartido(p.id)}>Eliminar</button>
+            <div key={p.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:'1px solid var(--gris-borde)',background:p.es_especial?'rgba(201,162,39,0.05)':''}}>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                {p.es_especial && <span title="Partido especial">⭐</span>}
+                <span style={{fontSize:14}}>{p.equipo_local?.nombre} vs {p.equipo_visitante?.nombre}</span>
+              </div>
+              <div style={{display:'flex',gap:8}}>
+                <button className="btn btn-small btn-secondary"
+                  onClick={async () => {
+                    await supabase.from('partidos').update({ es_especial: !p.es_especial }).eq('id', p.id)
+                    cargarPartidos()
+                  }}>
+                  {p.es_especial ? '★ Quitar especial' : '☆ Marcar especial'}
+                </button>
+                <button className="btn btn-small btn-danger" onClick={() => eliminarPartido(p.id)}>Eliminar</button>
+              </div>
             </div>
           ))}
         </div>
@@ -253,6 +276,19 @@ function AdminResultados() {
     setGuardando(false)
   }
 
+  async function notificarResultadosAdmin() {
+    setMsg('Enviando notificaciones...')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { tipo: 'resultados', mensaje_extra: '¡Ya están los resultados! Entrá a ver tus puntos.' }
+      })
+      if (!error) setMsg(`✓ Notificaciones enviadas a ${data?.enviadas || 0} usuarios`)
+      else setMsg('Error al enviar notificaciones')
+    } catch(e) {
+      setMsg('Error: ' + e.message)
+    }
+  }
+
   return (
     <div>
       <div className="card">
@@ -291,9 +327,14 @@ function AdminResultados() {
       ))}
 
       {partidos.length > 0 && (
-        <button className="btn btn-primary" style={{width:'100%',padding:14}} onClick={guardarResultados} disabled={guardando}>
-          {guardando ? 'Calculando puntos...' : 'Guardar resultados y calcular puntos'}
-        </button>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          <button className="btn btn-primary" style={{width:'100%',padding:14}} onClick={guardarResultados} disabled={guardando}>
+            {guardando ? 'Calculando puntos...' : 'Guardar resultados y calcular puntos'}
+          </button>
+          <button className="btn btn-gold" style={{width:'100%',padding:12}} onClick={notificarResultadosAdmin}>
+            🔔 Notificar resultados a todos los usuarios
+          </button>
+        </div>
       )}
     </div>
   )
@@ -322,7 +363,7 @@ function AdminEquipos() {
     else setMsg('Error: ' + error.message)
   }
 
-  const porCategoria = [1,2,3,4].map(cat => ({
+  const porCategoria = [1,2,3,4,5].map(cat => ({
     cat,
     equipos: equipos.filter(e => e.categoria_id === cat)
   }))
@@ -344,7 +385,7 @@ function AdminEquipos() {
           <div className="form-group">
             <label className="form-label">Categoría</label>
             <select className="form-select" value={form.categoria_id} onChange={e => setForm({...form, categoria_id: e.target.value})}>
-              {[2,3,4].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+              {[2,3,4,5].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
             </select>
           </div>
         </div>

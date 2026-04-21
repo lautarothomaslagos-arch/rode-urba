@@ -1,4 +1,4 @@
-const CACHE = 'pickandgo-v1'
+const CACHE = 'pickandgo-v2'
 const STATIC = ['/', '/manifest.json', '/logo.png']
 
 self.addEventListener('install', e => {
@@ -15,7 +15,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
-  if (e.request.url.includes('supabase')) return // No cachear llamadas a API
+  if (e.request.url.includes('supabase')) return
   e.respondWith(
     fetch(e.request)
       .then(r => {
@@ -24,5 +24,35 @@ self.addEventListener('fetch', e => {
         return r
       })
       .catch(() => caches.match(e.request))
+  )
+})
+
+// ===== PUSH NOTIFICATIONS =====
+self.addEventListener('push', e => {
+  if (!e.data) return
+  const data = e.data.json()
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-72x72.png',
+      tag: data.tag || 'pickandgo',
+      data: { url: data.url || '/' },
+      vibrate: [200, 100, 200],
+      actions: data.actions || []
+    })
+  )
+})
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close()
+  const url = e.notification.data?.url || '/'
+  e.waitUntil(
+    clients.matchAll({ type: 'window' }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url === url && 'focus' in client) return client.focus()
+      }
+      if (clients.openWindow) return clients.openWindow(url)
+    })
   )
 })
