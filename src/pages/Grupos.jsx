@@ -424,7 +424,7 @@ function CrearGrupo({ userId, onCreado }) {
           className="form-input"
           value={nombre}
           onChange={e => setNombre(e.target.value)}
-          placeholder="ej: Los del SIC, Grupo laburo..."
+          placeholder="ej: Los Pibes , Grupo laburo..."
           maxLength={40}
         />
       </div>
