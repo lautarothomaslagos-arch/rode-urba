@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
-const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C', 5:'Segunda Div.' }
-const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c', 5:'cat-segunda' }
+const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C' }
+const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c' }
 
-function Escudo({ equipo }) {
+function EscudoEquipo({ equipo }) {
   if (!equipo) return null
   const ini = equipo.nombre_corto || equipo.nombre?.substring(0,3).toUpperCase()
   return (
@@ -59,16 +59,16 @@ export default function Resultados() {
         <h1 className="page-title">Mis <span className="page-title-accent">resultados</span></h1>
       </div>
 
-      <div className="tabs-box">
-        {[1,2,3,4,5].map(c => (
-          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
+      <div className="tabs">
+        {[1,2,3,4].map(c => (
+          <button key={c} className={`tab ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
         ))}
       </div>
 
       {fechas.length > 0 && (
-        <div className="tabs-box" style={{marginBottom:16}}>
+        <div className="tabs" style={{marginBottom:16}}>
           {fechas.map(f => (
-            <button key={f.id} className={`tab-btn ${fechaId===f.id?'active':''}`} onClick={() => setFechaId(f.id)}>Fecha {f.numero}</button>
+            <button key={f.id} className={`tab ${fechaId===f.id?'active':''}`} onClick={() => setFechaId(f.id)}>Fecha {f.numero}</button>
           ))}
         </div>
       )}
@@ -83,10 +83,10 @@ export default function Resultados() {
       )}
 
       {!loading && puntosFecha && (
-        <div className="card" style={{background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',border:'none',marginBottom:16}}>
+        <div className="card" style={{background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',border:'none'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-            <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.8)'}}>
-              <span className={`cat-badge ${CAT_CLASS[cat]}`} style={{marginRight:8}}>{CATS[cat]}</span>
+            <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.8)',letterSpacing:1}}>
+              {fi && <span className={`cat-badge ${CAT_CLASS[cat]}`} style={{marginRight:8}}>{CATS[cat]}</span>}
               Fecha {fi?.numero}
             </span>
             <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:32,fontWeight:700,color:'var(--dorado)'}}>
@@ -94,16 +94,18 @@ export default function Resultados() {
             </span>
           </div>
           <div className="puntos-resumen">
-            {[
-              {v:puntosFecha.puntos_exactos, l:'Exactos'},
-              {v:puntosFecha.puntos_signo, l:'Signo'},
-              {v:(puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0), l:'Bonus'},
-            ].map((p,i) => (
-              <div key={i} className="punt-item" style={{background:'rgba(255,255,255,0.1)'}}>
-                <div className="punt-valor" style={{color:i===2?'var(--dorado)':'white'}}>{p.v}</div>
-                <div className="punt-label" style={{color:'rgba(255,255,255,0.6)'}}>{p.l}</div>
-              </div>
-            ))}
+            <div className="punt-item" style={{background:'rgba(255,255,255,0.1)'}}>
+              <div className="punt-valor" style={{color:'white'}}>{puntosFecha.puntos_exactos}</div>
+              <div className="punt-label" style={{color:'rgba(255,255,255,0.6)'}}>Exactos</div>
+            </div>
+            <div className="punt-item" style={{background:'rgba(255,255,255,0.1)'}}>
+              <div className="punt-valor" style={{color:'white'}}>{puntosFecha.puntos_signo}</div>
+              <div className="punt-label" style={{color:'rgba(255,255,255,0.6)'}}>Signo</div>
+            </div>
+            <div className="punt-item" style={{background:'rgba(255,255,255,0.1)'}}>
+              <div className="punt-valor" style={{color:'var(--dorado)'}}>{(puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0)}</div>
+              <div className="punt-label" style={{color:'rgba(255,255,255,0.6)'}}>Bonus</div>
+            </div>
           </div>
           {puntosFecha.bonus_pleno>0 && <div className="alert alert-gold" style={{marginBottom:0}}>¡Pleno! Acertaste todos los partidos (+5 pts)</div>}
         </div>
@@ -122,22 +124,22 @@ export default function Resultados() {
         }
         return (
           <div key={partido.id} className={claseCard}>
-            <div className="partido-fila">
-              <div className="equipo-lado local">
-                <span className="equipo-nombre">{partido.equipo_local?.nombre}</span>
-                <Escudo equipo={partido.equipo_local} />
+            <div className="partido-equipos">
+              <div className="equipo-bloque local">
+                <span className="equipo-nombre local">{partido.equipo_local?.nombre}</span>
+                <EscudoEquipo equipo={partido.equipo_local} />
               </div>
               <div className="marcador-central">
                 <div className="marcador-resultado">{partido.resultado_local} — {partido.resultado_visitante}</div>
               </div>
-              <div className="equipo-lado visitante">
-                <Escudo equipo={partido.equipo_visitante} />
-                <span className="equipo-nombre">{partido.equipo_visitante?.nombre}</span>
+              <div className="equipo-bloque visitante">
+                <EscudoEquipo equipo={partido.equipo_visitante} />
+                <span className="equipo-nombre visitante">{partido.equipo_visitante?.nombre}</span>
               </div>
             </div>
-            <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
+            <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)'}}>
               {pred !== undefined
-                ? <><span>Tu pred: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
+                ? <><span>Tu predicción: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
                 : <span>Sin predicción cargada</span>
               }
             </div>
