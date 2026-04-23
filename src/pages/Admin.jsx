@@ -362,7 +362,7 @@ function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
-  const [usuarioAbierto, setUsuarioAbierto] = useState(null)
+  const [expandido, setExpandido] = useState(null)
   const [msg, setMsg] = useState('')
 
   useEffect(() => { cargar() }, [])
@@ -379,7 +379,7 @@ function AdminUsuarios() {
   async function toggleAdmin(usuario) {
     if (!confirm(`¿${usuario.es_admin ? 'Quitar' : 'Dar'} permisos de admin a ${usuario.username}?`)) return
     const { error } = await supabase.from('perfiles').update({ es_admin: !usuario.es_admin }).eq('id', usuario.id)
-    if (!error) { setMsg('✓ Permisos actualizados'); setUsuarioAbierto(null); cargar() }
+    if (!error) { setMsg('✓ Permisos actualizados'); setExpandido(null); cargar() }
     else setMsg('Error: ' + error.message)
     setTimeout(() => setMsg(''), 3000)
   }
@@ -398,72 +398,77 @@ function AdminUsuarios() {
           <span style={{fontSize:13,color:'var(--texto-suave)',fontWeight:600}}>{usuarios.length} total</span>
         </div>
         {msg && <div className="alert alert-success">{msg}</div>}
-        <input className="form-input" placeholder="Buscar por usuario, nombre o club..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+        <input className="form-input" placeholder="Buscar por usuario, nombre o club..." value={busqueda} onChange={e => { setBusqueda(e.target.value); setExpandido(null) }} />
       </div>
 
       {loading && <div className="loading"><div className="spinner"></div></div>}
-
-      {/* Panel detalle usuario seleccionado */}
-      {usuarioAbierto && (
-        <div className="card" style={{border:'2px solid var(--dorado)',marginBottom:12}}>
-          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
-            <div className="avatar-circle" style={{width:52,height:52,fontSize:20,flexShrink:0}}>
-              {usuarioAbierto.avatar_url
-                ? <img src={usuarioAbierto.avatar_url} alt={usuarioAbierto.username} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
-                : usuarioAbierto.username?.[0]?.toUpperCase() || '?'}
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontWeight:700,fontSize:16,color:'var(--azul)',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                @{usuarioAbierto.username}
-                {usuarioAbierto.es_admin && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'2px 8px',borderRadius:20,fontWeight:700}}>ADMIN</span>}
-              </div>
-              {usuarioAbierto.nombre_completo && <div style={{fontSize:13,color:'var(--texto-suave)'}}>{usuarioAbierto.nombre_completo}</div>}
-              {usuarioAbierto.club && <div style={{fontSize:12,color:'var(--texto-suave)'}}>{usuarioAbierto.club}</div>}
-              <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:2}}>
-                Registrado: {usuarioAbierto.created_at ? new Date(usuarioAbierto.created_at).toLocaleDateString('es-AR') : '—'}
-              </div>
-            </div>
-          </div>
-          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-            <button className={`btn ${usuarioAbierto.es_admin ? 'btn-secondary' : 'btn-primary'} btn-small`} onClick={() => toggleAdmin(usuarioAbierto)}>
-              {usuarioAbierto.es_admin ? '🔓 Quitar admin' : '🔐 Dar admin'}
-            </button>
-            <button className="btn btn-secondary btn-small" onClick={() => setUsuarioAbierto(null)}>Cerrar</button>
-          </div>
-        </div>
-      )}
 
       {!loading && (
         <div className="card" style={{padding:0,overflow:'hidden'}}>
           {filtrados.length === 0 && <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)'}}>Sin resultados</div>}
           {filtrados.map(u => (
-            <div
-              key={u.id}
-              onClick={() => setUsuarioAbierto(usuarioAbierto?.id === u.id ? null : u)}
-              style={{
-                display:'flex', alignItems:'center', gap:12, padding:'12px 16px',
-                borderBottom:'1px solid var(--gris-borde)', cursor:'pointer', transition:'background 0.15s',
-                background: usuarioAbierto?.id === u.id ? 'rgba(201,162,39,0.08)' : u.es_admin ? 'rgba(201,162,39,0.04)' : 'white'
-              }}
-            >
-              <div className="avatar-circle" style={{width:36,height:36,fontSize:13,flexShrink:0}}>
-                {u.avatar_url
-                  ? <img src={u.avatar_url} alt={u.username} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
-                  : u.username?.[0]?.toUpperCase() || '?'}
-              </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:600,fontSize:14,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-                  {u.username}
-                  {u.es_admin && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700}}>ADMIN</span>}
+            <div key={u.id}>
+              {/* Fila del usuario */}
+              <div
+                onClick={() => setExpandido(expandido === u.id ? null : u.id)}
+                style={{
+                  display:'flex', alignItems:'center', gap:12, padding:'12px 16px',
+                  borderBottom: expandido === u.id ? 'none' : '1px solid var(--gris-borde)',
+                  cursor:'pointer', transition:'background 0.15s',
+                  background: expandido === u.id ? 'rgba(201,162,39,0.08)' : u.es_admin ? 'rgba(201,162,39,0.04)' : 'white'
+                }}
+              >
+                <div className="avatar-circle" style={{width:36,height:36,fontSize:13,flexShrink:0}}>
+                  {u.avatar_url
+                    ? <img src={u.avatar_url} alt={u.username} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
+                    : u.username?.[0]?.toUpperCase() || '?'}
                 </div>
-                <div style={{fontSize:11,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                  {[u.nombre_completo, u.club].filter(Boolean).join(' · ') || '—'}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:14,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                    {u.username}
+                    {u.es_admin && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700}}>ADMIN</span>}
+                  </div>
+                  <div style={{fontSize:11,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                    {[u.nombre_completo, u.club].filter(Boolean).join(' · ') || '—'}
+                  </div>
                 </div>
+                <div style={{fontSize:11,color:'var(--texto-suave)',flexShrink:0}}>
+                  {u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—'}
+                </div>
+                <div style={{color:'var(--dorado)',fontSize:18,flexShrink:0,transition:'transform 0.2s',transform: expandido === u.id ? 'rotate(90deg)' : 'none'}}>›</div>
               </div>
-              <div style={{fontSize:11,color:'var(--texto-suave)',flexShrink:0,textAlign:'right'}}>
-                {u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—'}
-              </div>
-              <div style={{color:'var(--dorado)',fontSize:18,flexShrink:0}}>›</div>
+
+              {/* Panel acordeón — aparece justo debajo */}
+              {expandido === u.id && (
+                <div style={{
+                  background:'rgba(201,162,39,0.06)',
+                  borderTop:'1px solid rgba(201,162,39,0.3)',
+                  borderBottom:'1px solid var(--gris-borde)',
+                  padding:'14px 16px',
+                  display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'
+                }}>
+                  <div style={{flex:1,minWidth:200}}>
+                    <div style={{fontWeight:700,fontSize:15,color:'var(--azul)',marginBottom:2}}>@{u.username}</div>
+                    {u.nombre_completo && <div style={{fontSize:13,color:'var(--texto)'}}>{u.nombre_completo}</div>}
+                    {u.club && <div style={{fontSize:12,color:'var(--texto-suave)'}}>{u.club}</div>}
+                    <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:4}}>
+                      Registrado: {u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—'}
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:8,flexShrink:0}}>
+                    <button
+                      className={`btn btn-small ${u.es_admin ? 'btn-secondary' : 'btn-primary'}`}
+                      onClick={e => { e.stopPropagation(); toggleAdmin(u) }}
+                    >
+                      {u.es_admin ? '🔓 Quitar admin' : '🔐 Dar admin'}
+                    </button>
+                    <button
+                      className="btn btn-small btn-secondary"
+                      onClick={e => { e.stopPropagation(); setExpandido(null) }}
+                    >Cerrar</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
