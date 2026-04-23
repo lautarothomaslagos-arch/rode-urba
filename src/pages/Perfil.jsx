@@ -21,6 +21,7 @@ export default function Perfil() {
   const [msg, setMsg] = useState('')
   const [subiendo, setSubiendo] = useState(false)
   const [preview, setPreview] = useState(null)
+  const [racha, setRacha] = useState({ actual: 0, maxima: 0 })
 
   useEffect(() => {
     if (perfil) {
@@ -29,6 +30,15 @@ export default function Perfil() {
       setPreview(perfil.avatar_url || null)
     }
   }, [perfil])
+
+  useEffect(() => {
+    if (user) cargarRacha()
+  }, [user])
+
+  async function cargarRacha() {
+    const { data } = await supabase.from('perfiles').select('racha_actual, racha_maxima').eq('id', user.id).single()
+    if (data) setRacha({ actual: data.racha_actual || 0, maxima: data.racha_maxima || 0 })
+  }
 
   async function guardar(e) {
     e.preventDefault()
@@ -83,10 +93,35 @@ export default function Perfil() {
               <input type="file" accept="image/jpeg,image/png,image/webp" style={{display:'none'}} onChange={subirFoto} disabled={subiendo} />
             </label>
           </div>
-          <div>
+          <div style={{flex:1}}>
             <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:22,fontWeight:700,color:'var(--azul)'}}>@{perfil?.username}</div>
             <div style={{fontSize:13,color:'var(--texto-suave)',marginTop:2}}>{perfil?.club || 'Sin club asignado'}</div>
             {perfil?.es_admin && <span className="cat-badge cat-top14" style={{marginTop:6,display:'inline-block'}}>Admin</span>}
+          </div>
+        </div>
+
+        {/* RACHA */}
+        <div style={{
+          display:'flex', gap:12, marginBottom:20, padding:'14px 16px',
+          background:'linear-gradient(135deg, rgba(201,162,39,0.08), rgba(201,162,39,0.04))',
+          borderRadius:10, border:'1px solid rgba(201,162,39,0.3)'
+        }}>
+          <div style={{flex:1,textAlign:'center'}}>
+            <div style={{fontSize:32,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--azul)',lineHeight:1}}>
+              {racha.actual > 0 ? '🔥' : '—'} {racha.actual}
+            </div>
+            <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>
+              Racha actual
+            </div>
+          </div>
+          <div style={{width:1,background:'rgba(201,162,39,0.3)'}} />
+          <div style={{flex:1,textAlign:'center'}}>
+            <div style={{fontSize:32,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--dorado-oscuro)',lineHeight:1}}>
+              🏆 {racha.maxima}
+            </div>
+            <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>
+              Racha máxima
+            </div>
           </div>
         </div>
 
@@ -113,26 +148,28 @@ export default function Perfil() {
           </button>
         </form>
       </div>
-{/* INVITAR AMIGOS */}
-<div className="card">
-  <div className="card-header">
-    <span className="card-title">👥 Invitá a un amigo</span>
-  </div>
-  <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>
-    ¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.
-  </p>
-  <button
-    className="btn btn-primary"
-    onClick={() => {
-      const mensaje = encodeURIComponent(
-        "Ey, estoy jugando Pick&Go, un prode de rugby de la URBA 🏉 Predecís los resultados de Top 14, Primera A, B, C y Segunda, hay ranking semanal y anual.\n\nBajatela:\n📱 Android: Chrome → pickandgo-prode.vercel.app → \"Agregar a pantalla de inicio\"\n🍎 iPhone: Safari → pickandgo-prode.vercel.app → botón compartir → \"Agregar a pantalla de inicio\"\n\n¡Sumate y a ver quién gana! 🏆"
-      )
-      window.open(`https://wa.me/?text=${mensaje}`, '_blank')
-    }}
-  >
-    📲 Invitar por WhatsApp
-  </button>
-</div>
+
+      {/* INVITAR AMIGOS */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">👥 Invitá a un amigo</span>
+        </div>
+        <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>
+          ¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.
+        </p>
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            const mensaje = encodeURIComponent(
+              "Ey, estoy jugando Pick&Go, un prode de rugby de la URBA 🏉 Predecís los resultados de Top 14, Primera A, B, C y Segunda, hay ranking semanal y anual.\n\nBajatela:\n📱 Android: Chrome → pickandgo-prode.vercel.app → \"Agregar a pantalla de inicio\"\n🍎 iPhone: Safari → pickandgo-prode.vercel.app → botón compartir → \"Agregar a pantalla de inicio\"\n\n¡Sumate y a ver quién gana! 🏆"
+            )
+            window.open(`https://wa.me/?text=${mensaje}`, '_blank')
+          }}
+        >
+          📲 Invitar por WhatsApp
+        </button>
+      </div>
+
       {/* NOTIFICACIONES */}
       <div className="card">
         <div className="card-header">

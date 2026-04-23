@@ -33,19 +33,15 @@ export default function Ranking() {
     try {
       if (subVista === 'anual') {
         const { data, error } = await supabase.from('puntos_totales')
-          .select('puntos_acumulados, fechas_jugadas, usuario_id, perfiles(username, nombre_completo, avatar_url, club)')
+          .select('puntos_acumulados, fechas_jugadas, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual)')
           .eq('temporada_id', 1)
         if (error) throw error
-        // Agrupar por usuario_id sumando todos los torneos
         const agrupado = {}
         data?.forEach(item => {
           const uid = item.usuario_id
           if (!uid) return
           if (!agrupado[uid]) agrupado[uid] = {
-            usuario_id: uid,
-            puntos_acumulados: 0,
-            fechas_jugadas: 0,
-            perfiles: item.perfiles
+            usuario_id: uid, puntos_acumulados: 0, fechas_jugadas: 0, perfiles: item.perfiles
           }
           agrupado[uid].puntos_acumulados += (item.puntos_acumulados || 0)
           agrupado[uid].fechas_jugadas = Math.max(agrupado[uid].fechas_jugadas, item.fechas_jugadas || 0)
@@ -57,7 +53,7 @@ export default function Ranking() {
         const ids = fechasIds?.map(f => f.id) || []
         if (!ids.length) { setLista([]); setLoading(false); return }
         const { data, error } = await supabase.from('puntos_fecha')
-          .select('total_puntos, partidos_acertados, partidos_totales, bonus_pleno, bonus_mitad, usuario_id, perfiles(username, nombre_completo, avatar_url, club)')
+          .select('total_puntos, partidos_acertados, partidos_totales, bonus_pleno, bonus_mitad, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual)')
           .in('fecha_id', ids)
         if (error) throw error
         const agrupado = {}
@@ -65,13 +61,8 @@ export default function Ranking() {
           const uid = item.usuario_id
           if (!uid) return
           if (!agrupado[uid]) agrupado[uid] = {
-            usuario_id: uid,
-            total_puntos: 0,
-            partidos_acertados: 0,
-            partidos_totales: 0,
-            bonus_pleno: 0,
-            bonus_mitad: 0,
-            perfiles: item.perfiles
+            usuario_id: uid, total_puntos: 0, partidos_acertados: 0,
+            partidos_totales: 0, bonus_pleno: 0, bonus_mitad: 0, perfiles: item.perfiles
           }
           agrupado[uid].total_puntos += (item.total_puntos || 0)
           agrupado[uid].partidos_acertados += (item.partidos_acertados || 0)
@@ -161,6 +152,7 @@ export default function Ranking() {
                 const esYo = item.perfiles?.username === perfil?.username
                 const av = item.perfiles?.avatar_url
                 const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+                const racha = item.perfiles?.racha_actual || 0
                 return (
                   <div key={item.usuario_id} className={`ranking-row ${esYo?'yo':''}`}>
                     <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx+1)}</div>
@@ -169,9 +161,14 @@ export default function Ranking() {
                         {av ? <img src={av} alt={ini} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
                       </div>
                       <div className="ranking-info">
-                        <div className="ranking-username">
+                        <div className="ranking-username" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
                           {item.perfiles?.username || 'Usuario'}
-                          {esYo && <span style={{marginLeft:6,fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700}}>VOS</span>}
+                          {esYo && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700}}>VOS</span>}
+                          {racha >= 2 && (
+                            <span style={{fontSize:11,fontWeight:700,color:'#ea580c'}}>
+                              🔥{racha}
+                            </span>
+                          )}
                         </div>
                         {item.perfiles?.club && <div className="ranking-club">{item.perfiles.club}</div>}
                         {subVista==='fecha' && (

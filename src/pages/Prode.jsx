@@ -78,6 +78,12 @@ export default function Prode() {
   const fi = fechas.find(f => f.id === fechaId)
   const abierto = estaAbierto(fi?.cierre_predicciones)
 
+  // Calcular progreso
+  const totalPartidos = partidos.length
+  const predsCompletas = partidos.filter(p => preds[p.id]?.local !== undefined && preds[p.id]?.visitante !== undefined).length
+  const porcentaje = totalPartidos > 0 ? Math.round((predsCompletas / totalPartidos) * 100) : 0
+  const todoCompleto = predsCompletas === totalPartidos && totalPartidos > 0
+
   return (
     <div className="container">
       <div className="page-header">
@@ -112,7 +118,7 @@ export default function Prode() {
 
       {fi && !loading && (
         <div className="card" style={{padding:'12px 16px',marginBottom:16}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:totalPartidos>0?12:0}}>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
               <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
@@ -127,8 +133,35 @@ export default function Prode() {
             </span>
           </div>
           {fi.cierre_predicciones && (
-            <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:4}}>
+            <div style={{fontSize:11,color:'var(--texto-suave)',marginBottom:totalPartidos>0?10:0}}>
               Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
+            </div>
+          )}
+
+          {/* Barra de progreso */}
+          {totalPartidos > 0 && (
+            <div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <span style={{fontSize:12,fontWeight:600,color: todoCompleto ? '#15803d' : 'var(--texto-suave)'}}>
+                  {todoCompleto ? '✅ ¡Todos los partidos cargados!' : `${predsCompletas} de ${totalPartidos} predicciones cargadas`}
+                </span>
+                <span style={{fontSize:12,fontWeight:700,color: todoCompleto ? '#15803d' : 'var(--azul)'}}>
+                  {porcentaje}%
+                </span>
+              </div>
+              <div style={{
+                height:8, borderRadius:10, background:'var(--gris-borde)',
+                overflow:'hidden', border:'1px solid rgba(0,0,0,0.06)'
+              }}>
+                <div style={{
+                  height:'100%', borderRadius:10,
+                  width:`${porcentaje}%`,
+                  background: todoCompleto
+                    ? 'linear-gradient(90deg, #16a34a, #22c55e)'
+                    : 'linear-gradient(90deg, var(--rojo-vivo), var(--dorado))',
+                  transition:'width 0.4s ease'
+                }} />
+              </div>
             </div>
           )}
         </div>
