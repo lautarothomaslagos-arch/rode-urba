@@ -30,15 +30,12 @@ function FilaEquipos({ partido, marcador }) {
 export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
   const tienePred = pred?.local !== undefined && pred?.visitante !== undefined
 
-  let claseCard = partido.es_especial ? 'partido-card especial' : 'partido-card'
-  let estiloExtra = {}
+  const estiloCard = partido.es_especial ? {} : tienePred ? {
+    borderColor: '#16a34a',
+    background: 'linear-gradient(135deg, #f0fdf4, #ffffff)'
+  } : {}
 
-  if (!partido.es_especial && tienePred) {
-    estiloExtra = {
-      borderColor: '#16a34a',
-      background: 'linear-gradient(135deg, #f0fdf4, #ffffff)'
-    }
-  }
+  const claseCard = partido.es_especial ? 'partido-card especial' : 'partido-card'
 
   const contenido = (
     <>
@@ -53,20 +50,7 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
         <div className="destacado-subtitulo">puntaje doble · exacto 6 pts · ganador 2 pts</div>
       )}
 
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:tienePred?4:0}}>
-        <div style={{flex:1}}>
-          <FilaEquipos partido={partido} />
-        </div>
-        {tienePred && !partido.es_especial && (
-          <div style={{marginLeft:8,flexShrink:0}}>
-            <span style={{
-              fontSize:11, fontWeight:700, color:'#15803d',
-              background:'#dcfce7', padding:'2px 8px', borderRadius:20,
-              display:'flex', alignItems:'center', gap:4
-            }}>✓ Cargado</span>
-          </div>
-        )}
-      </div>
+      <FilaEquipos partido={partido} />
 
       {abierto ? (
         <div className="prediccion-inputs">
@@ -97,7 +81,7 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
     )
   }
 
-  return <div className={claseCard} style={estiloExtra}>{contenido}</div>
+  return <div className={claseCard} style={estiloCard}>{contenido}</div>
 }
 
 export function PartidoCardResultado({ partido, pred }) {
