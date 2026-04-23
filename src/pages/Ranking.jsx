@@ -2,6 +2,19 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
+const BASE = 'https://xmtsxdzwurxygqqccgdc.supabase.co/storage/v1/object/public/trofeos'
+
+const TROFEOS = [
+  { nombre: 'Puma',     minimo: 15, img: `${BASE}/trofeo_puma.png`,     color: '#C9A227' },
+  { nombre: 'Capitán',  minimo: 10, img: `${BASE}/trofeo_capitan.png`,  color: '#C9A227' },
+  { nombre: 'Titular',  minimo: 6,  img: `${BASE}/trofeo_titular.png`,  color: '#9ca3af' },
+  { nombre: 'Suplente', minimo: 3,  img: `${BASE}/trofeo_suplente.png`, color: '#cd7c3e' },
+]
+
+function getTrofeo(rachaMaxima) {
+  return TROFEOS.find(t => rachaMaxima >= t.minimo) || null
+}
+
 export default function Ranking() {
   const { perfil } = useAuth()
   const [vista, setVista] = useState('personal')
@@ -33,7 +46,7 @@ export default function Ranking() {
     try {
       if (subVista === 'anual') {
         const { data, error } = await supabase.from('puntos_totales')
-          .select('puntos_acumulados, fechas_jugadas, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual)')
+          .select('puntos_acumulados, fechas_jugadas, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual, racha_maxima)')
           .eq('temporada_id', 1)
         if (error) throw error
         const agrupado = {}
@@ -53,7 +66,7 @@ export default function Ranking() {
         const ids = fechasIds?.map(f => f.id) || []
         if (!ids.length) { setLista([]); setLoading(false); return }
         const { data, error } = await supabase.from('puntos_fecha')
-          .select('total_puntos, partidos_acertados, partidos_totales, bonus_pleno, bonus_mitad, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual)')
+          .select('total_puntos, partidos_acertados, partidos_totales, bonus_pleno, bonus_mitad, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual, racha_maxima)')
           .in('fecha_id', ids)
         if (error) throw error
         const agrupado = {}
@@ -153,6 +166,7 @@ export default function Ranking() {
                 const av = item.perfiles?.avatar_url
                 const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
                 const racha = item.perfiles?.racha_actual || 0
+                const trofeo = getTrofeo(item.perfiles?.racha_maxima || 0)
                 return (
                   <div key={item.usuario_id} className={`ranking-row ${esYo?'yo':''}`}>
                     <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx+1)}</div>
@@ -164,10 +178,14 @@ export default function Ranking() {
                         <div className="ranking-username" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
                           {item.perfiles?.username || 'Usuario'}
                           {esYo && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700}}>VOS</span>}
-                          {racha >= 2 && (
-                            <span style={{fontSize:11,fontWeight:700,color:'#ea580c'}}>
-                              🔥{racha}
-                            </span>
+                          {racha >= 2 && <span style={{fontSize:11,fontWeight:700,color:'#ea580c'}}>🔥{racha}</span>}
+                          {trofeo && (
+                            <img
+                              src={trofeo.img}
+                              alt={trofeo.nombre}
+                              title={trofeo.nombre}
+                              style={{width:18,height:18,objectFit:'contain'}}
+                            />
                           )}
                         </div>
                         {item.perfiles?.club && <div className="ranking-club">{item.perfiles.club}</div>}
