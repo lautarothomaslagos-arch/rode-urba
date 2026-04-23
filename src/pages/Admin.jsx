@@ -8,17 +8,21 @@ export default function Admin() {
 
   return (
     <div className="container">
-      <h1 className="page-title">Panel de administración</h1>
-      <div className="tabs">
+      <h1 className="page-title">Panel de <span className="page-title-accent">administración</span></h1>
+      <div className="tabs" style={{flexWrap:'wrap'}}>
         <button className={`tab ${seccion === 'fechas' ? 'active' : ''}`} onClick={() => setSeccion('fechas')}>Fechas</button>
         <button className={`tab ${seccion === 'partidos' ? 'active' : ''}`} onClick={() => setSeccion('partidos')}>Partidos</button>
         <button className={`tab ${seccion === 'resultados' ? 'active' : ''}`} onClick={() => setSeccion('resultados')}>Cargar resultados</button>
         <button className={`tab ${seccion === 'equipos' ? 'active' : ''}`} onClick={() => setSeccion('equipos')}>Equipos</button>
+        <button className={`tab ${seccion === 'usuarios' ? 'active' : ''}`} onClick={() => setSeccion('usuarios')}>Usuarios</button>
+        <button className={`tab ${seccion === 'grupos' ? 'active' : ''}`} onClick={() => setSeccion('grupos')}>Grupos</button>
       </div>
       {seccion === 'fechas' && <AdminFechas />}
       {seccion === 'partidos' && <AdminPartidos />}
       {seccion === 'resultados' && <AdminResultados />}
       {seccion === 'equipos' && <AdminEquipos />}
+      {seccion === 'usuarios' && <AdminUsuarios />}
+      {seccion === 'grupos' && <AdminGrupos />}
     </div>
   )
 }
@@ -40,7 +44,7 @@ function AdminFechas() {
   async function guardar() {
     setLoading(true)
     const cierre = form.fecha_partido
-      ? new Date(form.fecha_partido + 'T23:59:00').toISOString().replace('T23:59:00.000Z', 'T02:59:00.000Z') // viernes 23:59 AR = sábado 02:59 UTC
+      ? new Date(form.fecha_partido + 'T23:59:00').toISOString().replace('T23:59:00.000Z', 'T02:59:00.000Z')
       : null
     const { error } = await supabase.from('fechas').insert({
       categoria_id: parseInt(form.categoria_id),
@@ -405,6 +409,230 @@ function AdminEquipos() {
           ))}
         </div>
       ))}
+    </div>
+  )
+}
+
+// ---- USUARIOS ----
+function AdminUsuarios() {
+  const [usuarios, setUsuarios] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [busqueda, setBusqueda] = useState('')
+  const [msg, setMsg] = useState('')
+
+  useEffect(() => { cargar() }, [])
+
+  async function cargar() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('perfiles')
+      .select('id, username, nombre_completo, club, es_admin, created_at, avatar_url')
+      .order('created_at', { ascending: false })
+    setUsuarios(data || [])
+    setLoading(false)
+  }
+
+  async function toggleAdmin(usuario) {
+    if (!confirm(`¿${usuario.es_admin ? 'Quitar' : 'Dar'} permisos de admin a ${usuario.username}?`)) return
+    const { error } = await supabase.from('perfiles').update({ es_admin: !usuario.es_admin }).eq('id', usuario.id)
+    if (!error) { setMsg(`✓ Permisos actualizados`); cargar() }
+    else setMsg('Error: ' + error.message)
+    setTimeout(() => setMsg(''), 3000)
+  }
+
+  const filtrados = usuarios.filter(u =>
+    u.username?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    u.nombre_completo?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    u.club?.toLowerCase().includes(busqueda.toLowerCase())
+  )
+
+  return (
+    <div>
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">👥 Usuarios registrados</span>
+          <span style={{fontSize:13,color:'var(--texto-suave)',fontWeight:600}}>{usuarios.length} total</span>
+        </div>
+        {msg && <div className="alert alert-success">{msg}</div>}
+        <input
+          className="form-input"
+          placeholder="Buscar por usuario, nombre o club..."
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+        />
+      </div>
+
+      {loading && <div className="loading"><div className="spinner"></div></div>}
+
+      {!loading && (
+        <div className="card" style={{padding:0,overflow:'hidden'}}>
+          <div style={{padding:'10px 16px',background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',display:'flex',gap:16}}>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,flex:1}}>USUARIO</span>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,width:140}}>CLUB</span>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,width:90}}>REGISTRO</span>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,width:80,textAlign:'center'}}>ADMIN</span>
+          </div>
+          {filtrados.length === 0 && (
+            <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)'}}>Sin resultados</div>
+          )}
+          {filtrados.map(u => (
+            <div key={u.id} style={{display:'flex',alignItems:'center',gap:16,padding:'12px 16px',borderBottom:'1px solid var(--gris-borde)',background:u.es_admin?'rgba(201,162,39,0.05)':''}}>
+              <div style={{display:'flex',alignItems:'center',gap:10,flex:1,minWidth:0}}>
+                <div className="avatar-circle" style={{width:32,height:32,fontSize:12,flexShrink:0}}>
+                  {u.avatar_url
+                    ? <img src={u.avatar_url} alt={u.username} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
+                    : u.username?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div style={{minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:13,color:'var(--texto)',display:'flex',alignItems:'center',gap:6}}>
+                    {u.username}
+                    {u.es_admin && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700}}>ADMIN</span>}
+                  </div>
+                  {u.nombre_completo && <div style={{fontSize:11,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.nombre_completo}</div>}
+                </div>
+              </div>
+              <div style={{width:140,fontSize:12,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                {u.club || '—'}
+              </div>
+              <div style={{width:90,fontSize:11,color:'var(--texto-suave)'}}>
+                {u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—'}
+              </div>
+              <div style={{width:80,textAlign:'center'}}>
+                <button
+                  className={`btn btn-small ${u.es_admin ? 'btn-secondary' : 'btn-primary'}`}
+                  onClick={() => toggleAdmin(u)}
+                  style={{fontSize:11,padding:'4px 10px'}}
+                >
+                  {u.es_admin ? 'Quitar' : 'Dar admin'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---- GRUPOS ----
+function AdminGrupos() {
+  const [grupos, setGrupos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [grupoAbierto, setGrupoAbierto] = useState(null)
+  const [miembros, setMiembros] = useState([])
+  const [msg, setMsg] = useState('')
+
+  useEffect(() => { cargar() }, [])
+
+  async function cargar() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('grupos')
+      .select('id, nombre, codigo, imagen_url, creador_id, created_at, perfiles(username)')
+      .order('created_at', { ascending: false })
+    setGrupos(data || [])
+    setLoading(false)
+  }
+
+  async function verMiembros(grupo) {
+    setGrupoAbierto(grupo)
+    const { data } = await supabase
+      .from('grupo_miembros')
+      .select('usuario_id, joined_at, perfiles(username, club, avatar_url)')
+      .eq('grupo_id', grupo.id)
+      .order('joined_at')
+    setMiembros(data || [])
+  }
+
+  async function eliminarGrupo(id) {
+    if (!confirm('¿Eliminar este grupo permanentemente?')) return
+    await supabase.from('grupos').delete().eq('id', id)
+    setGrupoAbierto(null)
+    setMsg('✓ Grupo eliminado')
+    cargar()
+    setTimeout(() => setMsg(''), 3000)
+  }
+
+  return (
+    <div>
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">🏉 Grupos privados</span>
+          <span style={{fontSize:13,color:'var(--texto-suave)',fontWeight:600}}>{grupos.length} grupos</span>
+        </div>
+        {msg && <div className="alert alert-success">{msg}</div>}
+      </div>
+
+      {loading && <div className="loading"><div className="spinner"></div></div>}
+
+      {grupoAbierto && (
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">👥 {grupoAbierto.nombre}</span>
+            <button className="btn btn-small btn-secondary" onClick={() => setGrupoAbierto(null)}>← Volver</button>
+          </div>
+          <div style={{fontSize:13,color:'var(--texto-suave)',marginBottom:12}}>
+            Código: <strong style={{color:'var(--dorado-oscuro)',letterSpacing:1}}>{grupoAbierto.codigo}</strong>
+            {' · '}Creado por: <strong>{grupoAbierto.perfiles?.username}</strong>
+            {' · '}{miembros.length} miembros
+          </div>
+          <div style={{marginBottom:16}}>
+            {miembros.map(m => (
+              <div key={m.usuario_id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:'1px solid var(--gris-borde)'}}>
+                <div className="avatar-circle" style={{width:30,height:30,fontSize:11,flexShrink:0}}>
+                  {m.perfiles?.avatar_url
+                    ? <img src={m.perfiles.avatar_url} alt={m.perfiles.username} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
+                    : m.perfiles?.username?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:600,fontSize:13}}>{m.perfiles?.username}</div>
+                  {m.perfiles?.club && <div style={{fontSize:11,color:'var(--texto-suave)'}}>{m.perfiles.club}</div>}
+                </div>
+                <div style={{fontSize:11,color:'var(--texto-suave)'}}>
+                  {m.joined_at ? new Date(m.joined_at).toLocaleDateString('es-AR') : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="btn btn-danger btn-small" onClick={() => eliminarGrupo(grupoAbierto.id)}>
+            🗑️ Eliminar este grupo
+          </button>
+        </div>
+      )}
+
+      {!loading && !grupoAbierto && (
+        <div className="card" style={{padding:0,overflow:'hidden'}}>
+          <div style={{padding:'10px 16px',background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',display:'flex',gap:16}}>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,flex:1}}>GRUPO</span>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,width:100}}>CREADOR</span>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,width:90}}>CÓDIGO</span>
+            <span style={{fontSize:12,fontWeight:700,color:'var(--dorado)',letterSpacing:1,width:80,textAlign:'center'}}>ACCIÓN</span>
+          </div>
+          {grupos.length === 0 && (
+            <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)'}}>No hay grupos creados todavía</div>
+          )}
+          {grupos.map(g => (
+            <div key={g.id} style={{display:'flex',alignItems:'center',gap:16,padding:'12px 16px',borderBottom:'1px solid var(--gris-borde)'}}>
+              <div style={{flex:1,display:'flex',alignItems:'center',gap:10}}>
+                <div style={{width:36,height:36,borderRadius:'50%',overflow:'hidden',background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,border:'2px solid var(--dorado)',flexShrink:0}}>
+                  {g.imagen_url ? <img src={g.imagen_url} alt={g.nombre} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '🏉'}
+                </div>
+                <div>
+                  <div style={{fontWeight:600,fontSize:13}}>{g.nombre}</div>
+                  <div style={{fontSize:11,color:'var(--texto-suave)'}}>{g.created_at ? new Date(g.created_at).toLocaleDateString('es-AR') : ''}</div>
+                </div>
+              </div>
+              <div style={{width:100,fontSize:12,color:'var(--texto-suave)'}}>{g.perfiles?.username || '—'}</div>
+              <div style={{width:90,fontSize:12,fontWeight:700,color:'var(--dorado-oscuro)',letterSpacing:1}}>{g.codigo}</div>
+              <div style={{width:80,textAlign:'center'}}>
+                <button className="btn btn-small btn-secondary" style={{fontSize:11}} onClick={() => verMiembros(g)}>
+                  Ver
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
