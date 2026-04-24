@@ -161,34 +161,41 @@ export default function Ranking() {
                 </span>
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>{lista.length} participantes</span>
               </div>
-              {lista.map((item, idx) => {
-                const esYo = item.perfiles?.username === perfil?.username
-                const av = item.perfiles?.avatar_url
-                const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
-                const racha = item.perfiles?.racha_actual || 0
-                const trofeo = getTrofeo(item.perfiles?.racha_maxima || 0)
-                return (
-                  <div key={item.usuario_id} className={`ranking-row ${esYo?'yo':''}`}>
-                    <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx+1)}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:10}}>
-                      <div className="avatar-circle" style={{width:34,height:34,fontSize:13}}>
+
+              {/* Lista deslizable con altura máxima */}
+              <div style={{maxHeight:480,overflowY:'auto'}}>
+                {lista.map((item, idx) => {
+                  const esYo = item.perfiles?.username === perfil?.username
+                  const av = item.perfiles?.avatar_url
+                  const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+                  const racha = item.perfiles?.racha_actual || 0
+                  const trofeo = getTrofeo(item.perfiles?.racha_maxima || 0)
+                  const puntos = subVista==='anual' ? item.puntos_acumulados : item.total_puntos
+                  return (
+                    <div key={item.usuario_id} className={`ranking-row ${esYo?'yo':''}`}
+                      style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid var(--gris-borde)',gap:0}}
+                    >
+                      {/* Posición — ancho fijo */}
+                      <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
+                        {medal(idx) || (idx+1)}
+                      </div>
+
+                      {/* Avatar — ancho fijo */}
+                      <div className="avatar-circle" style={{width:34,height:34,fontSize:13,flexShrink:0,marginLeft:8}}>
                         {av ? <img src={av} alt={ini} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
                       </div>
-                      <div className="ranking-info">
-                        <div className="ranking-username" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-                          {item.perfiles?.username || 'Usuario'}
-                          {esYo && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700}}>VOS</span>}
-                          {racha >= 2 && <span style={{fontSize:11,fontWeight:700,color:'#ea580c'}}>🔥{racha}</span>}
-                          {trofeo && (
-                            <img
-                              src={trofeo.img}
-                              alt={trofeo.nombre}
-                              title={trofeo.nombre}
-                              style={{width:18,height:18,objectFit:'contain'}}
-                            />
-                          )}
+
+                      {/* Info usuario — flex 1, ocupa el espacio restante */}
+                      <div style={{flex:1,minWidth:0,marginLeft:10}}>
+                        <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+                          <span style={{fontWeight:600,fontSize:14,color:'var(--texto)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                            {item.perfiles?.username || 'Usuario'}
+                          </span>
+                          {esYo && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700,flexShrink:0}}>VOS</span>}
+                          {racha >= 2 && <span style={{fontSize:11,fontWeight:700,color:'#ea580c',flexShrink:0}}>🔥{racha}</span>}
+                          {trofeo && <img src={trofeo.img} alt={trofeo.nombre} title={trofeo.nombre} style={{width:16,height:16,objectFit:'contain',flexShrink:0}} />}
                         </div>
-                        {item.perfiles?.club && <div className="ranking-club">{item.perfiles.club}</div>}
+                        {item.perfiles?.club && <div style={{fontSize:11,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.perfiles.club}</div>}
                         {subVista==='fecha' && (
                           <div style={{fontSize:11,color:'var(--texto-suave)'}}>
                             {item.partidos_acertados}/{item.partidos_totales} acertados
@@ -196,15 +203,17 @@ export default function Ranking() {
                           </div>
                         )}
                       </div>
+
+                      {/* Puntos — ancho fijo a la derecha */}
+                      <div style={{flexShrink:0,textAlign:'right',marginLeft:8}}>
+                        <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:'var(--azul)'}}>{puntos}</span>
+                        <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:2}}>pts</span>
+                        {subVista==='anual' && <div style={{fontSize:10,color:'var(--texto-suave)'}}>{item.fechas_jugadas} f.</div>}
+                      </div>
                     </div>
-                    <div className="ranking-pts">
-                      {subVista==='anual' ? item.puntos_acumulados : item.total_puntos}
-                      <span> pts</span>
-                    </div>
-                    {subVista==='anual' && <div className="ranking-fechas">{item.fechas_jugadas} f.</div>}
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
       )}
 
@@ -216,16 +225,23 @@ export default function Ranking() {
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'white',letterSpacing:1}}>Ranking por clubes 2026</span>
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.7)'}}>{listaClubs.length} clubes</span>
               </div>
-              {listaClubs.map((item, idx) => (
-                <div key={item.club} className="ranking-row">
-                  <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx+1)}</div>
-                  <div className="ranking-info">
-                    <div className="ranking-username">{item.club}</div>
-                    <div className="ranking-club">{item.miembros} {item.miembros===1?'participante':'participantes'}</div>
+              <div style={{maxHeight:480,overflowY:'auto'}}>
+                {listaClubs.map((item, idx) => (
+                  <div key={item.club} style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid var(--gris-borde)',gap:0}}>
+                    <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
+                      {medal(idx) || (idx+1)}
+                    </div>
+                    <div style={{flex:1,minWidth:0,marginLeft:12}}>
+                      <div style={{fontWeight:600,fontSize:14,color:'var(--texto)'}}>{item.club}</div>
+                      <div style={{fontSize:11,color:'var(--texto-suave)'}}>{item.miembros} {item.miembros===1?'participante':'participantes'}</div>
+                    </div>
+                    <div style={{flexShrink:0,textAlign:'right',marginLeft:8}}>
+                      <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:'var(--azul)'}}>{item.puntos}</span>
+                      <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:2}}>pts</span>
+                    </div>
                   </div>
-                  <div className="ranking-pts">{item.puntos}<span> pts</span></div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
       )}
     </div>
