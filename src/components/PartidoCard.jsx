@@ -9,15 +9,44 @@ const estilosMoneda = `
   0%   { transform: perspective(300px) rotateY(0deg); }
   100% { transform: perspective(300px) rotateY(1440deg); }
 }
-.moneda-flip {
-  animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards;
-}
-.moneda-flip-global {
-  animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards;
-}
+.moneda-flip { animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+.moneda-flip-global { animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
 `
 
-function MonedaBoton({ girando, onClick, size = 28 }) {
+// Moneda dorada con pelota de rugby a 45°
+function SvgMoneda({ size }) {
+  const cx = size / 2
+  const cy = size / 2
+  const r = size / 2 - 1
+  const id = `cg${size}`
+  // Óvalo a 45° — pelota de rugby rotada
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id={id} cx="38%" cy="32%" r="62%">
+          <stop offset="0%" stopColor="#ffe566"/>
+          <stop offset="50%" stopColor="#C9A227"/>
+          <stop offset="100%" stopColor="#7a5500"/>
+        </radialGradient>
+      </defs>
+      {/* Cuerpo de la moneda */}
+      <circle cx={cx} cy={cy} r={r} fill={`url(#${id})`} stroke="#9a7a1a" strokeWidth={size*0.04}/>
+      {/* Brillo sutil */}
+      <ellipse cx={cx*0.72} cy={cy*0.62} rx={r*0.28} ry={r*0.13} fill="rgba(255,255,255,0.22)" transform={`rotate(-20,${cx*0.72},${cy*0.62})`}/>
+      {/* Pelota de rugby a 45° — solo el óvalo rotado */}
+      <ellipse
+        cx={cx} cy={cy}
+        rx={r*0.42} ry={r*0.24}
+        fill="none"
+        stroke="#7a5500"
+        strokeWidth={size*0.07}
+        transform={`rotate(45,${cx},${cy})`}
+      />
+    </svg>
+  )
+}
+
+function MonedaBoton({ girando, onClick, size = 22 }) {
   return (
     <button
       onClick={onClick}
@@ -27,29 +56,15 @@ function MonedaBoton({ girando, onClick, size = 28 }) {
         background: 'none', border: 'none',
         cursor: girando ? 'not-allowed' : 'pointer',
         padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        opacity: girando ? 0.6 : 1,
+        opacity: girando ? 0.5 : 1,
+        filter: 'drop-shadow(0 1px 3px rgba(120,90,0,0.4))',
       }}
     >
       <div
         className={girando ? 'moneda-flip' : ''}
         style={{ width: size, height: size, transformStyle: 'preserve-3d' }}
       >
-        <svg viewBox="0 0 28 28" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id={`coinG${size}`} cx="35%" cy="30%" r="65%">
-              <stop offset="0%" stopColor="#ffe97a"/>
-              <stop offset="45%" stopColor="#C9A227"/>
-              <stop offset="100%" stopColor="#7a5c00"/>
-            </radialGradient>
-          </defs>
-          <circle cx="14" cy="14" r="13" fill={`url(#coinG${size})`} stroke="#9a7a1a" strokeWidth="1.2"/>
-          <circle cx="14" cy="14" r="10.5" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8"/>
-          {/* Pelota de rugby simple */}
-          <ellipse cx="14" cy="14" rx="6" ry="4" fill="none" stroke="#7a5c00" strokeWidth="1.4"/>
-          <line x1="14" y1="10" x2="14" y2="18" stroke="#7a5c00" strokeWidth="1.1" strokeLinecap="round"/>
-          <line x1="10.5" y1="13" x2="17.5" y2="13" stroke="#7a5c00" strokeWidth="0.9" strokeLinecap="round"/>
-          <line x1="10.5" y1="15" x2="17.5" y2="15" stroke="#7a5c00" strokeWidth="0.9" strokeLinecap="round"/>
-        </svg>
+        <SvgMoneda size={size} />
       </div>
     </button>
   )
@@ -67,31 +82,16 @@ export function MonedaGlobal({ girando, onClick }) {
         padding: 0, display: 'flex', flexDirection: 'column',
         alignItems: 'center', gap: 3,
         opacity: girando ? 0.6 : 1,
-        filter: 'drop-shadow(0 2px 5px rgba(201,162,39,0.5))',
+        filter: 'drop-shadow(0 2px 4px rgba(120,90,0,0.35))',
       }}
     >
       <div
         className={girando ? 'moneda-flip-global' : ''}
-        style={{ width: 44, height: 44, transformStyle: 'preserve-3d' }}
+        style={{ width: 36, height: 36, transformStyle: 'preserve-3d' }}
       >
-        <svg viewBox="0 0 44 44" width="44" height="44" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="coinBig" cx="35%" cy="30%" r="65%">
-              <stop offset="0%" stopColor="#ffe97a"/>
-              <stop offset="45%" stopColor="#C9A227"/>
-              <stop offset="100%" stopColor="#7a5c00"/>
-            </radialGradient>
-          </defs>
-          <circle cx="22" cy="22" r="21" fill="url(#coinBig)" stroke="#9a7a1a" strokeWidth="1.5"/>
-          <circle cx="22" cy="22" r="17" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
-          <ellipse cx="22" cy="22" rx="9" ry="6" fill="none" stroke="#7a5c00" strokeWidth="2"/>
-          <line x1="22" y1="16" x2="22" y2="28" stroke="#7a5c00" strokeWidth="1.6" strokeLinecap="round"/>
-          <line x1="16" y1="20" x2="28" y2="20" stroke="#7a5c00" strokeWidth="1.3" strokeLinecap="round"/>
-          <line x1="16" y1="22" x2="28" y2="22" stroke="#7a5c00" strokeWidth="1.3" strokeLinecap="round"/>
-          <line x1="16" y1="24" x2="28" y2="24" stroke="#7a5c00" strokeWidth="1.3" strokeLinecap="round"/>
-        </svg>
+        <SvgMoneda size={36} />
       </div>
-      <span style={{fontSize:10,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.3}}>
+      <span style={{fontSize:9,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.5}}>
         {girando ? 'TIRANDO...' : 'TIRAR TODO'}
       </span>
     </button>
@@ -152,13 +152,9 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
     <>
       <style>{estilosMoneda}</style>
 
-      {/* Moneda flotante esquina superior derecha */}
       {abierto && (
-        <div style={{
-          position: 'absolute', top: 6, right: 6,
-          filter: 'drop-shadow(0 2px 4px rgba(201,162,39,0.4))'
-        }}>
-          <MonedaBoton girando={girando} onClick={tirarMoneda} size={28} />
+        <div style={{position:'absolute', top:4, right:4}}>
+          <MonedaBoton girando={girando} onClick={tirarMoneda} size={22} />
         </div>
       )}
 
