@@ -90,9 +90,9 @@ export function MonedaGlobal({ girando, onClick }) {
     >
       <div
         className={girando ? 'moneda-flip-global' : ''}
-        style={{ width: 36, height: 36, transformStyle: 'preserve-3d' }}
+        style={{ width: 42, height: 42, transformStyle: 'preserve-3d' }}
       >
-        <SvgMoneda size={36} />
+        <SvgMoneda size={42} />
       </div>
       <span style={{fontSize:9,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.5,marginTop:3,whiteSpace:'nowrap'}}>
         {girando ? 'SORTEANDO...' : 'SORTEAR'}
@@ -157,7 +157,7 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
       <style>{estilosMoneda}</style>
 
       {abierto && (
-        <div style={{position:'absolute', top:4, right:4}}>
+        <div style={{position:'absolute', top:6, right:6}}>
           <MonedaBoton girando={girando} onClick={tirarMoneda} size={22} />
         </div>
       )}
