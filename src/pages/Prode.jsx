@@ -136,8 +136,9 @@ export default function Prode() {
       {/* CARD 1 — Info de la fecha */}
       {fi && !loading && (
         <div className="card" style={{padding:'12px 16px',marginBottom:8}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+          {/* Fila única con todo en línea — "Abiertas" al lado del título */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',flex:1}}>
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
               <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
               {fi.fecha_partido && (
@@ -146,12 +147,13 @@ export default function Prode() {
                 </span>
               )}
             </div>
-            <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`}>
+            {/* Abiertas siempre a la derecha en la misma fila */}
+            <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`} style={{flexShrink:0}}>
               {abierto ? '● Abiertas' : '✕ Cerradas'}
             </span>
           </div>
           {fi.cierre_predicciones && (
-            <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:6}}>
+            <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:5}}>
               Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
             </div>
           )}
@@ -161,16 +163,20 @@ export default function Prode() {
       {/* CARD 2 — Barra de progreso + moneda global */}
       {fi && !loading && abierto && totalPartidos > 0 && (
         <div className="card" style={{
-          padding:'10px 14px',
+          padding:'10px 16px',
           marginBottom:16,
           display:'flex',
           alignItems:'center',
           gap:12
         }}>
-          {/* Barra — 70% */}
-          <div style={{flex:'0 0 70%'}}>
+          {/* Barra — ocupa el espacio restante */}
+          <div style={{flex:1,minWidth:0}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-              <span style={{fontSize:11,fontWeight:600,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--texto-suave)'}}>
+              <span style={{
+                fontSize:11, fontWeight:600,
+                color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--texto-suave)',
+                paddingLeft:2
+              }}>
                 {todoCompleto ? '🏉 ¡Todos cargados!' : `${predsCompletas} / ${totalPartidos} cargados`}
               </span>
               <span style={{fontSize:11,fontWeight:700,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>
@@ -188,8 +194,8 @@ export default function Prode() {
             </div>
           </div>
 
-          {/* Moneda — 30% */}
-          <div style={{flex:'0 0 30%',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          {/* Moneda — ancho fijo, más grande en desktop */}
+          <div style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',width:64}}>
             <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
           </div>
         </div>
