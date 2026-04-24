@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -15,6 +15,56 @@ function getTrofeo(rachaMaxima) {
   return TROFEOS.find(t => rachaMaxima >= t.minimo) || null
 }
 
+function FilaRanking({ item, idx, esYo, subVista, refProp }) {
+  const av = item.perfiles?.avatar_url
+  const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+  const racha = item.perfiles?.racha_actual || 0
+  const trofeo = getTrofeo(item.perfiles?.racha_maxima || 0)
+  const puntos = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
+  const medal = (i) => ['🥇','🥈','🥉'][i] || null
+  const posClass = (i) => i===0?'pos-1':i===1?'pos-2':i===2?'pos-3':''
+
+  return (
+    <div
+      ref={refProp}
+      style={{
+        display:'flex', alignItems:'center', padding:'10px 16px',
+        borderBottom:'1px solid var(--gris-borde)', gap:0,
+        background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
+      }}
+    >
+      <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
+        {medal(idx) || (idx+1)}
+      </div>
+      <div className="avatar-circle" style={{width:34,height:34,fontSize:13,flexShrink:0,marginLeft:8}}>
+        {av ? <img src={av} alt={ini} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
+      </div>
+      <div style={{flex:1,minWidth:0,marginLeft:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
+          <span style={{fontWeight:600,fontSize:14,color:'var(--texto)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+            {item.perfiles?.username || 'Usuario'}
+          </span>
+          {esYo && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700,flexShrink:0}}>VOS</span>}
+          {racha >= 2 && <span style={{fontSize:11,fontWeight:700,color:'#ea580c',flexShrink:0}}>🔥{racha}</span>}
+          {trofeo && <img src={trofeo.img} alt={trofeo.nombre} title={trofeo.nombre} style={{width:16,height:16,objectFit:'contain',flexShrink:0}} />}
+        </div>
+        {item.perfiles?.club && <div style={{fontSize:11,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.perfiles.club}</div>}
+        {subVista==='fecha' && (
+          <div style={{fontSize:11,color:'var(--texto-suave)'}}>
+            {item.partidos_acertados}/{item.partidos_totales} acertados
+            {item.bonus_pleno>0 && <span style={{marginLeft:4,color:'var(--dorado)',fontWeight:600}}>+{item.bonus_pleno*5} pleno</span>}
+          </div>
+        )}
+      </div>
+      <div style={{flexShrink:0,textAlign:'right',marginLeft:8}}>
+        <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:'var(--azul)'}}>{puntos}</span>
+        <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:2}}>pts</span>
+        {subVista==='anual' && <div style={{fontSize:10,color:'var(--texto-suave)'}}>{item.fechas_jugadas} f.</div>}
+      </div>
+    </div>
+  )
+}
+
 export default function Ranking() {
   const { perfil } = useAuth()
   const [vista, setVista] = useState('personal')
@@ -24,12 +74,26 @@ export default function Ranking() {
   const [lista, setLista] = useState([])
   const [listaClubs, setListaClubs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [miFilaVisible, setMiFilaVisible] = useState(true)
+  const miFilaRef = useRef(null)
+  const scrollContainerRef = useRef(null)
 
   useEffect(() => { cargarFechas() }, [])
   useEffect(() => {
     if (vista === 'personal') cargarPersonal()
     else cargarClubs()
   }, [vista, subVista, fechaNum])
+
+  // Observer para detectar si mi fila está visible
+  useEffect(() => {
+    if (!miFilaRef.current || !scrollContainerRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setMiFilaVisible(entry.isIntersecting),
+      { root: scrollContainerRef.current, threshold: 0.5 }
+    )
+    observer.observe(miFilaRef.current)
+    return () => observer.disconnect()
+  }, [lista, subVista])
 
   async function cargarFechas() {
     const { data } = await supabase.from('fechas')
@@ -120,6 +184,9 @@ export default function Ranking() {
   const medal = (i) => ['🥇','🥈','🥉'][i] || null
   const posClass = (i) => i===0?'pos-1':i===1?'pos-2':i===2?'pos-3':''
 
+  const miIdx = lista.findIndex(item => item.perfiles?.username === perfil?.username)
+  const miItem = miIdx >= 0 ? lista[miIdx] : null
+
   return (
     <div className="container">
       <div className="page-header">
@@ -162,58 +229,35 @@ export default function Ranking() {
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>{lista.length} participantes</span>
               </div>
 
-              {/* Lista deslizable con altura máxima */}
-              <div style={{maxHeight:480,overflowY:'auto'}}>
+              {/* Lista deslizable */}
+              <div ref={scrollContainerRef} style={{maxHeight:480,overflowY:'auto'}}>
                 {lista.map((item, idx) => {
                   const esYo = item.perfiles?.username === perfil?.username
-                  const av = item.perfiles?.avatar_url
-                  const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
-                  const racha = item.perfiles?.racha_actual || 0
-                  const trofeo = getTrofeo(item.perfiles?.racha_maxima || 0)
-                  const puntos = subVista==='anual' ? item.puntos_acumulados : item.total_puntos
                   return (
-                    <div key={item.usuario_id} className={`ranking-row ${esYo?'yo':''}`}
-                      style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid var(--gris-borde)',gap:0}}
-                    >
-                      {/* Posición — ancho fijo */}
-                      <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
-                        {medal(idx) || (idx+1)}
-                      </div>
-
-                      {/* Avatar — ancho fijo */}
-                      <div className="avatar-circle" style={{width:34,height:34,fontSize:13,flexShrink:0,marginLeft:8}}>
-                        {av ? <img src={av} alt={ini} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
-                      </div>
-
-                      {/* Info usuario — flex 1, ocupa el espacio restante */}
-                      <div style={{flex:1,minWidth:0,marginLeft:10}}>
-                        <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-                          <span style={{fontWeight:600,fontSize:14,color:'var(--texto)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                            {item.perfiles?.username || 'Usuario'}
-                          </span>
-                          {esYo && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700,flexShrink:0}}>VOS</span>}
-                          {racha >= 2 && <span style={{fontSize:11,fontWeight:700,color:'#ea580c',flexShrink:0}}>🔥{racha}</span>}
-                          {trofeo && <img src={trofeo.img} alt={trofeo.nombre} title={trofeo.nombre} style={{width:16,height:16,objectFit:'contain',flexShrink:0}} />}
-                        </div>
-                        {item.perfiles?.club && <div style={{fontSize:11,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.perfiles.club}</div>}
-                        {subVista==='fecha' && (
-                          <div style={{fontSize:11,color:'var(--texto-suave)'}}>
-                            {item.partidos_acertados}/{item.partidos_totales} acertados
-                            {item.bonus_pleno>0 && <span style={{marginLeft:4,color:'var(--dorado)',fontWeight:600}}>+{item.bonus_pleno*5} pleno</span>}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Puntos — ancho fijo a la derecha */}
-                      <div style={{flexShrink:0,textAlign:'right',marginLeft:8}}>
-                        <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:'var(--azul)'}}>{puntos}</span>
-                        <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:2}}>pts</span>
-                        {subVista==='anual' && <div style={{fontSize:10,color:'var(--texto-suave)'}}>{item.fechas_jugadas} f.</div>}
-                      </div>
-                    </div>
+                    <FilaRanking
+                      key={item.usuario_id}
+                      item={item}
+                      idx={idx}
+                      esYo={esYo}
+                      subVista={subVista}
+                      refProp={esYo ? miFilaRef : null}
+                    />
                   )
                 })}
               </div>
+
+              {/* Fila fija de "VOS" cuando no está visible */}
+              {miItem && !miFilaVisible && (
+                <div style={{borderTop:'2px solid var(--dorado)'}}>
+                  <FilaRanking
+                    item={miItem}
+                    idx={miIdx}
+                    esYo={true}
+                    subVista={subVista}
+                    refProp={null}
+                  />
+                </div>
+              )}
             </div>
       )}
 
