@@ -136,14 +136,15 @@ export default function Prode() {
       {fi && !loading && (
         <div className="card" style={{padding:'12px 16px',marginBottom:16,position:'relative'}}>
 
-          {/* Moneda global — esquina superior derecha */}
+          {/* Moneda global — esquina superior derecha, sola */}
           {abierto && totalPartidos > 0 && (
-            <div style={{position:'absolute', top:6, right:8}}>
+            <div style={{position:'absolute', top:8, right:10}}>
               <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
             </div>
           )}
 
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:totalPartidos>0?12:0,paddingRight: abierto && totalPartidos > 0 ? 60 : 0}}>
+          {/* Fila 1: categoría + fecha + día */}
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,flexWrap:'wrap',paddingRight:44}}>
             <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
             <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
             {fi.fecha_partido && (
@@ -151,22 +152,26 @@ export default function Prode() {
                 {new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}
               </span>
             )}
-            <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`} style={{marginLeft:'auto'}}>
+          </div>
+
+          {/* Fila 2: cierre + estado */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:totalPartidos>0?10:0}}>
+            {fi.cierre_predicciones && (
+              <div style={{fontSize:11,color:'var(--texto-suave)'}}>
+                Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
+              </div>
+            )}
+            <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`}>
               {abierto ? '● Abiertas' : '✕ Cerradas'}
             </span>
           </div>
 
-          {fi.cierre_predicciones && (
-            <div style={{fontSize:11,color:'var(--texto-suave)',marginBottom:totalPartidos>0?10:0}}>
-              Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
-            </div>
-          )}
-
+          {/* Barra de progreso */}
           {totalPartidos > 0 && (
             <div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                 <span style={{fontSize:12,fontWeight:600,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--texto-suave)'}}>
-                  {todoCompleto ? '🏉 ¡Todos los partidos sorteados!' : `${predsCompletas} de ${totalPartidos} predicciones cargadas`}
+                  {todoCompleto ? '🏉 ¡Todos los partidos cargados!' : `${predsCompletas} de ${totalPartidos} predicciones cargadas`}
                 </span>
                 <span style={{fontSize:12,fontWeight:700,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>
                   {porcentaje}%
