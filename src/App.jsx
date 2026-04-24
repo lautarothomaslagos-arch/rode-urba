@@ -31,7 +31,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/registro" element={<Login />} />
+        <Route path="/registro" element={<Login modoInicial="registro" />} />
         <Route path="/nueva-contrasena" element={<NuevaContrasena />} />
         <Route path="/prode" element={<PrivateRoute><Prode /></PrivateRoute>} />
         <Route path="/ranking" element={<PrivateRoute><Ranking /></PrivateRoute>} />
