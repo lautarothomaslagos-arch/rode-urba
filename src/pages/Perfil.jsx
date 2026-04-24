@@ -15,10 +15,10 @@ const CLUBES_URBA = [
 const BASE = 'https://xmtsxdzwurxygqqccgdc.supabase.co/storage/v1/object/public/trofeos'
 
 const TROFEOS = [
-  { nombre: 'Puma',    minimo: 15, img: `${BASE}/trofeo_puma.png`,     desc: 'Nivel seleccionado',    color: '#C9A227', bg: 'rgba(201,162,39,0.12)' },
-  { nombre: 'Capitán', minimo: 10, img: `${BASE}/trofeo_capitan.png`,  desc: 'El referente del grupo', color: '#C9A227', bg: 'rgba(201,162,39,0.08)' },
-  { nombre: 'Titular', minimo: 6,  img: `${BASE}/trofeo_titular.png`,  desc: 'Ganaste tu lugar',       color: '#9ca3af', bg: 'rgba(156,163,175,0.12)' },
-  { nombre: 'Suplente',minimo: 3,  img: `${BASE}/trofeo_suplente.png`, desc: 'Entraste al equipo',     color: '#cd7c3e', bg: 'rgba(205,124,62,0.12)' },
+  { nombre: 'Puma',    minimo: 15, img: `${BASE}/trofeo_puma_v2.png`,     desc: 'Nivel seleccionado',    color: '#C9A227', bg: 'rgba(201,162,39,0.12)' },
+  { nombre: 'Capitán', minimo: 10, img: `${BASE}/trofeo_capitan_v2.png`,  desc: 'El referente del grupo', color: '#C9A227', bg: 'rgba(201,162,39,0.08)' },
+  { nombre: 'Titular', minimo: 6,  img: `${BASE}/trofeo_titular_v2.png`,  desc: 'Ganaste tu lugar',       color: '#9ca3af', bg: 'rgba(156,163,175,0.12)' },
+  { nombre: 'Suplente',minimo: 3,  img: `${BASE}/trofeo_suplente_v2.png`, desc: 'Entraste al equipo',     color: '#cd7c3e', bg: 'rgba(205,124,62,0.12)' },
 ]
 
 function getTrofeo(rachaMaxima) {

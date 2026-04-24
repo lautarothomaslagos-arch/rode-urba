@@ -5,10 +5,10 @@ import { useAuth } from '../context/AuthContext'
 const BASE = 'https://xmtsxdzwurxygqqccgdc.supabase.co/storage/v1/object/public/trofeos'
 
 const TROFEOS = [
-  { nombre: 'Puma',     minimo: 15, img: `${BASE}/trofeo_puma.png`,     color: '#C9A227' },
-  { nombre: 'Capitán',  minimo: 10, img: `${BASE}/trofeo_capitan.png`,  color: '#C9A227' },
-  { nombre: 'Titular',  minimo: 6,  img: `${BASE}/trofeo_titular.png`,  color: '#9ca3af' },
-  { nombre: 'Suplente', minimo: 3,  img: `${BASE}/trofeo_suplente.png`, color: '#cd7c3e' },
+  { nombre: 'Puma',     minimo: 15, img: `${BASE}/trofeo_puma_v2.png`,     color: '#C9A227' },
+  { nombre: 'Capitán',  minimo: 10, img: `${BASE}/trofeo_capitan_v2.png`,  color: '#C9A227' },
+  { nombre: 'Titular',  minimo: 6,  img: `${BASE}/trofeo_titular_v2.png`,  color: '#9ca3af' },
+  { nombre: 'Suplente', minimo: 3,  img: `${BASE}/trofeo_suplente_v2.png`, color: '#cd7c3e' },
 ]
 
 function getTrofeo(rachaMaxima) {
