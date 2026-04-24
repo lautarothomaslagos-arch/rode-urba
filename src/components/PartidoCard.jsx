@@ -1,3 +1,55 @@
+import { useState } from 'react'
+
+// Genera un score aleatorio estilo rugby (entre 3 y 48, múltiplos de 1)
+function scoreRandom() {
+  return Math.floor(Math.random() * 46) + 3
+}
+
+// Animación CSS de la moneda girando
+const estilosMoneda = `
+@keyframes girarMoneda {
+  0%   { transform: rotateY(0deg); }
+  25%  { transform: rotateY(180deg); }
+  50%  { transform: rotateY(360deg); }
+  75%  { transform: rotateY(540deg); }
+  100% { transform: rotateY(720deg); }
+}
+.moneda-girando {
+  animation: girarMoneda 1.2s ease-in-out forwards;
+}
+`
+
+function Moneda({ girando, onClick, titulo }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={girando}
+      title={titulo}
+      style={{
+        background: 'none', border: 'none', cursor: girando ? 'not-allowed' : 'pointer',
+        padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0
+      }}
+    >
+      <div
+        className={girando ? 'moneda-girando' : ''}
+        style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #b0b0b0, #e8e8e8, #909090)',
+          border: '2px solid #888',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 14, color: '#555', fontWeight: 700,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          transformStyle: 'preserve-3d',
+          userSelect: 'none'
+        }}
+      >
+        🏉
+      </div>
+    </button>
+  )
+}
+
 function Escudo({ equipo }) {
   if (!equipo) return null
   const ini = equipo.nombre_corto || equipo.nombre?.substring(0,3).toUpperCase()
@@ -28,6 +80,7 @@ function FilaEquipos({ partido, marcador }) {
 }
 
 export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
+  const [girando, setGirando] = useState(false)
   const tienePred = pred?.local !== undefined && pred?.visitante !== undefined
 
   const estiloCard = partido.es_especial ? {} : tienePred ? {
@@ -37,8 +90,20 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
 
   const claseCard = partido.es_especial ? 'partido-card especial' : 'partido-card'
 
+  function tirarMoneda() {
+    if (girando) return
+    setGirando(true)
+    setTimeout(() => {
+      onUpdate(partido.id, 'local', scoreRandom())
+      onUpdate(partido.id, 'visitante', scoreRandom())
+      setGirando(false)
+    }, 1300)
+  }
+
   const contenido = (
     <>
+      <style>{estilosMoneda}</style>
+
       {partido.es_especial && (
         <div className="destacado-header">
           <div className="destacado-linea destacado-linea-izq"></div>
@@ -53,14 +118,17 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
       <FilaEquipos partido={partido} />
 
       {abierto ? (
-        <div className="prediccion-inputs">
-          <input type="number" className="score-input" min="0" max="120"
-            value={pred?.local ?? ''} placeholder="0"
-            onChange={e => onUpdate(partido.id, 'local', e.target.value)} />
-          <span className="score-separator">—</span>
-          <input type="number" className="score-input" min="0" max="120"
-            value={pred?.visitante ?? ''} placeholder="0"
-            onChange={e => onUpdate(partido.id, 'visitante', e.target.value)} />
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div className="prediccion-inputs" style={{flex:1}}>
+            <input type="number" className="score-input" min="0" max="120"
+              value={pred?.local ?? ''} placeholder="0"
+              onChange={e => onUpdate(partido.id, 'local', e.target.value)} />
+            <span className="score-separator">—</span>
+            <input type="number" className="score-input" min="0" max="120"
+              value={pred?.visitante ?? ''} placeholder="0"
+              onChange={e => onUpdate(partido.id, 'visitante', e.target.value)} />
+          </div>
+          <Moneda girando={girando} onClick={tirarMoneda} titulo="Tirar la moneda" />
         </div>
       ) : (
         <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
