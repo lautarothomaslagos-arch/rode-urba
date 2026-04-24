@@ -13,13 +13,13 @@ const estilosMoneda = `
 .moneda-flip-global { animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
 `
 
-// Moneda dorada con pelota de rugby a 45°
 function SvgMoneda({ size }) {
   const cx = size / 2
   const cy = size / 2
   const r = size / 2 - 1
   const id = `cg${size}`
-  // Óvalo a 45° — pelota de rugby rotada
+  // Pelota de rugby en perspectiva: óvalo exterior + óvalo interior inclinado + línea central
+  const s = size / 28 // escala relativa
   return (
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -29,18 +29,22 @@ function SvgMoneda({ size }) {
           <stop offset="100%" stopColor="#7a5500"/>
         </radialGradient>
       </defs>
-      {/* Cuerpo de la moneda */}
-      <circle cx={cx} cy={cy} r={r} fill={`url(#${id})`} stroke="#9a7a1a" strokeWidth={size*0.04}/>
-      {/* Brillo sutil */}
-      <ellipse cx={cx*0.72} cy={cy*0.62} rx={r*0.28} ry={r*0.13} fill="rgba(255,255,255,0.22)" transform={`rotate(-20,${cx*0.72},${cy*0.62})`}/>
-      {/* Pelota de rugby a 45° — solo el óvalo rotado */}
-      <ellipse
-        cx={cx} cy={cy}
-        rx={r*0.42} ry={r*0.24}
-        fill="none"
-        stroke="#7a5500"
-        strokeWidth={size*0.07}
-        transform={`rotate(45,${cx},${cy})`}
+      {/* Cuerpo moneda */}
+      <circle cx={cx} cy={cy} r={r} fill={`url(#${id})`} stroke="#9a7a1a" strokeWidth={s*1.1}/>
+      {/* Brillo */}
+      <ellipse cx={cx*0.72} cy={cy*0.62} rx={r*0.26} ry={r*0.12} fill="rgba(255,255,255,0.22)" transform={`rotate(-20,${cx*0.72},${cy*0.62})`}/>
+      {/* Pelota de rugby en perspectiva */}
+      {/* Óvalo exterior — cuerpo principal */}
+      <ellipse cx={cx} cy={cy} rx={r*0.52} ry={r*0.34} fill="none" stroke="#7a5500" strokeWidth={s*2} transform={`rotate(-35,${cx},${cy})`}/>
+      {/* Óvalo interior — perspectiva */}
+      <ellipse cx={cx} cy={cy} rx={r*0.52} ry={r*0.12} fill="none" stroke="#9a7a1a" strokeWidth={s*1.1} transform={`rotate(-35,${cx},${cy})`}/>
+      {/* Línea central de la pelota */}
+      <line
+        x1={cx - r*0.42*Math.cos(Math.PI*35/180)}
+        y1={cy - r*0.42*Math.sin(Math.PI*35/180)}
+        x2={cx + r*0.42*Math.cos(Math.PI*35/180)}
+        y2={cy + r*0.42*Math.sin(Math.PI*35/180)}
+        stroke="#7a5500" strokeWidth={s*1.1} strokeLinecap="round"
       />
     </svg>
   )
@@ -51,7 +55,7 @@ function MonedaBoton({ girando, onClick, size = 22 }) {
     <button
       onClick={onClick}
       disabled={girando}
-      title="Tirar la moneda"
+      title="Sortear partido"
       style={{
         background: 'none', border: 'none',
         cursor: girando ? 'not-allowed' : 'pointer',
@@ -75,24 +79,24 @@ export function MonedaGlobal({ girando, onClick }) {
     <button
       onClick={onClick}
       disabled={girando}
-      title="Tirar la moneda para todos"
+      title="Sortear todos los partidos"
       style={{
         background: 'none', border: 'none',
         cursor: girando ? 'not-allowed' : 'pointer',
         padding: 0, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: 3,
+        alignItems: 'center', gap: 2,
         opacity: girando ? 0.6 : 1,
         filter: 'drop-shadow(0 2px 4px rgba(120,90,0,0.35))',
       }}
     >
       <div
         className={girando ? 'moneda-flip-global' : ''}
-        style={{ width: 36, height: 36, transformStyle: 'preserve-3d' }}
+        style={{ width: 28, height: 28, transformStyle: 'preserve-3d' }}
       >
-        <SvgMoneda size={36} />
+        <SvgMoneda size={28} />
       </div>
-      <span style={{fontSize:9,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.5}}>
-        {girando ? 'TIRANDO...' : 'TIRAR TODO'}
+      <span style={{fontSize:8,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.3,whiteSpace:'nowrap'}}>
+        {girando ? 'SORTEANDO...' : 'SORTEAR PARTIDOS'}
       </span>
     </button>
   )
@@ -131,9 +135,10 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
   const [girando, setGirando] = useState(false)
   const tienePred = pred?.local !== undefined && pred?.visitante !== undefined
 
+  // Dorado en vez de verde cuando está completo
   const estiloCard = partido.es_especial ? {} : tienePred ? {
-    borderColor: '#16a34a',
-    background: 'linear-gradient(135deg, #f0fdf4, #ffffff)'
+    borderColor: 'var(--dorado)',
+    background: 'linear-gradient(135deg, var(--dorado-claro), #ffffff)'
   } : {}
 
   const claseCard = partido.es_especial ? 'partido-card especial' : 'partido-card'
