@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -84,7 +84,6 @@ export default function Ranking() {
     else cargarClubs()
   }, [vista, subVista, fechaNum])
 
-  // Observer para detectar si mi fila está visible
   useEffect(() => {
     if (!miFilaRef.current || !scrollContainerRef.current) return
     const observer = new IntersectionObserver(
@@ -229,7 +228,6 @@ export default function Ranking() {
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>{lista.length} participantes</span>
               </div>
 
-              {/* Lista deslizable */}
               <div ref={scrollContainerRef} style={{maxHeight:'60vh',overflowY:'auto'}}>
                 {lista.map((item, idx) => {
                   const esYo = item.perfiles?.username === perfil?.username
@@ -246,7 +244,6 @@ export default function Ranking() {
                 })}
               </div>
 
-              {/* Fila fija de "VOS" cuando no está visible */}
               {miItem && !miFilaVisible && (
                 <div style={{borderTop:'2px solid var(--dorado)'}}>
                   <FilaRanking
@@ -269,7 +266,7 @@ export default function Ranking() {
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'white',letterSpacing:1}}>Ranking por clubes 2026</span>
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.7)'}}>{listaClubs.length} clubes</span>
               </div>
-              style={{maxHeight:'60vh',overflowY:'auto'}}
+              <div style={{maxHeight:'60vh',overflowY:'auto'}}>
                 {listaClubs.map((item, idx) => (
                   <div key={item.club} style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid var(--gris-borde)',gap:0}}>
                     <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
