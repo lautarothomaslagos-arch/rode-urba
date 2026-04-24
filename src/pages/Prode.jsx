@@ -133,61 +133,65 @@ export default function Prode() {
         </div>
       )}
 
+      {/* CARD 1 — Info de la fecha */}
       {fi && !loading && (
-        <div className="card" style={{padding:'12px 16px',marginBottom:16,position:'relative'}}>
-
-          {/* Moneda global — esquina superior derecha, sola */}
-          {abierto && totalPartidos > 0 && (
-            <div style={{position:'absolute', top:8, right:10}}>
-              <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
+        <div className="card" style={{padding:'12px 16px',marginBottom:8}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:6}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+              <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
+              <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
+              {fi.fecha_partido && (
+                <span style={{fontSize:13,color:'var(--texto-suave)'}}>
+                  {new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}
+                </span>
+              )}
             </div>
-          )}
-
-          {/* Fila 1: categoría + fecha + día */}
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6,flexWrap:'wrap',paddingRight:44}}>
-            <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
-            <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
-            {fi.fecha_partido && (
-              <span style={{fontSize:13,color:'var(--texto-suave)'}}>
-                {new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}
-              </span>
-            )}
-          </div>
-
-          {/* Fila 2: cierre + estado */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:totalPartidos>0?10:0}}>
-            {fi.cierre_predicciones && (
-              <div style={{fontSize:11,color:'var(--texto-suave)'}}>
-                Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
-              </div>
-            )}
             <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`}>
               {abierto ? '● Abiertas' : '✕ Cerradas'}
             </span>
           </div>
-
-          {/* Barra de progreso */}
-          {totalPartidos > 0 && (
-            <div>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                <span style={{fontSize:12,fontWeight:600,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--texto-suave)'}}>
-                  {todoCompleto ? '🏉 ¡Todos los partidos cargados!' : `${predsCompletas} de ${totalPartidos} predicciones cargadas`}
-                </span>
-                <span style={{fontSize:12,fontWeight:700,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>
-                  {porcentaje}%
-                </span>
-              </div>
-              <div style={{height:8,borderRadius:10,background:'var(--gris-borde)',overflow:'hidden',border:'1px solid rgba(0,0,0,0.06)'}}>
-                <div style={{
-                  height:'100%', borderRadius:10, width:`${porcentaje}%`,
-                  background: todoCompleto
-                    ? 'linear-gradient(90deg, var(--dorado), var(--dorado-oscuro))'
-                    : 'linear-gradient(90deg, var(--rojo-vivo), var(--dorado))',
-                  transition:'width 0.4s ease'
-                }} />
-              </div>
+          {fi.cierre_predicciones && (
+            <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:6}}>
+              Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
             </div>
           )}
+        </div>
+      )}
+
+      {/* CARD 2 — Barra de progreso + moneda global */}
+      {fi && !loading && abierto && totalPartidos > 0 && (
+        <div className="card" style={{
+          padding:'10px 14px',
+          marginBottom:16,
+          display:'flex',
+          alignItems:'center',
+          gap:12
+        }}>
+          {/* Barra — 70% */}
+          <div style={{flex:'0 0 70%'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+              <span style={{fontSize:11,fontWeight:600,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--texto-suave)'}}>
+                {todoCompleto ? '🏉 ¡Todos cargados!' : `${predsCompletas} / ${totalPartidos} cargados`}
+              </span>
+              <span style={{fontSize:11,fontWeight:700,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>
+                {porcentaje}%
+              </span>
+            </div>
+            <div style={{height:7,borderRadius:10,background:'var(--gris-borde)',overflow:'hidden',border:'1px solid rgba(0,0,0,0.06)'}}>
+              <div style={{
+                height:'100%', borderRadius:10, width:`${porcentaje}%`,
+                background: todoCompleto
+                  ? 'linear-gradient(90deg, var(--dorado), var(--dorado-oscuro))'
+                  : 'linear-gradient(90deg, var(--rojo-vivo), var(--dorado))',
+                transition:'width 0.4s ease'
+              }} />
+            </div>
+          </div>
+
+          {/* Moneda — 30% */}
+          <div style={{flex:'0 0 30%',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
+          </div>
         </div>
       )}
 
