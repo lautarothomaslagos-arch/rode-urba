@@ -3,12 +3,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
-export default function Login() {
+export default function Login({ modoInicial = 'login' }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [modo, setModo] = useState('login')
+  const [modo, setModo] = useState(modoInicial)
   const [username, setUsername] = useState('')
   const [nombre, setNombre] = useState('')
   const [msgRecupero, setMsgRecupero] = useState('')
