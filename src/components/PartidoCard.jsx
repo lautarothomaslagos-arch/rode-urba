@@ -90,11 +90,13 @@ export function MonedaGlobal({ girando, onClick }) {
     >
       <div
         className={girando ? 'moneda-flip-global' : ''}
-        style={{ width: 28, height: 28, transformStyle: 'preserve-3d' }}
+        style={{ width: 36, height: 36, transformStyle: 'preserve-3d' }}
       >
-        <SvgMoneda size={28} />
+        <SvgMoneda size={36} />
       </div>
-
+      <span style={{fontSize:9,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.5,marginTop:3,whiteSpace:'nowrap'}}>
+        {girando ? 'SORTEANDO...' : 'SORTEAR'}
+      </span>
     </button>
   )
 }
