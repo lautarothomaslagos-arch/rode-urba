@@ -1,23 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { PartidoCardPrediccion } from '../components/PartidoCard'
+import { PartidoCardPrediccion, MonedaGlobal } from '../components/PartidoCard'
 
 const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C', 5:'Segunda Div.' }
 const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c', 5:'cat-segunda' }
-
-const estilosMonedaGlobal = `
-@keyframes girarMonedaGlobal {
-  0%   { transform: rotateY(0deg); }
-  25%  { transform: rotateY(180deg); }
-  50%  { transform: rotateY(360deg); }
-  75%  { transform: rotateY(540deg); }
-  100% { transform: rotateY(720deg); }
-}
-.moneda-global-girando {
-  animation: girarMonedaGlobal 1.2s ease-in-out forwards;
-}
-`
 
 function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
@@ -84,7 +71,7 @@ export default function Prode() {
       })
       setPreds(nuevasPreds)
       setGirando(false)
-    }, 1300)
+    }, 1500)
   }
 
   async function guardar() {
@@ -116,7 +103,6 @@ export default function Prode() {
 
   return (
     <div className="container">
-      <style>{estilosMonedaGlobal}</style>
       <div className="page-header">
         <h1 className="page-title">Mis <span className="page-title-accent">predicciones</span></h1>
       </div>
@@ -159,37 +145,16 @@ export default function Prode() {
                 </span>
               )}
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
               {abierto && totalPartidos > 0 && (
-                <button
-                  onClick={tirarMonedaTodos}
-                  disabled={girando}
-                  style={{
-                    display:'flex', alignItems:'center', gap:6,
-                    background:'rgba(128,128,128,0.1)', border:'1.5px solid #bbb',
-                    borderRadius:20, padding:'4px 12px', cursor: girando ? 'not-allowed' : 'pointer',
-                    fontSize:12, fontWeight:600, color:'#555'
-                  }}
-                >
-                  <div
-                    className={girando ? 'moneda-global-girando' : ''}
-                    style={{
-                      width:20, height:20, borderRadius:'50%',
-                      background:'linear-gradient(135deg,#b0b0b0,#e8e8e8,#909090)',
-                      border:'1.5px solid #888', display:'flex', alignItems:'center',
-                      justifyContent:'center', fontSize:11, transformStyle:'preserve-3d'
-                    }}
-                  >
-                    🏉
-                  </div>
-                  {girando ? 'Tirando...' : 'Tirar para todos'}
-                </button>
+                <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
               )}
               <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`}>
                 {abierto ? '● Abiertas' : '✕ Cerradas'}
               </span>
             </div>
           </div>
+
           {fi.cierre_predicciones && (
             <div style={{fontSize:11,color:'var(--texto-suave)',marginBottom:totalPartidos>0?10:0}}>
               Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
