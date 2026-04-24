@@ -134,25 +134,26 @@ export default function Prode() {
       )}
 
       {fi && !loading && (
-        <div className="card" style={{padding:'12px 16px',marginBottom:16}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:totalPartidos>0?12:0}}>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
-              <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
-              {fi.fecha_partido && (
-                <span style={{fontSize:13,color:'var(--texto-suave)'}}>
-                  {new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}
-                </span>
-              )}
+        <div className="card" style={{padding:'12px 16px',marginBottom:16,position:'relative'}}>
+
+          {/* Moneda global — esquina superior derecha */}
+          {abierto && totalPartidos > 0 && (
+            <div style={{position:'absolute', top:6, right:8}}>
+              <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:12}}>
-              {abierto && totalPartidos > 0 && (
-                <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
-              )}
-              <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`}>
-                {abierto ? '● Abiertas' : '✕ Cerradas'}
+          )}
+
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:totalPartidos>0?12:0,paddingRight: abierto && totalPartidos > 0 ? 60 : 0}}>
+            <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
+            <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
+            {fi.fecha_partido && (
+              <span style={{fontSize:13,color:'var(--texto-suave)'}}>
+                {new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}
               </span>
-            </div>
+            )}
+            <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`} style={{marginLeft:'auto'}}>
+              {abierto ? '● Abiertas' : '✕ Cerradas'}
+            </span>
           </div>
 
           {fi.cierre_predicciones && (
@@ -164,10 +165,10 @@ export default function Prode() {
           {totalPartidos > 0 && (
             <div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                <span style={{fontSize:12,fontWeight:600,color: todoCompleto ? '#15803d' : 'var(--texto-suave)'}}>
-                  {todoCompleto ? '✅ ¡Todos los partidos cargados!' : `${predsCompletas} de ${totalPartidos} predicciones cargadas`}
+                <span style={{fontSize:12,fontWeight:600,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--texto-suave)'}}>
+                  {todoCompleto ? '🏉 ¡Todos los partidos sorteados!' : `${predsCompletas} de ${totalPartidos} predicciones cargadas`}
                 </span>
-                <span style={{fontSize:12,fontWeight:700,color: todoCompleto ? '#15803d' : 'var(--azul)'}}>
+                <span style={{fontSize:12,fontWeight:700,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>
                   {porcentaje}%
                 </span>
               </div>
@@ -175,8 +176,8 @@ export default function Prode() {
                 <div style={{
                   height:'100%', borderRadius:10, width:`${porcentaje}%`,
                   background: todoCompleto
-                    ? 'linear-gradient(90deg,#16a34a,#22c55e)'
-                    : 'linear-gradient(90deg,var(--rojo-vivo),var(--dorado))',
+                    ? 'linear-gradient(90deg, var(--dorado), var(--dorado-oscuro))'
+                    : 'linear-gradient(90deg, var(--rojo-vivo), var(--dorado))',
                   transition:'width 0.4s ease'
                 }} />
               </div>
