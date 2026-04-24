@@ -84,8 +84,7 @@ export function MonedaGlobal({ girando, onClick }) {
         background: 'none', border: 'none',
         cursor: girando ? 'not-allowed' : 'pointer',
         padding: 0, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: 2,
-        opacity: girando ? 0.6 : 1,
+        alignItems: 'center', opacity: girando ? 0.6 : 1,
         filter: 'drop-shadow(0 2px 4px rgba(120,90,0,0.35))',
       }}
     >
@@ -95,9 +94,7 @@ export function MonedaGlobal({ girando, onClick }) {
       >
         <SvgMoneda size={28} />
       </div>
-      <span style={{fontSize:8,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.3,whiteSpace:'nowrap'}}>
-        {girando ? 'SORTEANDO...' : 'SORTEAR PARTIDOS'}
-      </span>
+
     </button>
   )
 }
