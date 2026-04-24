@@ -6,6 +6,23 @@ import { PartidoCardPrediccion } from '../components/PartidoCard'
 const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C', 5:'Segunda Div.' }
 const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c', 5:'cat-segunda' }
 
+const estilosMonedaGlobal = `
+@keyframes girarMonedaGlobal {
+  0%   { transform: rotateY(0deg); }
+  25%  { transform: rotateY(180deg); }
+  50%  { transform: rotateY(360deg); }
+  75%  { transform: rotateY(540deg); }
+  100% { transform: rotateY(720deg); }
+}
+.moneda-global-girando {
+  animation: girarMonedaGlobal 1.2s ease-in-out forwards;
+}
+`
+
+function scoreRandom() {
+  return Math.floor(Math.random() * 46) + 3
+}
+
 function estaAbierto(cierre) {
   if (!cierre) return true
   return new Date() < new Date(cierre)
@@ -21,6 +38,7 @@ export default function Prode() {
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [girando, setGirando] = useState(false)
 
   useEffect(() => { cargarFechas(cat) }, [cat])
   useEffect(() => { if (fechaId) cargarPartidos(fechaId) }, [fechaId])
@@ -56,6 +74,19 @@ export default function Prode() {
     setPreds(prev => ({ ...prev, [pid]: { ...prev[pid], [lado]: n } }))
   }
 
+  function tirarMonedaTodos() {
+    if (girando) return
+    setGirando(true)
+    setTimeout(() => {
+      const nuevasPreds = { ...preds }
+      partidos.forEach(p => {
+        nuevasPreds[p.id] = { local: scoreRandom(), visitante: scoreRandom() }
+      })
+      setPreds(nuevasPreds)
+      setGirando(false)
+    }, 1300)
+  }
+
   async function guardar() {
     setGuardando(true)
     const fi = fechas.find(f => f.id === fechaId)
@@ -78,7 +109,6 @@ export default function Prode() {
   const fi = fechas.find(f => f.id === fechaId)
   const abierto = estaAbierto(fi?.cierre_predicciones)
 
-  // Calcular progreso
   const totalPartidos = partidos.length
   const predsCompletas = partidos.filter(p => preds[p.id]?.local !== undefined && preds[p.id]?.visitante !== undefined).length
   const porcentaje = totalPartidos > 0 ? Math.round((predsCompletas / totalPartidos) * 100) : 0
@@ -86,6 +116,7 @@ export default function Prode() {
 
   return (
     <div className="container">
+      <style>{estilosMonedaGlobal}</style>
       <div className="page-header">
         <h1 className="page-title">Mis <span className="page-title-accent">predicciones</span></h1>
       </div>
@@ -128,9 +159,36 @@ export default function Prode() {
                 </span>
               )}
             </div>
-            <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`}>
-              {abierto ? '● Abiertas' : '✕ Cerradas'}
-            </span>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              {abierto && totalPartidos > 0 && (
+                <button
+                  onClick={tirarMonedaTodos}
+                  disabled={girando}
+                  style={{
+                    display:'flex', alignItems:'center', gap:6,
+                    background:'rgba(128,128,128,0.1)', border:'1.5px solid #bbb',
+                    borderRadius:20, padding:'4px 12px', cursor: girando ? 'not-allowed' : 'pointer',
+                    fontSize:12, fontWeight:600, color:'#555'
+                  }}
+                >
+                  <div
+                    className={girando ? 'moneda-global-girando' : ''}
+                    style={{
+                      width:20, height:20, borderRadius:'50%',
+                      background:'linear-gradient(135deg,#b0b0b0,#e8e8e8,#909090)',
+                      border:'1.5px solid #888', display:'flex', alignItems:'center',
+                      justifyContent:'center', fontSize:11, transformStyle:'preserve-3d'
+                    }}
+                  >
+                    🏉
+                  </div>
+                  {girando ? 'Tirando...' : 'Tirar para todos'}
+                </button>
+              )}
+              <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`}>
+                {abierto ? '● Abiertas' : '✕ Cerradas'}
+              </span>
+            </div>
           </div>
           {fi.cierre_predicciones && (
             <div style={{fontSize:11,color:'var(--texto-suave)',marginBottom:totalPartidos>0?10:0}}>
@@ -138,7 +196,6 @@ export default function Prode() {
             </div>
           )}
 
-          {/* Barra de progreso */}
           {totalPartidos > 0 && (
             <div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
@@ -149,16 +206,12 @@ export default function Prode() {
                   {porcentaje}%
                 </span>
               </div>
-              <div style={{
-                height:8, borderRadius:10, background:'var(--gris-borde)',
-                overflow:'hidden', border:'1px solid rgba(0,0,0,0.06)'
-              }}>
+              <div style={{height:8,borderRadius:10,background:'var(--gris-borde)',overflow:'hidden',border:'1px solid rgba(0,0,0,0.06)'}}>
                 <div style={{
-                  height:'100%', borderRadius:10,
-                  width:`${porcentaje}%`,
+                  height:'100%', borderRadius:10, width:`${porcentaje}%`,
                   background: todoCompleto
-                    ? 'linear-gradient(90deg, #16a34a, #22c55e)'
-                    : 'linear-gradient(90deg, var(--rojo-vivo), var(--dorado))',
+                    ? 'linear-gradient(90deg,#16a34a,#22c55e)'
+                    : 'linear-gradient(90deg,var(--rojo-vivo),var(--dorado))',
                   transition:'width 0.4s ease'
                 }} />
               </div>
