@@ -230,7 +230,7 @@ export default function Ranking() {
               </div>
 
               {/* Lista deslizable */}
-              <div ref={scrollContainerRef} style={{maxHeight:480,overflowY:'auto'}}>
+              <div ref={scrollContainerRef} style={{maxHeight:'60vh',overflowY:'auto'}}>
                 {lista.map((item, idx) => {
                   const esYo = item.perfiles?.username === perfil?.username
                   return (
@@ -269,7 +269,7 @@ export default function Ranking() {
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'white',letterSpacing:1}}>Ranking por clubes 2026</span>
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.7)'}}>{listaClubs.length} clubes</span>
               </div>
-              <div style={{maxHeight:480,overflowY:'auto'}}>
+              style={{maxHeight:'60vh',overflowY:'auto'}}
                 {listaClubs.map((item, idx) => (
                   <div key={item.club} style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid var(--gris-borde)',gap:0}}>
                     <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
