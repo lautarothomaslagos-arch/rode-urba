@@ -1,51 +1,164 @@
 import { useState } from 'react'
 
-// Genera un score aleatorio estilo rugby (entre 3 y 48, múltiplos de 1)
 function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
 }
 
-// Animación CSS de la moneda girando
 const estilosMoneda = `
-@keyframes girarMoneda {
-  0%   { transform: rotateY(0deg); }
-  25%  { transform: rotateY(180deg); }
-  50%  { transform: rotateY(360deg); }
-  75%  { transform: rotateY(540deg); }
-  100% { transform: rotateY(720deg); }
+@keyframes flipMoneda {
+  0%   { transform: perspective(200px) rotateY(0deg); }
+  50%  { transform: perspective(200px) rotateY(900deg); }
+  100% { transform: perspective(200px) rotateY(1800deg); }
 }
-.moneda-girando {
-  animation: girarMoneda 1.2s ease-in-out forwards;
+@keyframes flipMonedaGlobal {
+  0%   { transform: perspective(200px) rotateY(0deg); }
+  50%  { transform: perspective(200px) rotateY(900deg); }
+  100% { transform: perspective(200px) rotateY(1800deg); }
+}
+.moneda-flip {
+  animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+.moneda-flip-global {
+  animation: flipMonedaGlobal 1.4s cubic-bezier(0.4,0,0.2,1) forwards;
 }
 `
 
-function Moneda({ girando, onClick, titulo }) {
+// SVG cara A — arco de rugby (H)
+const CaraArco = () => (
+  <svg viewBox="0 0 36 36" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="coinA" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stopColor="#e8e8e8"/>
+        <stop offset="40%" stopColor="#c0c0c0"/>
+        <stop offset="100%" stopColor="#787878"/>
+      </radialGradient>
+      <radialGradient id="coinEdgeA" cx="50%" cy="50%" r="50%">
+        <stop offset="85%" stopColor="transparent"/>
+        <stop offset="100%" stopColor="rgba(0,0,0,0.25)"/>
+      </radialGradient>
+    </defs>
+    <circle cx="18" cy="18" r="17" fill="url(#coinA)" stroke="#888" strokeWidth="1.2"/>
+    <circle cx="18" cy="18" r="17" fill="url(#coinEdgeA)"/>
+    {/* Arco de rugby (H) */}
+    <line x1="11" y1="8" x2="11" y2="28" stroke="#555" strokeWidth="2.2" strokeLinecap="round"/>
+    <line x1="25" y1="8" x2="25" y2="28" stroke="#555" strokeWidth="2.2" strokeLinecap="round"/>
+    <line x1="11" y1="18" x2="25" y2="18" stroke="#555" strokeWidth="2.2" strokeLinecap="round"/>
+    {/* Pelota en el arco */}
+    <ellipse cx="18" cy="11" rx="3.5" ry="2.2" fill="none" stroke="#777" strokeWidth="1.2"/>
+  </svg>
+)
+
+// SVG cara B — pelota de rugby
+const CaraPelota = () => (
+  <svg viewBox="0 0 36 36" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="coinB" cx="35%" cy="30%" r="65%">
+        <stop offset="0%" stopColor="#d8d8d8"/>
+        <stop offset="40%" stopColor="#b0b0b0"/>
+        <stop offset="100%" stopColor="#686868"/>
+      </radialGradient>
+    </defs>
+    <circle cx="18" cy="18" r="17" fill="url(#coinB)" stroke="#888" strokeWidth="1.2"/>
+    {/* Pelota de rugby */}
+    <ellipse cx="18" cy="18" rx="9" ry="6" fill="none" stroke="#555" strokeWidth="1.8"/>
+    <line x1="18" y1="12" x2="18" y2="24" stroke="#555" strokeWidth="1.4" strokeLinecap="round"/>
+    <line x1="13" y1="16" x2="23" y2="16" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
+    <line x1="13" y1="18" x2="23" y2="18" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
+    <line x1="13" y1="20" x2="23" y2="20" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
+  </svg>
+)
+
+function Moneda({ girando, onClick, size = 36 }) {
+  const [cara, setCara] = useState('arco')
+
+  function handleClick() {
+    if (girando) return
+    onClick()
+    // Alternar cara al terminar la animación
+    setTimeout(() => setCara(c => c === 'arco' ? 'pelota' : 'arco'), 1400)
+  }
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={girando}
-      title={titulo}
+      title="Tirar la moneda"
       style={{
-        background: 'none', border: 'none', cursor: girando ? 'not-allowed' : 'pointer',
-        padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0
+        background: 'none', border: 'none',
+        cursor: girando ? 'not-allowed' : 'pointer',
+        padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0, opacity: girando ? 0.7 : 1,
+        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))',
+        transition: 'filter 0.15s',
       }}
     >
       <div
-        className={girando ? 'moneda-girando' : ''}
-        style={{
-          width: 28, height: 28, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #b0b0b0, #e8e8e8, #909090)',
-          border: '2px solid #888',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 14, color: '#555', fontWeight: 700,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          transformStyle: 'preserve-3d',
-          userSelect: 'none'
-        }}
+        className={girando ? 'moneda-flip' : ''}
+        style={{ width: size, height: size, transformStyle: 'preserve-3d' }}
       >
-        🏉
+        {cara === 'arco' ? <CaraArco /> : <CaraPelota />}
       </div>
+    </button>
+  )
+}
+
+function MonedaGlobal({ girando, onClick }) {
+  const [cara, setCara] = useState('arco')
+
+  function handleClick() {
+    if (girando) return
+    onClick()
+    setTimeout(() => setCara(c => c === 'arco' ? 'pelota' : 'arco'), 1400)
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={girando}
+      title="Tirar la moneda para todos los partidos"
+      style={{
+        background: 'none', border: 'none',
+        cursor: girando ? 'not-allowed' : 'pointer',
+        padding: 0, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 3,
+        opacity: girando ? 0.7 : 1,
+        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.3))',
+      }}
+    >
+      <div
+        className={girando ? 'moneda-flip-global' : ''}
+        style={{ width: 48, height: 48, transformStyle: 'preserve-3d' }}
+      >
+        <svg viewBox="0 0 48 48" width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="coinG" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stopColor="#e8e8e8"/>
+              <stop offset="40%" stopColor="#c0c0c0"/>
+              <stop offset="100%" stopColor="#787878"/>
+            </radialGradient>
+          </defs>
+          <circle cx="24" cy="24" r="22" fill="url(#coinG)" stroke="#888" strokeWidth="1.5"/>
+          {cara === 'arco' ? (
+            <>
+              <line x1="14" y1="10" x2="14" y2="38" stroke="#555" strokeWidth="2.8" strokeLinecap="round"/>
+              <line x1="34" y1="10" x2="34" y2="38" stroke="#555" strokeWidth="2.8" strokeLinecap="round"/>
+              <line x1="14" y1="24" x2="34" y2="24" stroke="#555" strokeWidth="2.8" strokeLinecap="round"/>
+              <ellipse cx="24" cy="14" rx="4.5" ry="2.8" fill="none" stroke="#777" strokeWidth="1.5"/>
+            </>
+          ) : (
+            <>
+              <ellipse cx="24" cy="24" rx="12" ry="8" fill="none" stroke="#555" strokeWidth="2.2"/>
+              <line x1="24" y1="16" x2="24" y2="32" stroke="#555" strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="17" y1="21" x2="31" y2="21" stroke="#555" strokeWidth="1.4" strokeLinecap="round"/>
+              <line x1="17" y1="24" x2="31" y2="24" stroke="#555" strokeWidth="1.4" strokeLinecap="round"/>
+              <line x1="17" y1="27" x2="31" y2="27" stroke="#555" strokeWidth="1.4" strokeLinecap="round"/>
+            </>
+          )}
+        </svg>
+      </div>
+      <span style={{fontSize:10,color:'#777',fontWeight:600,letterSpacing:0.3}}>
+        {girando ? 'TIRANDO...' : 'TIRAR TODO'}
+      </span>
     </button>
   )
 }
@@ -60,7 +173,7 @@ function Escudo({ equipo }) {
   )
 }
 
-function FilaEquipos({ partido, marcador }) {
+function FilaEquipos({ partido, marcador, onTirar, girando }) {
   const vsStyle = partido.es_especial ? 'destacado-vs' : 'vs-badge'
   return (
     <div className="partido-fila">
@@ -68,8 +181,11 @@ function FilaEquipos({ partido, marcador }) {
         <span className="equipo-nombre">{partido.equipo_local?.nombre}</span>
         <Escudo equipo={partido.equipo_local} />
       </div>
-      <div className="marcador-central">
+      <div className="marcador-central" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
         {marcador || <div className={vsStyle}>VS</div>}
+        {onTirar && (
+          <Moneda girando={girando} onClick={onTirar} size={30} />
+        )}
       </div>
       <div className="equipo-lado visitante">
         <Escudo equipo={partido.equipo_visitante} />
@@ -78,6 +194,8 @@ function FilaEquipos({ partido, marcador }) {
     </div>
   )
 }
+
+export { MonedaGlobal }
 
 export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
   const [girando, setGirando] = useState(false)
@@ -97,7 +215,7 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
       onUpdate(partido.id, 'local', scoreRandom())
       onUpdate(partido.id, 'visitante', scoreRandom())
       setGirando(false)
-    }, 1300)
+    }, 1500)
   }
 
   const contenido = (
@@ -115,20 +233,21 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
         <div className="destacado-subtitulo">puntaje doble · exacto 6 pts · ganador 2 pts</div>
       )}
 
-      <FilaEquipos partido={partido} />
+      <FilaEquipos
+        partido={partido}
+        onTirar={abierto ? tirarMoneda : null}
+        girando={girando}
+      />
 
       {abierto ? (
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div className="prediccion-inputs" style={{flex:1}}>
-            <input type="number" className="score-input" min="0" max="120"
-              value={pred?.local ?? ''} placeholder="0"
-              onChange={e => onUpdate(partido.id, 'local', e.target.value)} />
-            <span className="score-separator">—</span>
-            <input type="number" className="score-input" min="0" max="120"
-              value={pred?.visitante ?? ''} placeholder="0"
-              onChange={e => onUpdate(partido.id, 'visitante', e.target.value)} />
-          </div>
-          <Moneda girando={girando} onClick={tirarMoneda} titulo="Tirar la moneda" />
+        <div className="prediccion-inputs">
+          <input type="number" className="score-input" min="0" max="120"
+            value={pred?.local ?? ''} placeholder="0"
+            onChange={e => onUpdate(partido.id, 'local', e.target.value)} />
+          <span className="score-separator">—</span>
+          <input type="number" className="score-input" min="0" max="120"
+            value={pred?.visitante ?? ''} placeholder="0"
+            onChange={e => onUpdate(partido.id, 'visitante', e.target.value)} />
         </div>
       ) : (
         <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
