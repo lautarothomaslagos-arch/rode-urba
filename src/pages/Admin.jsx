@@ -42,15 +42,17 @@ function AdminFechas() {
 
   async function guardar() {
     setLoading(true)
-    const cierre = form.fecha_partido
+const cierre = form.fecha_partido
   ? (() => {
-      const sabado = new Date(form.fecha_partido + 'T00:00:00-03:00')
+      const partes = form.fecha_partido.split('-')
+      const sabado = new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]))
       const viernes = new Date(sabado)
       viernes.setDate(viernes.getDate() - 1)
-      viernes.setHours(23, 59, 0, 0)
-      return viernes.toISOString()
+      // Viernes 23:59 Argentina = sábado 02:59 UTC
+      return new Date(viernes.getFullYear(), viernes.getMonth(), viernes.getDate(), 23, 59, 0)
+        .toISOString().replace(/T\d{2}:\d{2}:\d{2}/, 'T02:59:00').replace(/\.\d{3}Z/, '.000Z')
     })()
-  : null
+  : nulll
     const { error } = await supabase.from('fechas').insert({
       categoria_id: parseInt(form.categoria_id), numero: parseInt(form.numero),
       temporada_id: 1, fecha_partido: form.fecha_partido || null,
