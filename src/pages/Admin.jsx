@@ -27,11 +27,26 @@ export default function Admin() {
   )
 }
 
+function calcularCierreDefault(fechaPartido) {
+  if (!fechaPartido) return ''
+  const partes = fechaPartido.split('-')
+  const viernes = new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]))
+  viernes.setDate(viernes.getDate() - 1)
+  const y = viernes.getFullYear()
+  const m = String(viernes.getMonth()+1).padStart(2,'0')
+  const d = String(viernes.getDate()).padStart(2,'0')
+  return `${y}-${m}-${d}T23:59`
+}
+
 function AdminFechas() {
   const [fechas, setFechas] = useState([])
-  const [form, setForm] = useState({ categoria_id: 1, numero: '', fecha_partido: '' })
+  const [form, setForm] = useState({ categoria_id: 1, numero: '', fecha_partido: '', cierre: '', activar: true })
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
+  const [filasbulk, setFilasBulk] = useState([{ numero: '', fecha_partido: '' }])
+  const [catBulk, setCatBulk] = useState(1)
+  const [loadingBulk, setLoadingBulk] = useState(false)
+  const [msgBulk, setMsgBulk] = useState('')
 
   useEffect(() => { cargar() }, [])
 
@@ -40,24 +55,20 @@ function AdminFechas() {
     setFechas(data || [])
   }
 
+  function onChangeFechaPartido(val) {
+    setForm(f => ({ ...f, fecha_partido: val, cierre: calcularCierreDefault(val) }))
+  }
+
   async function guardar() {
+    if (!form.numero) { setMsg('Error: ingresá el número de fecha'); return }
     setLoading(true)
-    const cierre = form.fecha_partido
-      ? (() => {
-          const partes = form.fecha_partido.split('-')
-          const sabado = new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]))
-          const viernes = new Date(sabado)
-          viernes.setDate(viernes.getDate() - 1)
-          return new Date(viernes.getFullYear(), viernes.getMonth(), viernes.getDate(), 23, 59, 0)
-            .toISOString().replace(/T\d{2}:\d{2}:\d{2}/, 'T02:59:00').replace(/\.\d{3}Z/, '.000Z')
-        })()
-      : null
+    const cierre = form.cierre ? new Date(form.cierre).toISOString() : null
     const { error } = await supabase.from('fechas').insert({
       categoria_id: parseInt(form.categoria_id), numero: parseInt(form.numero),
       temporada_id: 1, fecha_partido: form.fecha_partido || null,
-      cierre_predicciones: cierre, activa: true
+      cierre_predicciones: cierre, activa: form.activar
     })
-    if (!error) { setMsg('Fecha creada'); cargar(); setForm({ ...form, numero: '' }) }
+    if (!error) { setMsg('Fecha creada'); cargar(); setForm({ ...form, numero: '', fecha_partido: '', cierre: '' }) }
     else setMsg('Error: ' + error.message)
     setLoading(false)
   }
@@ -67,8 +78,47 @@ function AdminFechas() {
     cargar()
   }
 
+  function agregarFila() {
+    setFilasBulk(prev => [...prev, { numero: '', fecha_partido: '' }])
+  }
+
+  function eliminarFila(i) {
+    setFilasBulk(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  function actualizarFila(i, campo, val) {
+    setFilasBulk(prev => prev.map((f, idx) => idx === i ? { ...f, [campo]: val } : f))
+  }
+
+  async function crearTodas() {
+    const validas = filasbulk.filter(f => f.numero && f.fecha_partido)
+    if (!validas.length) { setMsgBulk('Error: completá al menos una fila con número y fecha'); return }
+    setLoadingBulk(true)
+    setMsgBulk('')
+    const inserts = validas.map(f => ({
+      categoria_id: parseInt(catBulk),
+      numero: parseInt(f.numero),
+      temporada_id: 1,
+      fecha_partido: f.fecha_partido,
+      cierre_predicciones: calcularCierreDefault(f.fecha_partido)
+        ? new Date(calcularCierreDefault(f.fecha_partido)).toISOString()
+        : null,
+      activa: false
+    }))
+    const { error } = await supabase.from('fechas').insert(inserts)
+    if (!error) {
+      setMsgBulk(`✓ ${inserts.length} fechas creadas como inactivas`)
+      setFilasBulk([{ numero: '', fecha_partido: '' }])
+      cargar()
+    } else {
+      setMsgBulk('Error: ' + error.message)
+    }
+    setLoadingBulk(false)
+  }
+
   return (
     <div>
+      {/* ── CREAR FECHA INDIVIDUAL ── */}
       <div className="card">
         <div className="card-header"><span className="card-title">Nueva fecha</span></div>
         {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`}>{msg}</div>}
@@ -84,19 +134,71 @@ function AdminFechas() {
             <input className="form-input" type="number" value={form.numero} onChange={e => setForm({...form, numero: e.target.value})} placeholder="ej: 1" />
           </div>
           <div className="form-group">
-            <label className="form-label">Fecha del partido (sábado)</label>
-            <input className="form-input" type="date" value={form.fecha_partido} onChange={e => setForm({...form, fecha_partido: e.target.value})} />
+            <label className="form-label">Fecha del partido</label>
+            <input className="form-input" type="date" value={form.fecha_partido} onChange={e => onChangeFechaPartido(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Cierre de predicciones</label>
+            <input className="form-input" type="datetime-local" value={form.cierre} onChange={e => setForm({...form, cierre: e.target.value})} />
+            <span style={{fontSize:11,color:'var(--texto-suave)'}}>Se completa automático al elegir la fecha. Podés editarlo.</span>
           </div>
         </div>
-        <div style={{fontSize:12,color:'var(--texto-suave)',marginBottom:12}}>El cierre se calcula automáticamente: viernes anterior a las 23:59</div>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,marginTop:4}}>
+          <input type="checkbox" id="activar" checked={form.activar} onChange={e => setForm({...form, activar: e.target.checked})} style={{width:16,height:16,cursor:'pointer'}} />
+          <label htmlFor="activar" style={{fontSize:14,cursor:'pointer'}}>Activar inmediatamente</label>
+        </div>
         <button className="btn btn-primary" onClick={guardar} disabled={loading}>Crear fecha</button>
       </div>
+
+      {/* ── CARGA MASIVA ── */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Carga masiva de fechas</span>
+        </div>
+        <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:14}}>
+          Cargá todas las fechas del torneo de una vez. Se crean como <strong>inactivas</strong> y las vas activando semana a semana desde la lista de abajo.
+        </p>
+        {msgBulk && <div className={`alert ${msgBulk.startsWith('Error') ? 'alert-error' : 'alert-success'}`}>{msgBulk}</div>}
+        <div className="form-group">
+          <label className="form-label">Categoría</label>
+          <select className="form-select" value={catBulk} onChange={e => setCatBulk(e.target.value)} style={{maxWidth:200}}>
+            {[1,2,3,4,5].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+          </select>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'80px 1fr 32px',gap:8,marginBottom:8}}>
+          <span style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase'}}>Nº fecha</span>
+          <span style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase'}}>Fecha del partido</span>
+          <span></span>
+        </div>
+        {filasbulk.map((fila, i) => (
+          <div key={i} style={{display:'grid',gridTemplateColumns:'80px 1fr 32px',gap:8,marginBottom:8,alignItems:'center'}}>
+            <input className="form-input" type="number" placeholder="ej: 5" value={fila.numero}
+              onChange={e => actualizarFila(i, 'numero', e.target.value)}
+              style={{padding:'8px 10px'}} />
+            <input className="form-input" type="date" value={fila.fecha_partido}
+              onChange={e => actualizarFila(i, 'fecha_partido', e.target.value)}
+              style={{padding:'8px 10px'}} />
+            <button onClick={() => eliminarFila(i)} disabled={filasbulk.length === 1}
+              style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'var(--rojo)',opacity:filasbulk.length===1?0.3:1}}>×</button>
+          </div>
+        ))}
+        <div style={{display:'flex',gap:10,marginTop:4}}>
+          <button className="btn btn-secondary btn-small" onClick={agregarFila}>+ Agregar fila</button>
+          <button className="btn btn-primary" onClick={crearTodas} disabled={loadingBulk}>
+            {loadingBulk ? 'Creando...' : `Crear ${filasbulk.filter(f=>f.numero&&f.fecha_partido).length || ''} fechas (inactivas)`}
+          </button>
+        </div>
+      </div>
+
+      {/* ── LISTA DE FECHAS ── */}
       <div className="card" style={{padding:0}}>
+        {fechas.length === 0 && <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)'}}>No hay fechas cargadas</div>}
         {fechas.map(f => (
-          <div key={f.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:'1px solid var(--gris-borde)'}}>
+          <div key={f.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:'1px solid var(--gris-borde)',opacity:f.activa?1:0.55}}>
             <div>
               <span className="card-title">{f.categorias?.nombre} — Fecha {f.numero}</span>
               {f.fecha_partido && <span style={{marginLeft:8,fontSize:13,color:'var(--texto-suave)'}}>{f.fecha_partido}</span>}
+              {!f.activa && <span style={{marginLeft:8,fontSize:11,background:'var(--gris-borde)',color:'var(--texto-suave)',padding:'1px 6px',borderRadius:20}}>inactiva</span>}
             </div>
             <div style={{display:'flex',gap:8,alignItems:'center'}}>
               {f.resultados_cargados && <span className="cierre-badge cierre-abierto">Resultados OK</span>}
