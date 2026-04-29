@@ -9,13 +9,13 @@ export default function Admin() {
   return (
     <div className="container">
       <h1 className="page-title">Panel de <span className="page-title-accent">administración</span></h1>
-      <div className="tabs" style={{flexWrap:'wrap'}}>
-        <button className={`tab ${seccion === 'fechas' ? 'active' : ''}`} onClick={() => setSeccion('fechas')}>Fechas</button>
-        <button className={`tab ${seccion === 'partidos' ? 'active' : ''}`} onClick={() => setSeccion('partidos')}>Partidos</button>
-        <button className={`tab ${seccion === 'resultados' ? 'active' : ''}`} onClick={() => setSeccion('resultados')}>Cargar resultados</button>
-        <button className={`tab ${seccion === 'equipos' ? 'active' : ''}`} onClick={() => setSeccion('equipos')}>Equipos</button>
-        <button className={`tab ${seccion === 'usuarios' ? 'active' : ''}`} onClick={() => setSeccion('usuarios')}>Usuarios</button>
-        <button className={`tab ${seccion === 'grupos' ? 'active' : ''}`} onClick={() => setSeccion('grupos')}>Grupos</button>
+      <div className="tabs-box" style={{flexWrap:'wrap',marginBottom:20}}>
+        <button className={`tab-btn ${seccion === 'fechas' ? 'active' : ''}`} onClick={() => setSeccion('fechas')}>📅 Fechas</button>
+        <button className={`tab-btn ${seccion === 'partidos' ? 'active' : ''}`} onClick={() => setSeccion('partidos')}>🏉 Partidos</button>
+        <button className={`tab-btn ${seccion === 'resultados' ? 'active' : ''}`} onClick={() => setSeccion('resultados')}>✏️ Resultados</button>
+        <button className={`tab-btn ${seccion === 'equipos' ? 'active' : ''}`} onClick={() => setSeccion('equipos')}>🛡️ Equipos</button>
+        <button className={`tab-btn ${seccion === 'usuarios' ? 'active' : ''}`} onClick={() => setSeccion('usuarios')}>👥 Usuarios</button>
+        <button className={`tab-btn ${seccion === 'grupos' ? 'active' : ''}`} onClick={() => setSeccion('grupos')}>🏆 Grupos</button>
       </div>
       {seccion === 'fechas' && <AdminFechas />}
       {seccion === 'partidos' && <AdminPartidos />}
