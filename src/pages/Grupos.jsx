@@ -355,32 +355,38 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
             const av = item.perfiles?.avatar_url
             const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
             return (
-              <div key={item.usuario_id} className={`ranking-row ${esYo ? 'yo' : ''}`}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx + 1)}</div>
-                    <div className="avatar-circle" style={{ width: 34, height: 34, fontSize: 13 }}>
-                      {av ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
-                    </div>
-                    <div className="ranking-info">
-                      <div className="ranking-username">
-                        {item.perfiles?.username || 'Usuario'}
-                        {esYo && <span style={{ marginLeft: 6, fontSize: 10, background: 'var(--dorado)', color: 'var(--azul)', padding: '1px 6px', borderRadius: 20, fontWeight: 700 }}>VOS</span>}
-                      </div>
-                      {item.perfiles?.club && <div className="ranking-club">{item.perfiles.club}</div>}
-                    </div>
+              <div key={item.usuario_id} style={{
+                display: 'flex', alignItems: 'center', padding: '10px 16px',
+                borderBottom: '1px solid var(--gris-borde)', gap: 0,
+                background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
+              }}>
+                <div className={`ranking-pos ${posClass(idx)}`} style={{ width: 36, flexShrink: 0, textAlign: 'center' }}>
+                  {medal(idx) || (idx + 1)}
+                </div>
+                <div className="avatar-circle" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0, marginLeft: 8 }}>
+                  {av ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.perfiles?.username || 'Usuario'}
+                    </span>
+                    {esYo && <span style={{ fontSize: 10, background: 'var(--dorado)', color: 'var(--azul)', padding: '1px 6px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>VOS</span>}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className="ranking-pts">
+                  {item.perfiles?.club && <div style={{ fontSize: 11, color: 'var(--texto-suave)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.perfiles.club}</div>}
+                </div>
+                <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div>
+                    <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>
                       {subVista === 'anual' ? item.puntos_acumulados : item.total_puntos}
-                      <span> pts</span>
-                    </div>
-                    {esAdmin && item.usuario_id !== userId && (
-                      <button className="btn btn-small btn-danger" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => expulsarMiembro(item.usuario_id)}>
-                        Expulsar
-                      </button>
-                    )}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
                   </div>
+                  {esAdmin && item.usuario_id !== userId && (
+                    <button className="btn btn-small btn-danger" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => expulsarMiembro(item.usuario_id)}>
+                      Expulsar
+                    </button>
+                  )}
                 </div>
               </div>
             )
