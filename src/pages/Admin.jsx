@@ -42,17 +42,16 @@ function AdminFechas() {
 
   async function guardar() {
     setLoading(true)
-const cierre = form.fecha_partido
-  ? (() => {
-      const partes = form.fecha_partido.split('-')
-      const sabado = new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]))
-      const viernes = new Date(sabado)
-      viernes.setDate(viernes.getDate() - 1)
-      // Viernes 23:59 Argentina = sábado 02:59 UTC
-      return new Date(viernes.getFullYear(), viernes.getMonth(), viernes.getDate(), 23, 59, 0)
-        .toISOString().replace(/T\d{2}:\d{2}:\d{2}/, 'T02:59:00').replace(/\.\d{3}Z/, '.000Z')
-    })()
-  : nulll
+    const cierre = form.fecha_partido
+      ? (() => {
+          const partes = form.fecha_partido.split('-')
+          const sabado = new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]))
+          const viernes = new Date(sabado)
+          viernes.setDate(viernes.getDate() - 1)
+          return new Date(viernes.getFullYear(), viernes.getMonth(), viernes.getDate(), 23, 59, 0)
+            .toISOString().replace(/T\d{2}:\d{2}:\d{2}/, 'T02:59:00').replace(/\.\d{3}Z/, '.000Z')
+        })()
+      : null
     const { error } = await supabase.from('fechas').insert({
       categoria_id: parseInt(form.categoria_id), numero: parseInt(form.numero),
       temporada_id: 1, fecha_partido: form.fecha_partido || null,
@@ -243,11 +242,15 @@ function AdminResultados() {
 
   async function guardarResultados() {
     setGuardando(true); setMsg('')
-    for (const [pid, res] of Object.entries(resultados)) {
-      if (res.local !== undefined && res.visitante !== undefined) {
-        await supabase.from('partidos').update({ resultado_local: parseInt(res.local), resultado_visitante: parseInt(res.visitante), jugado: true }).eq('id', pid)
-      }
-    }
+    await Promise.all(
+      Object.entries(resultados)
+        .filter(([, res]) => res.local !== undefined && res.visitante !== undefined)
+        .map(([pid, res]) => supabase.from('partidos').update({
+          resultado_local: parseInt(res.local),
+          resultado_visitante: parseInt(res.visitante),
+          jugado: true
+        }).eq('id', pid))
+    )
     await supabase.from('fechas').update({ resultados_cargados: true }).eq('id', fechaId)
     const { error } = await supabase.rpc('calcular_puntos_fecha', { p_fecha_id: parseInt(fechaId) })
     if (!error) setMsg('Resultados guardados y puntos calculados correctamente')
@@ -285,9 +288,13 @@ function AdminResultados() {
             <div className="equipo-nombre visitante">{p.equipo_visitante?.nombre}</div>
           </div>
           <div className="prediccion-inputs">
-            <input type="number" className="score-input" min="0" max="99" value={resultados[p.id]?.local ?? ''} placeholder="0" onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], local: e.target.value }}))} />
+            <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+              value={resultados[p.id]?.local ?? ''} placeholder="0"
+              onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], local: e.target.value.replace(/\D/g,'') }}))} />
             <span className="score-separator">-</span>
-            <input type="number" className="score-input" min="0" max="99" value={resultados[p.id]?.visitante ?? ''} placeholder="0" onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.value }}))} />
+            <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+              value={resultados[p.id]?.visitante ?? ''} placeholder="0"
+              onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.value.replace(/\D/g,'') }}))} />
           </div>
         </div>
       ))}
@@ -365,7 +372,6 @@ function AdminEquipos() {
   )
 }
 
-// ---- USUARIOS ----
 function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
@@ -416,7 +422,6 @@ function AdminUsuarios() {
           {filtrados.length === 0 && <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)'}}>Sin resultados</div>}
           {filtrados.map(u => (
             <div key={u.id}>
-              {/* Fila del usuario */}
               <div
                 onClick={() => setExpandido(expandido === u.id ? null : u.id)}
                 style={{
@@ -445,8 +450,6 @@ function AdminUsuarios() {
                 </div>
                 <div style={{color:'var(--dorado)',fontSize:18,flexShrink:0,transition:'transform 0.2s',transform: expandido === u.id ? 'rotate(90deg)' : 'none'}}>›</div>
               </div>
-
-              {/* Panel acordeón — aparece justo debajo */}
               {expandido === u.id && (
                 <div style={{
                   background:'rgba(201,162,39,0.06)',
@@ -464,16 +467,10 @@ function AdminUsuarios() {
                     </div>
                   </div>
                   <div style={{display:'flex',gap:8,flexShrink:0}}>
-                    <button
-                      className={`btn btn-small ${u.es_admin ? 'btn-secondary' : 'btn-primary'}`}
-                      onClick={e => { e.stopPropagation(); toggleAdmin(u) }}
-                    >
+                    <button className={`btn btn-small ${u.es_admin ? 'btn-secondary' : 'btn-primary'}`} onClick={e => { e.stopPropagation(); toggleAdmin(u) }}>
                       {u.es_admin ? '🔓 Quitar admin' : '🔐 Dar admin'}
                     </button>
-                    <button
-                      className="btn btn-small btn-secondary"
-                      onClick={e => { e.stopPropagation(); setExpandido(null) }}
-                    >Cerrar</button>
+                    <button className="btn btn-small btn-secondary" onClick={e => { e.stopPropagation(); setExpandido(null) }}>Cerrar</button>
                   </div>
                 </div>
               )}
@@ -485,7 +482,6 @@ function AdminUsuarios() {
   )
 }
 
-// ---- GRUPOS ----
 function AdminGrupos() {
   const [grupos, setGrupos] = useState([])
   const [loading, setLoading] = useState(true)

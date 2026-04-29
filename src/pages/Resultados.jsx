@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PartidoCardResultado } from '../components/PartidoCard'
-
-const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C', 5:'Segunda Div.' }
-const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c', 5:'cat-segunda' }
+import { CATS, CAT_CLASS } from '../lib/constants'
 
 export default function Resultados() {
   const { user } = useAuth()
@@ -25,6 +23,7 @@ export default function Resultados() {
       .eq('categoria_id', c).eq('resultados_cargados', true)
       .order('numero', { ascending: false })
     setFechas(data || [])
+    setPuntosFecha(null)
     if (data?.length) setFechaId(data[0].id)
     else { setFechaId(null); setPartidos([]); setLoading(false) }
   }

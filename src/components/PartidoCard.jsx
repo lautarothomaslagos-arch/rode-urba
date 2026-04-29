@@ -18,8 +18,7 @@ function SvgMoneda({ size }) {
   const cy = size / 2
   const r = size / 2 - 1
   const id = `cg${size}`
-  // Pelota de rugby en perspectiva: óvalo exterior + óvalo interior inclinado + línea central
-  const s = size / 28 // escala relativa
+  const s = size / 28
   return (
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -29,16 +28,10 @@ function SvgMoneda({ size }) {
           <stop offset="100%" stopColor="#7a5500"/>
         </radialGradient>
       </defs>
-      {/* Cuerpo moneda */}
       <circle cx={cx} cy={cy} r={r} fill={`url(#${id})`} stroke="#9a7a1a" strokeWidth={s*1.1}/>
-      {/* Brillo */}
       <ellipse cx={cx*0.72} cy={cy*0.62} rx={r*0.26} ry={r*0.12} fill="rgba(255,255,255,0.22)" transform={`rotate(-20,${cx*0.72},${cy*0.62})`}/>
-      {/* Pelota de rugby en perspectiva */}
-      {/* Óvalo exterior — cuerpo principal */}
       <ellipse cx={cx} cy={cy} rx={r*0.52} ry={r*0.34} fill="none" stroke="#7a5500" strokeWidth={s*2} transform={`rotate(-35,${cx},${cy})`}/>
-      {/* Óvalo interior — perspectiva */}
       <ellipse cx={cx} cy={cy} rx={r*0.52} ry={r*0.12} fill="none" stroke="#9a7a1a" strokeWidth={s*1.1} transform={`rotate(-35,${cx},${cy})`}/>
-      {/* Línea central de la pelota */}
       <line
         x1={cx - r*0.42*Math.cos(Math.PI*35/180)}
         y1={cy - r*0.42*Math.sin(Math.PI*35/180)}
@@ -64,10 +57,7 @@ function MonedaBoton({ girando, onClick, size = 22 }) {
         filter: 'drop-shadow(0 1px 3px rgba(120,90,0,0.4))',
       }}
     >
-      <div
-        className={girando ? 'moneda-flip' : ''}
-        style={{ width: size, height: size, transformStyle: 'preserve-3d' }}
-      >
+      <div className={girando ? 'moneda-flip' : ''} style={{ width: size, height: size, transformStyle: 'preserve-3d' }}>
         <SvgMoneda size={size} />
       </div>
     </button>
@@ -88,10 +78,7 @@ export function MonedaGlobal({ girando, onClick }) {
         filter: 'drop-shadow(0 2px 4px rgba(120,90,0,0.35))',
       }}
     >
-      <div
-        className={girando ? 'moneda-flip-global' : ''}
-        style={{ width: 42, height: 42, transformStyle: 'preserve-3d' }}
-      >
+      <div className={girando ? 'moneda-flip-global' : ''} style={{ width: 42, height: 42, transformStyle: 'preserve-3d' }}>
         <SvgMoneda size={42} />
       </div>
       <span style={{fontSize:9,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.5,marginTop:3,whiteSpace:'nowrap'}}>
@@ -134,7 +121,6 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
   const [girando, setGirando] = useState(false)
   const tienePred = pred?.local !== undefined && pred?.visitante !== undefined
 
-  // Dorado en vez de verde cuando está completo
   const estiloCard = partido.es_especial ? {} : tienePred ? {
     borderColor: 'var(--dorado)',
     background: 'linear-gradient(135deg, var(--dorado-claro), #ffffff)'
@@ -177,13 +163,13 @@ export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
 
       {abierto ? (
         <div className="prediccion-inputs">
-          <input type="number" className="score-input" min="0" max="120"
+          <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
             value={pred?.local ?? ''} placeholder="0"
-            onChange={e => onUpdate(partido.id, 'local', e.target.value)} />
+            onChange={e => onUpdate(partido.id, 'local', e.target.value.replace(/\D/g, ''))} />
           <span className="score-separator">—</span>
-          <input type="number" className="score-input" min="0" max="120"
+          <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
             value={pred?.visitante ?? ''} placeholder="0"
-            onChange={e => onUpdate(partido.id, 'visitante', e.target.value)} />
+            onChange={e => onUpdate(partido.id, 'visitante', e.target.value.replace(/\D/g, ''))} />
         </div>
       ) : (
         <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>

@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PartidoCardPrediccion, MonedaGlobal } from '../components/PartidoCard'
-
-const CATS = { 1:'Top 14', 2:'Primera A', 3:'Primera B', 4:'Primera C', 5:'Segunda Div.' }
-const CAT_CLASS = { 1:'cat-top14', 2:'cat-primera-a', 3:'cat-primera-b', 4:'cat-primera-c', 5:'cat-segunda' }
+import { CATS, CAT_CLASS } from '../lib/constants'
 
 function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
@@ -24,6 +22,7 @@ export default function Prode() {
   const [preds, setPreds] = useState({})
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
+  const [hayCAmbios, setHayCAmbios] = useState(false)
   const [loading, setLoading] = useState(true)
   const [girando, setGirando] = useState(false)
 
@@ -53,12 +52,14 @@ export default function Prode() {
       pr?.forEach(p => { m[p.partido_id] = { local: p.goles_local, visitante: p.goles_visitante } })
       setPreds(m)
     }
+    setHayCAmbios(false)
     setLoading(false)
   }
 
   function updPred(pid, lado, val) {
-    const n = Math.max(0, parseInt(val) || 0)
+    const n = typeof val === 'number' ? val : Math.max(0, parseInt(val) || 0)
     setPreds(prev => ({ ...prev, [pid]: { ...prev[pid], [lado]: n } }))
+    setHayCAmbios(true)
   }
 
   function tirarMonedaTodos() {
@@ -70,6 +71,7 @@ export default function Prode() {
         nuevasPreds[p.id] = { local: scoreRandom(), visitante: scoreRandom() }
       })
       setPreds(nuevasPreds)
+      setHayCAmbios(true)
       setGirando(false)
     }, 1500)
   }
@@ -88,6 +90,7 @@ export default function Prode() {
     if (upserts.length) {
       await supabase.from('predicciones').upsert(upserts, { onConflict: 'usuario_id,partido_id' })
       setGuardado(true)
+      setHayCAmbios(false)
       setTimeout(() => setGuardado(false), 3000)
     }
     setGuardando(false)
@@ -133,10 +136,8 @@ export default function Prode() {
         </div>
       )}
 
-      {/* CARD 1 — Info de la fecha */}
       {fi && !loading && (
         <div className="card" style={{padding:'12px 16px',marginBottom:8}}>
-          {/* Fila única con todo en línea — "Abiertas" al lado del título */}
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
             <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',flex:1}}>
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
@@ -147,7 +148,6 @@ export default function Prode() {
                 </span>
               )}
             </div>
-            {/* Abiertas siempre a la derecha en la misma fila */}
             <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`} style={{flexShrink:0}}>
               {abierto ? '● Abiertas' : '✕ Cerradas'}
             </span>
@@ -160,41 +160,27 @@ export default function Prode() {
         </div>
       )}
 
-      {/* CARD 2 — Barra de progreso + moneda global */}
       {fi && !loading && abierto && totalPartidos > 0 && (
-        <div className="card" style={{
-          padding:'10px 16px',
-          marginBottom:16,
-          display:'flex',
-          alignItems:'center',
-          gap:12
-        }}>
-          {/* Barra — ocupa el espacio restante */}
+        <div className="card" style={{padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-              <span style={{
-                fontSize:11, fontWeight:600,
-                color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--texto-suave)',
-                paddingLeft:2
-              }}>
+              <span style={{fontSize:11,fontWeight:600,color:todoCompleto?'var(--dorado-oscuro)':'var(--texto-suave)',paddingLeft:2}}>
                 {todoCompleto ? '🏉 ¡Todos cargados!' : `${predsCompletas} / ${totalPartidos} cargados`}
               </span>
-              <span style={{fontSize:11,fontWeight:700,color: todoCompleto ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>
+              <span style={{fontSize:11,fontWeight:700,color:todoCompleto?'var(--dorado-oscuro)':'var(--azul)'}}>
                 {porcentaje}%
               </span>
             </div>
             <div style={{height:7,borderRadius:10,background:'var(--gris-borde)',overflow:'hidden',border:'1px solid rgba(0,0,0,0.06)'}}>
               <div style={{
-                height:'100%', borderRadius:10, width:`${porcentaje}%`,
-                background: todoCompleto
-                  ? 'linear-gradient(90deg, var(--dorado), var(--dorado-oscuro))'
-                  : 'linear-gradient(90deg, var(--rojo-vivo), var(--dorado))',
+                height:'100%',borderRadius:10,width:`${porcentaje}%`,
+                background:todoCompleto
+                  ?'linear-gradient(90deg,var(--dorado),var(--dorado-oscuro))'
+                  :'linear-gradient(90deg,var(--rojo-vivo),var(--dorado))',
                 transition:'width 0.4s ease'
               }} />
             </div>
           </div>
-
-          {/* Moneda — ancho fijo, más grande en desktop */}
           <div style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',width:64}}>
             <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
           </div>
@@ -213,6 +199,11 @@ export default function Prode() {
 
       {!loading && partidos.length > 0 && abierto && (
         <div className="sticky-save">
+          {hayCAmbios && !guardando && (
+            <div style={{textAlign:'center',fontSize:12,color:'var(--dorado)',fontWeight:600,marginBottom:6}}>
+              ● Tenés cambios sin guardar
+            </div>
+          )}
           <button className="btn btn-primary" onClick={guardar} disabled={guardando}>
             {guardando ? <><span className="spinner"></span> Guardando...</> : guardado ? '✓ Guardado' : 'Guardar predicciones'}
           </button>
