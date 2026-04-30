@@ -105,12 +105,32 @@ export default function Resultados() {
           </div>
           {puntosFecha.bonus_pleno>0 && <div className="alert alert-gold" style={{marginBottom:8}}>¡Pleno! Acertaste todos los partidos (+5 pts)</div>}
           <button
-            onClick={() => {
+            onClick={async () => {
+              const numeroFecha = fi?.numero
+              // Busca todas las fechas con el mismo número (todos los torneos)
+              const { data: todasFechas } = await supabase.from('fechas').select('id, categoria_id').eq('numero', numeroFecha)
+              const fids = (todasFechas || []).map(f => f.id)
+              const { data: allPuntos } = await supabase.from('puntos_fecha').select('*')
+                .eq('usuario_id', user.id).in('fecha_id', fids)
+              const tot = (allPuntos || []).reduce((a, p) => ({
+                pts: a.pts + (p.total_puntos || 0),
+                exactos: a.exactos + (p.puntos_exactos || 0),
+                signo: a.signo + (p.puntos_signo || 0),
+                bonus: a.bonus + (p.bonus_pleno || 0) + (p.bonus_mitad || 0),
+              }), { pts: 0, exactos: 0, signo: 0, bonus: 0 })
+              const jugados = allPuntos?.length || 1
+              const desglose = allPuntos?.length > 1
+                ? allPuntos.map(p => {
+                    const catId = todasFechas?.find(f => f.id === p.fecha_id)?.categoria_id
+                    return `${CATS[catId]}: ${p.total_puntos}pts`
+                  }).join(' · ')
+                : null
               const msg = encodeURIComponent(
-                `🏉 Pick&Go · ${CATS[cat]} · Fecha ${fi?.numero}\n` +
-                `Saqué ${puntosFecha.total_puntos} puntos 🎯\n` +
-                `(${puntosFecha.puntos_exactos} exactos · ${puntosFecha.puntos_signo} signo${(puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0)>0?` · ${(puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0)} bonus`:''})\n\n` +
-                `https://pickandgo-prode.vercel.app`
+                `🏉 Pick&Go · Fecha ${numeroFecha} URBA 2026\n` +
+                `Mis puntos: ${tot.pts} 🎯\n` +
+                `(${tot.exactos} exactos · ${tot.signo} signo${tot.bonus > 0 ? ` · ${tot.bonus} bonus` : ''})\n` +
+                (desglose ? `${desglose}\n` : '') +
+                `\nhttps://pickandgo-prode.vercel.app`
               )
               window.open(`https://wa.me/?text=${msg}`, '_blank')
             }}
