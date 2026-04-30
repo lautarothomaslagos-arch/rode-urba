@@ -271,7 +271,7 @@ export default function Perfil() {
           ¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.
         </p>
         <button className="btn btn-primary" onClick={() => {
-          const mensaje = encodeURIComponent("Ey, estoy jugando Pick&Go, un prode de rugby de la URBA 🏉 Predecís los resultados de Top 14, Primera A, B, C y Segunda, hay ranking semanal y anual.\n\nhttps://pickandgo-prode.vercel.app\n\nBajatela:\n📱 Android: Chrome → abrí el link → \"Agregar a pantalla de inicio\"\n🍎 iPhone: Safari → abrí el link → botón compartir → \"Agregar a pantalla de inicio\"\n\n¡Sumate y a ver quién gana! 🏆")
+          const mensaje = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
           window.open(`https://wa.me/?text=${mensaje}`, '_blank')
         }}>
           📲 Invitar por WhatsApp
