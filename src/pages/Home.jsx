@@ -20,17 +20,17 @@ export default function Home() {
   const navigate = useNavigate()
 
   return (
-    <div style={{minHeight:'100vh', background:'#0d1117', color:'white', fontFamily:"'Rajdhani', sans-serif"}}>
+    <div style={{minHeight:'100vh', background:'#1a2744', color:'white', fontFamily:"'Rajdhani', sans-serif"}}>
 
       {/* HERO */}
       <div style={{
         position:'relative', overflow:'hidden',
-        background:'linear-gradient(160deg, #1a0a00 0%, #1a1a2e 40%, #0d0d1a 100%)',
+        background:'linear-gradient(160deg, #0f1a35 0%, #1a2744 50%, #243460 100%)',
         padding:'48px 20px 60px',
         textAlign:'center',
       }}>
-        <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at 50% 0%, rgba(139,0,0,0.3) 0%, transparent 70%)',pointerEvents:'none'}} />
-        <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(201,162,39,0.03) 40px,rgba(201,162,39,0.03) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(201,162,39,0.03) 40px,rgba(201,162,39,0.03) 41px)',pointerEvents:'none'}} />
+        <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at 50% 0%, rgba(201,162,39,0.12) 0%, transparent 65%)',pointerEvents:'none'}} />
+        <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(201,162,39,0.04) 40px,rgba(201,162,39,0.04) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(201,162,39,0.04) 40px,rgba(201,162,39,0.04) 41px)',pointerEvents:'none'}} />
 
         <div style={{position:'relative',zIndex:1,maxWidth:600,margin:'0 auto'}}>
           {/* Logo más grande, sin borde dorado */}
@@ -109,7 +109,7 @@ export default function Home() {
 
       {/* PASOS */}
       <div style={{padding:'16px 16px 48px',maxWidth:900,margin:'0 auto'}}>
-        <div style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(201,162,39,0.15)',borderRadius:20,padding:'28px 24px'}}>
+        <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(201,162,39,0.2)',borderRadius:20,padding:'28px 24px'}}>
           <div style={{textAlign:'center',marginBottom:28}}>
             <div style={{fontSize:11,letterSpacing:4,color:'rgba(201,162,39,0.7)',marginBottom:6}}>¿CÓMO FUNCIONA?</div>
             <div style={{width:40,height:2,background:'linear-gradient(90deg,transparent,#C9A227,transparent)',margin:'0 auto'}} />
@@ -117,7 +117,7 @@ export default function Home() {
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:20}}>
             {PASOS.map((p,i) => (
               <div key={i} style={{textAlign:'center',padding:'0 8px'}}>
-                <div style={{width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,rgba(139,0,0,0.4),rgba(26,10,0,0.8))',border:'1px solid rgba(201,162,39,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,margin:'0 auto 12px',boxShadow:'0 4px 16px rgba(139,0,0,0.3)'}}>
+                <div style={{width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#243460,#1a2744)',border:'1px solid rgba(201,162,39,0.35)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,margin:'0 auto 12px',boxShadow:'0 4px 16px rgba(0,0,0,0.3)'}}>
                   {p.icon}
                 </div>
                 <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:'rgba(201,162,39,0.6)',marginBottom:4}}>PASO {i+1}</div>
