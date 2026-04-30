@@ -246,48 +246,50 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
       ) : (
         <div style={{ marginBottom: 10 }}>
           {partidos.map(p => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--gris-borde)', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                {p.es_especial && <span title="Especial" style={{ flexShrink: 0 }}>⭐</span>}
-                <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)', fontSize: 12 }}>vs</span> {p.equipo_visitante?.nombre}
-                </span>
-              </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                <button className="btn btn-small btn-secondary" onClick={() => toggleEspecial(p)} title={p.es_especial ? 'Quitar especial' : 'Marcar especial'}>
-                  {p.es_especial ? '★' : '☆'}
-                </button>
-                <button className="btn btn-small btn-secondary" title="Editar equipos" onClick={() => {
-                  setEditandoPartido(editandoPartido === p.id ? null : p.id)
-                  setEditForm({ local: String(p.equipo_local_id), visitante: String(p.equipo_visitante_id) })
-                }}>✏️</button>
-                <button className="btn btn-small btn-danger" onClick={() => eliminarPartido(p.id)}>×</button>
-              </div>
-            </div>
-            {editandoPartido === p.id && (
-              <div style={{ padding: '8px 0 10px', borderBottom: '1px solid var(--gris-borde)', background: 'rgba(201,162,39,0.04)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
-                  <select className="form-select" style={{ fontSize: 13 }} value={editForm.local} onChange={e => setEditForm(f => ({ ...f, local: e.target.value }))}>
-                    {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
-                  </select>
-                  <select className="form-select" style={{ fontSize: 13 }} value={editForm.visitante} onChange={e => setEditForm(f => ({ ...f, visitante: e.target.value }))}>
-                    {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
-                  </select>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="btn btn-primary btn-small" onClick={async () => {
-                      if (editForm.local === editForm.visitante) { flash('Equipos deben ser distintos'); return }
-                      await supabase.from('partidos').update({
-                        equipo_local_id: parseInt(editForm.local),
-                        equipo_visitante_id: parseInt(editForm.visitante)
-                      }).eq('id', p.id)
-                      setEditandoPartido(null)
-                      cargarPartidos()
-                    }}>✓</button>
-                    <button className="btn btn-secondary btn-small" onClick={() => setEditandoPartido(null)}>✕</button>
-                  </div>
+            <div key={p.id}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: editandoPartido === p.id ? 'none' : '1px solid var(--gris-borde)', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                  {p.es_especial && <span title="Especial" style={{ flexShrink: 0 }}>⭐</span>}
+                  <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)', fontSize: 12 }}>vs</span> {p.equipo_visitante?.nombre}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button className="btn btn-small btn-secondary" onClick={() => toggleEspecial(p)} title={p.es_especial ? 'Quitar especial' : 'Marcar especial'}>
+                    {p.es_especial ? '★' : '☆'}
+                  </button>
+                  <button className="btn btn-small btn-secondary" title="Editar equipos" onClick={() => {
+                    setEditandoPartido(editandoPartido === p.id ? null : p.id)
+                    setEditForm({ local: String(p.equipo_local_id), visitante: String(p.equipo_visitante_id) })
+                  }}>✏️</button>
+                  <button className="btn btn-small btn-danger" onClick={() => eliminarPartido(p.id)}>×</button>
                 </div>
               </div>
-            )}
+              {editandoPartido === p.id && (
+                <div style={{ padding: '8px 0 10px', borderBottom: '1px solid var(--gris-borde)', background: 'rgba(201,162,39,0.04)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                    <select className="form-select" style={{ fontSize: 13 }} value={editForm.local} onChange={e => setEditForm(f => ({ ...f, local: e.target.value }))}>
+                      {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
+                    </select>
+                    <select className="form-select" style={{ fontSize: 13 }} value={editForm.visitante} onChange={e => setEditForm(f => ({ ...f, visitante: e.target.value }))}>
+                      {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
+                    </select>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-primary btn-small" onClick={async () => {
+                        if (editForm.local === editForm.visitante) { flash('Equipos deben ser distintos'); return }
+                        await supabase.from('partidos').update({
+                          equipo_local_id: parseInt(editForm.local),
+                          equipo_visitante_id: parseInt(editForm.visitante)
+                        }).eq('id', p.id)
+                        setEditandoPartido(null)
+                        cargarPartidos()
+                      }}>✓</button>
+                      <button className="btn btn-secondary btn-small" onClick={() => setEditandoPartido(null)}>✕</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
