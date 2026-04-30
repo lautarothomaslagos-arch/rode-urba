@@ -118,19 +118,11 @@ export default function Resultados() {
                 signo: a.signo + (p.puntos_signo || 0),
                 bonus: a.bonus + (p.bonus_pleno || 0) + (p.bonus_mitad || 0),
               }), { pts: 0, exactos: 0, signo: 0, bonus: 0 })
-              const jugados = allPuntos?.length || 1
-              const desglose = allPuntos?.length > 1
-                ? allPuntos.map(p => {
-                    const catId = todasFechas?.find(f => f.id === p.fecha_id)?.categoria_id
-                    return `${CATS[catId]}: ${p.total_puntos}pts`
-                  }).join(' · ')
-                : null
               const msg = encodeURIComponent(
                 `🏉 Pick&Go · Fecha ${numeroFecha} URBA 2026\n` +
                 `Mis puntos: ${tot.pts} 🎯\n` +
-                `(${tot.exactos} exactos · ${tot.signo} signo${tot.bonus > 0 ? ` · ${tot.bonus} bonus` : ''})\n` +
-                (desglose ? `${desglose}\n` : '') +
-                `\nhttps://pickandgo-prode.vercel.app`
+                `(${tot.exactos} exactos · ${tot.signo} signo${tot.bonus > 0 ? ` · ${tot.bonus} bonus` : ''})\n\n` +
+                `https://pickandgo-prode.vercel.app`
               )
               window.open(`https://wa.me/?text=${msg}`, '_blank')
             }}
