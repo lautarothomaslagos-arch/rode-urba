@@ -71,13 +71,14 @@ function AdminSemana() {
           <div key={cat} className="card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
             <button
               onClick={() => setCatAbierta(estaAbierto ? null : cat)}
-              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', textAlign: 'left' }}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '14px 16px', textAlign: 'left' }}
             >
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
-              <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>
+              <span style={{ flex: 1 }} />
+              <span style={{ fontSize: 12, color: 'var(--texto-suave)', marginRight: 10 }}>
                 {activas.length > 0 ? `${activas.length} fecha${activas.length > 1 ? 's' : ''}` : proximas.length > 0 ? `${proximas.length} próxima${proximas.length > 1 ? 's' : ''}` : 'sin fechas'}
               </span>
-              <span style={{ marginLeft: 'auto', color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
+              <span style={{ color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
             </button>
             {estaAbierto && (
               <div style={{ borderTop: '1px solid var(--gris-borde)', padding: '8px 12px 12px' }}>
@@ -535,11 +536,12 @@ function AdminFechas() {
           <div key={cat} className="card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
             <button
               onClick={() => setCatAbierta(estaAbierto ? null : cat)}
-              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', textAlign: 'left' }}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '14px 16px', textAlign: 'left' }}
             >
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
-              <span style={{ fontSize: 13, color: 'var(--texto-suave)' }}>{lista.length} fecha{lista.length !== 1 ? 's' : ''}</span>
-              <span style={{ marginLeft: 'auto', color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
+              <span style={{ flex: 1 }} />
+              <span style={{ fontSize: 12, color: 'var(--texto-suave)', marginRight: 10 }}>{lista.length} fecha{lista.length !== 1 ? 's' : ''}</span>
+              <span style={{ color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
             </button>
             {estaAbierto && (
               lista.length === 0
