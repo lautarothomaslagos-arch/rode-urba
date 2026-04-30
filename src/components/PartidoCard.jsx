@@ -115,11 +115,6 @@ function FilaEquipos({ partido, marcador }) {
           <span className="equipo-nombre">{partido.equipo_visitante?.nombre}</span>
         </div>
       </div>
-      {partido.hora_estimada && (
-        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--texto-suave)', marginTop: 4 }}>
-          🕐 {partido.hora_estimada.slice(0, 5)} hs
-        </div>
-      )}
     </div>
   )
 }
