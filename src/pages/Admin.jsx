@@ -74,17 +74,9 @@ function AdminSemana() {
               style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', textAlign: 'left' }}
             >
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
-              {activas.length > 0 && (
-                <span style={{ fontSize: 11, background: '#16a34a', color: 'white', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
-                  ● {activas.length} activa{activas.length > 1 ? 's' : ''}
-                </span>
-              )}
-              {proximas.length > 0 && activas.length === 0 && (
-                <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>{proximas.length} pendiente{proximas.length > 1 ? 's' : ''}</span>
-              )}
-              {activas.length === 0 && proximas.length === 0 && (
-                <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>sin fechas</span>
-              )}
+              <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>
+                {activas.length > 0 ? `${activas.length} fecha${activas.length > 1 ? 's' : ''}` : proximas.length > 0 ? `${proximas.length} próxima${proximas.length > 1 ? 's' : ''}` : 'sin fechas'}
+              </span>
               <span style={{ marginLeft: 'auto', color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
             </button>
             {estaAbierto && (
@@ -931,16 +923,24 @@ function AdminStats() {
       supabase.from('predicciones').select('*', { count: 'exact', head: true })
         .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       supabase.from('puntos_fecha')
-        .select('fecha_id, total_puntos, perfiles(username), fechas(categoria_id, numero)')
-        .order('total_puntos', { ascending: false }).limit(100)
+        .select('usuario_id, total_puntos, perfiles(username), fechas(numero, fecha_partido)')
     ])
-    // Dedup: máximo por fecha (el primero por orden desc es el más alto)
-    const vistas = new Set()
-    const topPorFecha = (topFecha || []).filter(p => {
-      if (vistas.has(p.fecha_id)) return false
-      vistas.add(p.fecha_id)
-      return true
-    }).slice(0, 10)
+    // Agrupa por (usuario_id, fecha numero) sumando todos los torneos
+    const mapa = {}
+    ;(topFecha || []).forEach(p => {
+      const num = p.fechas?.numero
+      const uid = p.usuario_id
+      if (num == null) return
+      const key = `${uid}_${num}`
+      if (!mapa[key]) mapa[key] = { username: p.perfiles?.username, numero: num, fecha_partido: p.fechas?.fecha_partido, total: 0 }
+      mapa[key].total += p.total_puntos || 0
+    })
+    // Por cada numero de fecha, el mejor usuario
+    const mejorPorFecha = {}
+    Object.values(mapa).forEach(g => {
+      if (!mejorPorFecha[g.numero] || g.total > mejorPorFecha[g.numero].total) mejorPorFecha[g.numero] = g
+    })
+    const topPorFecha = Object.values(mejorPorFecha).sort((a, b) => b.total - a.total).slice(0, 10)
     setStats({ totalUsuarios, totalGrupos, fechasActivas: fechasActivas || [], totalPredsHoy, topFecha: topPorFecha })
     setLoading(false)
   }
@@ -971,10 +971,10 @@ function AdminStats() {
           <p style={{ fontSize: 13, color: 'var(--texto-suave)' }}>Ninguna fecha activa en este momento.</p>
         ) : (
           stats.fechasActivas.map(f => (
-            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
-              <span className={`cat-badge ${CAT_CLASS[f.categoria_id]}`}>{CAT_LABELS[f.categoria_id]}</span>
-              <span style={{ fontWeight: 600 }}>Fecha {f.numero}</span>
-              {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
+            <div key={f.id} style={{ display: 'grid', gridTemplateColumns: '110px 80px 1fr', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
+              <span className={`cat-badge ${CAT_CLASS[f.categoria_id]}`} style={{ justifySelf: 'start' }}>{CAT_LABELS[f.categoria_id]}</span>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>Fecha {f.numero}</span>
+              <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido || '—'}</span>
             </div>
           ))
         )}
@@ -984,19 +984,12 @@ function AdminStats() {
         <div className="card">
           <div className="card-header"><span className="card-title">🏆 Top puntajes por fecha</span></div>
           {stats.topFecha.map((p, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 16, minWidth: 20 }}>{'🥇🥈🥉'[i] || `${i + 1}.`}</span>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{p.perfiles?.username || '—'}</div>
-                  <div style={{ fontSize: 11, color: 'var(--texto-suave)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
-                    <span className={`cat-badge ${CAT_CLASS[p.fechas?.categoria_id]}`} style={{ fontSize: 9, padding: '1px 5px' }}>{CAT_LABELS[p.fechas?.categoria_id]}</span>
-                    Fecha {p.fechas?.numero}
-                  </div>
-                </div>
-              </div>
-              <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>
-                {p.total_puntos} <span style={{ fontSize: 12, color: 'var(--texto-suave)', fontWeight: 400 }}>pts</span>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 80px 60px', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
+              <span style={{ fontSize: 15, textAlign: 'center' }}>{['🥇','🥈','🥉'][i] || `${i + 1}.`}</span>
+              <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.username || '—'}</span>
+              <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>Fecha {p.numero}</span>
+              <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--azul)', textAlign: 'right' }}>
+                {p.total} <span style={{ fontSize: 11, color: 'var(--texto-suave)', fontWeight: 400 }}>pts</span>
               </span>
             </div>
           ))}
