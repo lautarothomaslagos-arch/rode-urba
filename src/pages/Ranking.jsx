@@ -69,6 +69,7 @@ export default function Ranking() {
   const { perfil } = useAuth()
   const [vista, setVista] = useState('personal')
   const [subVista, setSubVista] = useState('anual')
+  const [busqueda, setBusqueda] = useState('')
   const [fechas, setFechas] = useState([])
   const [fechaNum, setFechaNum] = useState(null)
   const [lista, setLista] = useState([])
@@ -186,6 +187,13 @@ export default function Ranking() {
   const miIdx = lista.findIndex(item => item.perfiles?.username === perfil?.username)
   const miItem = miIdx >= 0 ? lista[miIdx] : null
 
+  const listaFiltrada = busqueda.trim()
+    ? lista.filter(item =>
+        item.perfiles?.username?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        item.perfiles?.club?.toLowerCase().includes(busqueda.toLowerCase())
+      )
+    : lista
+
   return (
     <div className="container">
       <div className="page-header">
@@ -215,6 +223,16 @@ export default function Ranking() {
         </div>
       )}
 
+      {vista === 'personal' && !loading && lista.length > 0 && (
+        <input
+          className="form-input"
+          placeholder="🔍 Buscar por usuario o club..."
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+          style={{ marginBottom: 12 }}
+        />
+      )}
+
       {loading && <div className="loading"><div className="spinner"></div></div>}
 
       {!loading && vista === 'personal' && (
@@ -225,26 +243,32 @@ export default function Ranking() {
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--dorado)',letterSpacing:1}}>
                   {subVista==='anual' ? 'Ranking anual 2026' : `Fecha ${fechaNum} — todos los torneos`}
                 </span>
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>{lista.length} participantes</span>
+                <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>
+                  {busqueda ? `${listaFiltrada.length} resultados` : `${lista.length} participantes`}
+                </span>
               </div>
 
               <div ref={scrollContainerRef} style={{maxHeight:'60vh',overflowY:'auto'}}>
-                {lista.map((item, idx) => {
+                {listaFiltrada.map((item, idx) => {
                   const esYo = item.perfiles?.username === perfil?.username
+                  const idxReal = lista.indexOf(item)
                   return (
                     <FilaRanking
                       key={item.usuario_id}
                       item={item}
-                      idx={idx}
+                      idx={idxReal}
                       esYo={esYo}
                       subVista={subVista}
                       refProp={esYo ? miFilaRef : null}
                     />
                   )
                 })}
+                {busqueda && listaFiltrada.length === 0 && (
+                  <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)',fontSize:13}}>Sin resultados para "{busqueda}"</div>
+                )}
               </div>
 
-              {miItem && !miFilaVisible && (
+              {!busqueda && miItem && !miFilaVisible && (
                 <div style={{borderTop:'2px solid var(--dorado)'}}>
                   <FilaRanking
                     item={miItem}

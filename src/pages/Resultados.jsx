@@ -103,7 +103,21 @@ export default function Resultados() {
               </div>
             ))}
           </div>
-          {puntosFecha.bonus_pleno>0 && <div className="alert alert-gold" style={{marginBottom:0}}>¡Pleno! Acertaste todos los partidos (+5 pts)</div>}
+          {puntosFecha.bonus_pleno>0 && <div className="alert alert-gold" style={{marginBottom:8}}>¡Pleno! Acertaste todos los partidos (+5 pts)</div>}
+          <button
+            onClick={() => {
+              const msg = encodeURIComponent(
+                `🏉 Pick&Go · ${CATS[cat]} · Fecha ${fi?.numero}\n` +
+                `Saqué ${puntosFecha.total_puntos} puntos 🎯\n` +
+                `(${puntosFecha.puntos_exactos} exactos · ${puntosFecha.puntos_signo} signo${(puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0)>0?` · ${(puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0)} bonus`:''})\n\n` +
+                `https://pickandgo-prode.vercel.app`
+              )
+              window.open(`https://wa.me/?text=${msg}`, '_blank')
+            }}
+            style={{width:'100%',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,padding:'10px',color:'white',fontSize:13,fontWeight:600,cursor:'pointer',marginTop:4}}
+          >
+            📲 Compartir resultado por WhatsApp
+          </button>
         </div>
       )}
 

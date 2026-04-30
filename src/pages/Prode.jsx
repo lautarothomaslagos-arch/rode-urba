@@ -25,6 +25,13 @@ export default function Prode() {
   const [hayCAmbios, setHayCAmbios] = useState(false)
   const [loading, setLoading] = useState(true)
   const [girando, setGirando] = useState(false)
+  const [catsActivas, setCatsActivas] = useState(new Set())
+
+  useEffect(() => {
+    supabase.from('fechas').select('categoria_id')
+      .eq('activa', true).eq('resultados_cargados', false)
+      .then(({ data }) => setCatsActivas(new Set(data?.map(f => f.categoria_id) || [])))
+  }, [])
 
   useEffect(() => { cargarFechas(cat) }, [cat])
   useEffect(() => { if (fechaId) cargarPartidos(fechaId) }, [fechaId])
@@ -112,7 +119,18 @@ export default function Prode() {
 
       <div className="tabs-box">
         {[1,2,3,4,5].map(c => (
-          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
+          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}
+            style={{ position: 'relative' }}>
+            {CATS[c]}
+            {catsActivas.has(c) && (
+              <span style={{
+                position: 'absolute', top: 4, right: 4,
+                width: 7, height: 7, borderRadius: '50%',
+                background: 'var(--dorado)', display: 'block',
+                boxShadow: '0 0 4px rgba(201,162,39,0.8)'
+              }} />
+            )}
+          </button>
         ))}
       </div>
 

@@ -35,6 +35,7 @@ export default function Perfil() {
   const [subiendo, setSubiendo] = useState(false)
   const [preview, setPreview] = useState(null)
   const [racha, setRacha] = useState({ actual: 0, maxima: 0 })
+  const [stats, setStats] = useState(null)
 
   useEffect(() => {
     if (perfil) {
@@ -45,12 +46,24 @@ export default function Perfil() {
   }, [perfil])
 
   useEffect(() => {
-    if (user) cargarRacha()
+    if (user) { cargarRacha(); cargarStats() }
   }, [user])
 
   async function cargarRacha() {
     const { data } = await supabase.from('perfiles').select('racha_actual, racha_maxima').eq('id', user.id).single()
     if (data) setRacha({ actual: data.racha_actual || 0, maxima: data.racha_maxima || 0 })
+  }
+
+  async function cargarStats() {
+    const [{ data: totales }, { data: porFecha }] = await Promise.all([
+      supabase.from('puntos_totales').select('puntos_acumulados').eq('usuario_id', user.id),
+      supabase.from('puntos_fecha').select('total_puntos').eq('usuario_id', user.id)
+    ])
+    const totalPuntos = totales?.reduce((s, r) => s + (r.puntos_acumulados || 0), 0) || 0
+    const totalFechas = porFecha?.length || 0
+    const mejorFecha = porFecha?.reduce((max, r) => Math.max(max, r.total_puntos || 0), 0) || 0
+    const promedio = totalFechas > 0 ? Math.round(totalPuntos / totalFechas * 10) / 10 : 0
+    setStats({ totalPuntos, totalFechas, mejorFecha, promedio })
   }
 
   async function guardar(e) {
@@ -96,11 +109,12 @@ export default function Perfil() {
       </div>
 
       <div className="card">
-        <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:24,paddingBottom:20,borderBottom:'2px solid var(--gris)'}}>
+        {/* Header avatar + username */}
+        <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:20,paddingBottom:20,borderBottom:'2px solid var(--gris)'}}>
           <div style={{position:'relative',flexShrink:0}}>
             <div style={{width:80,height:80,borderRadius:'50%',background:'linear-gradient(135deg,var(--dorado),var(--dorado-oscuro))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:700,color:'var(--azul)',overflow:'hidden',border:'3px solid var(--dorado)'}}>
               {preview
-                ? <img src={preview} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                ? <img src={preview} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
                 : ini}
             </div>
             <label style={{position:'absolute',bottom:-2,right:-2,width:26,height:26,background:'var(--rojo-vivo)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',border:'2px solid white',fontSize:16,color:'white',fontWeight:700}}>
@@ -115,56 +129,66 @@ export default function Perfil() {
           </div>
         </div>
 
+        {/* ESTADÍSTICAS */}
+        {stats && (
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Mis estadísticas 2026</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+              {[
+                { v: stats.totalPuntos, l: 'Total pts', color: 'var(--azul)' },
+                { v: stats.totalFechas, l: 'Fechas', color: 'var(--texto)' },
+                { v: stats.mejorFecha,  l: 'Mejor fecha', color: 'var(--dorado-oscuro)' },
+                { v: stats.promedio,    l: 'Promedio', color: 'var(--texto)' },
+              ].map((s, i) => (
+                <div key={i} style={{textAlign:'center',padding:'10px 6px',background:'var(--gris)',borderRadius:10,border:'1px solid var(--gris-borde)'}}>
+                  <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:22,fontWeight:700,color:s.color,lineHeight:1}}>{s.v}</div>
+                  <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:3,textTransform:'uppercase',letterSpacing:0.3}}>{s.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* RACHA Y TROFEO */}
         <div style={{marginBottom:20}}>
-          {/* Racha actual y máxima */}
-          <div style={{display:'flex',gap:12,marginBottom:12}}>
-            <div style={{flex:1,textAlign:'center',padding:'12px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
-              <div style={{fontSize:28,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--azul)',lineHeight:1}}>
+          <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Racha de fechas jugadas</div>
+          <div style={{display:'flex',gap:10,marginBottom:12}}>
+            <div style={{flex:1,textAlign:'center',padding:'10px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
+              <div style={{fontSize:26,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--azul)',lineHeight:1}}>
                 {racha.actual > 0 ? '🔥' : '—'} {racha.actual}
               </div>
-              <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha actual</div>
+              <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha actual</div>
             </div>
-            <div style={{flex:1,textAlign:'center',padding:'12px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
-              <div style={{fontSize:28,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--dorado-oscuro)',lineHeight:1}}>
+            <div style={{flex:1,textAlign:'center',padding:'10px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
+              <div style={{fontSize:26,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--dorado-oscuro)',lineHeight:1}}>
                 🏆 {racha.maxima}
               </div>
-              <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha máxima</div>
+              <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha máxima</div>
             </div>
           </div>
 
-          {/* Trofeo actual */}
           {trofeo ? (
-            <div style={{
-              display:'flex', alignItems:'center', gap:16, padding:'16px',
-              background: trofeo.bg, borderRadius:12,
-              border:`1.5px solid ${trofeo.color}40`
-            }}>
-              <img src={trofeo.img} alt={trofeo.nombre} style={{width:64,height:64,objectFit:'contain',flexShrink:0}} />
+            <div style={{display:'flex',alignItems:'center',gap:16,padding:'14px',background:trofeo.bg,borderRadius:12,border:`1.5px solid ${trofeo.color}40`}}>
+              <img src={trofeo.img} alt={trofeo.nombre} style={{width:56,height:56,objectFit:'contain',flexShrink:0}} />
               <div>
-                <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:trofeo.color,letterSpacing:1}}>
-                  {trofeo.nombre.toUpperCase()}
-                </div>
+                <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:18,fontWeight:700,color:trofeo.color,letterSpacing:1}}>{trofeo.nombre.toUpperCase()}</div>
                 <div style={{fontSize:13,color:'var(--texto)',marginTop:2}}>"{trofeo.desc}"</div>
-                <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:4}}>
-                  Desbloqueado con {trofeo.minimo} fechas consecutivas
-                </div>
+                <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:3}}>Desbloqueado con {trofeo.minimo} fechas consecutivas</div>
               </div>
             </div>
           ) : (
-            <div style={{padding:'14px 16px',background:'var(--gris)',borderRadius:10,textAlign:'center'}}>
+            <div style={{padding:'12px 16px',background:'var(--gris)',borderRadius:10,textAlign:'center'}}>
               <div style={{fontSize:13,color:'var(--texto-suave)'}}>
                 Todavía no tenés trofeo — completá {proximoTrofeo ? proximoTrofeo.minimo : 3} fechas consecutivas para ganar el primero 🏆
               </div>
             </div>
           )}
 
-          {/* Próximo trofeo */}
           {trofeo && proximoTrofeo && (
             <div style={{marginTop:8,padding:'10px 14px',background:'var(--gris)',borderRadius:8,display:'flex',alignItems:'center',gap:10}}>
-              <img src={proximoTrofeo.img} alt={proximoTrofeo.nombre} style={{width:32,height:32,objectFit:'contain',opacity:0.4,flexShrink:0}} />
+              <img src={proximoTrofeo.img} alt={proximoTrofeo.nombre} style={{width:28,height:28,objectFit:'contain',opacity:0.4,flexShrink:0}} />
               <div style={{fontSize:12,color:'var(--texto-suave)'}}>
-                Próximo: <strong style={{color:'var(--texto)'}}>{proximoTrofeo.nombre}</strong> — completá {proximoTrofeo.minimo} fechas consecutivas
+                Próximo: <strong style={{color:'var(--texto)'}}>{proximoTrofeo.nombre}</strong> — {proximoTrofeo.minimo} fechas consecutivas
               </div>
             </div>
           )}

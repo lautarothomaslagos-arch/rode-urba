@@ -16,12 +16,14 @@ export default function Admin() {
         <button className={`tab-btn ${seccion === 'equipos' ? 'active' : ''}`} onClick={() => setSeccion('equipos')}>🛡️ Equipos</button>
         <button className={`tab-btn ${seccion === 'usuarios' ? 'active' : ''}`} onClick={() => setSeccion('usuarios')}>👥 Usuarios</button>
         <button className={`tab-btn ${seccion === 'grupos' ? 'active' : ''}`} onClick={() => setSeccion('grupos')}>🏆 Grupos</button>
+        <button className={`tab-btn ${seccion === 'stats' ? 'active' : ''}`} onClick={() => setSeccion('stats')}>📊 Stats</button>
       </div>
       {seccion === 'semana' && <AdminSemana />}
       {seccion === 'fechas' && <AdminFechas />}
       {seccion === 'equipos' && <AdminEquipos />}
       {seccion === 'usuarios' && <AdminUsuarios />}
       {seccion === 'grupos' && <AdminGrupos />}
+      {seccion === 'stats' && <AdminStats />}
     </div>
   )
 }
@@ -493,20 +495,68 @@ function AdminFechas() {
         </div>
         {fechasFiltradas.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: 'var(--texto-suave)' }}>No hay fechas</div>}
         {fechasFiltradas.map(f => (
-          <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--gris-borde)', opacity: f.activa ? 1 : 0.6, gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
-              <span className={`cat-badge ${CAT_CLASS[f.categoria_id]}`}>{CAT_LABELS[f.categoria_id]}</span>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>Fecha {f.numero}</span>
-              {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
-              {!f.activa && <span style={{ fontSize: 11, background: 'var(--gris-borde)', color: 'var(--texto-suave)', padding: '1px 6px', borderRadius: 20 }}>inactiva</span>}
-              {f.resultados_cargados && <span className="cierre-badge cierre-abierto" style={{ fontSize: 11 }}>✓ Resultados</span>}
-            </div>
-            <button className={`btn btn-small ${f.activa ? 'btn-secondary' : 'btn-primary'}`} onClick={() => toggleActiva(f)} style={{ flexShrink: 0 }}>
-              {f.activa ? 'Desactivar' : 'Activar'}
-            </button>
-          </div>
+          <FilaFecha key={f.id} f={f} onToggle={() => toggleActiva(f)} onRefresh={cargar} />
         ))}
       </div>
+    </div>
+  )
+}
+
+function FilaFecha({ f, onToggle, onRefresh }) {
+  const [editando, setEditando] = useState(false)
+  const [editFecha, setEditFecha] = useState(f.fecha_partido || '')
+  const [editCierre, setEditCierre] = useState(
+    f.cierre_predicciones ? f.cierre_predicciones.slice(0, 16) : ''
+  )
+  const [guardando, setGuardando] = useState(false)
+
+  async function guardarEdicion() {
+    setGuardando(true)
+    const cierre = editCierre ? new Date(editCierre).toISOString() : null
+    await supabase.from('fechas').update({
+      fecha_partido: editFecha || null,
+      cierre_predicciones: cierre
+    }).eq('id', f.id)
+    setGuardando(false)
+    setEditando(false)
+    onRefresh()
+  }
+
+  return (
+    <div style={{ borderBottom: '1px solid var(--gris-borde)', opacity: f.activa ? 1 : 0.6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+          <span className={`cat-badge ${CAT_CLASS[f.categoria_id]}`}>{CAT_LABELS[f.categoria_id]}</span>
+          <span style={{ fontWeight: 600, fontSize: 14 }}>Fecha {f.numero}</span>
+          {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
+          {!f.activa && <span style={{ fontSize: 11, background: 'var(--gris-borde)', color: 'var(--texto-suave)', padding: '1px 6px', borderRadius: 20 }}>inactiva</span>}
+          {f.resultados_cargados && <span className="cierre-badge cierre-abierto" style={{ fontSize: 11 }}>✓ Resultados</span>}
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+          <button className="btn btn-small btn-secondary" onClick={() => setEditando(!editando)}>✏️</button>
+          <button className={`btn btn-small ${f.activa ? 'btn-secondary' : 'btn-primary'}`} onClick={onToggle}>
+            {f.activa ? 'Desactivar' : 'Activar'}
+          </button>
+        </div>
+      </div>
+      {editando && (
+        <div style={{ padding: '0 16px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'end', background: 'rgba(201,162,39,0.04)' }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">Fecha del partido</label>
+            <input className="form-input" type="date" value={editFecha} onChange={e => setEditFecha(e.target.value)} />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">Cierre predicciones</label>
+            <input className="form-input" type="datetime-local" value={editCierre} onChange={e => setEditCierre(e.target.value)} />
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button className="btn btn-primary btn-small" onClick={guardarEdicion} disabled={guardando}>
+              {guardando ? '...' : '✓'}
+            </button>
+            <button className="btn btn-secondary btn-small" onClick={() => setEditando(false)}>✕</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -787,6 +837,92 @@ function AdminGrupos() {
               </div>
               <div style={{ fontSize: 11, color: 'var(--texto-suave)', flexShrink: 0 }}>{g.created_at ? new Date(g.created_at).toLocaleDateString('es-AR') : ''}</div>
               <div style={{ color: 'var(--dorado)', fontSize: 18, flexShrink: 0 }}>›</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────
+
+function AdminStats() {
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { cargar() }, [])
+
+  async function cargar() {
+    setLoading(true)
+    const [
+      { count: totalUsuarios },
+      { count: totalGrupos },
+      { data: fechasActivas },
+      { count: totalPredsHoy },
+      { data: topFecha }
+    ] = await Promise.all([
+      supabase.from('perfiles').select('*', { count: 'exact', head: true }),
+      supabase.from('grupos').select('*', { count: 'exact', head: true }),
+      supabase.from('fechas').select('id, categoria_id, numero, fecha_partido').eq('activa', true).eq('resultados_cargados', false),
+      supabase.from('predicciones').select('*', { count: 'exact', head: true })
+        .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+      supabase.from('puntos_fecha').select('total_puntos, usuario_id, perfiles(username)')
+        .order('total_puntos', { ascending: false }).limit(5)
+    ])
+    setStats({ totalUsuarios, totalGrupos, fechasActivas: fechasActivas || [], totalPredsHoy, topFecha: topFecha || [] })
+    setLoading(false)
+  }
+
+  if (loading) return <div className="loading"><div className="spinner"></div></div>
+  if (!stats) return null
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
+        {[
+          { v: stats.totalUsuarios, l: 'Usuarios', icon: '👥', color: 'var(--azul)' },
+          { v: stats.totalGrupos,   l: 'Grupos',   icon: '🏉', color: 'var(--dorado-oscuro)' },
+          { v: stats.fechasActivas.length, l: 'Fechas activas', icon: '📅', color: '#16a34a' },
+          { v: stats.totalPredsHoy, l: 'Preds esta semana', icon: '✏️', color: 'var(--rojo-vivo)' },
+        ].map((s, i) => (
+          <div key={i} className="card" style={{ textAlign: 'center', padding: '16px 12px' }}>
+            <div style={{ fontSize: 24, marginBottom: 6 }}>{s.icon}</div>
+            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 32, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.v ?? '—'}</div>
+            <div style={{ fontSize: 11, color: 'var(--texto-suave)', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="card-header"><span className="card-title">📅 Fechas activas ahora</span></div>
+        {stats.fechasActivas.length === 0 ? (
+          <p style={{ fontSize: 13, color: 'var(--texto-suave)' }}>Ninguna fecha activa en este momento.</p>
+        ) : (
+          stats.fechasActivas.map(f => (
+            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
+              <span className={`cat-badge ${CAT_CLASS[f.categoria_id]}`}>{CAT_LABELS[f.categoria_id]}</span>
+              <span style={{ fontWeight: 600 }}>Fecha {f.numero}</span>
+              {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
+            </div>
+          ))
+        )}
+      </div>
+
+      {stats.topFecha.length > 0 && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">🏆 Top puntajes históricos</span></div>
+          {stats.topFecha.map((p, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 16 }}>{'🥇🥈🥉'[i] || `${i + 1}.`}</span>
+                <span style={{ fontWeight: 600, fontSize: 14 }}>{p.perfiles?.username || '—'}</span>
+              </div>
+              <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>
+                {p.total_puntos} <span style={{ fontSize: 12, color: 'var(--texto-suave)', fontWeight: 400 }}>pts</span>
+              </span>
             </div>
           ))}
         </div>

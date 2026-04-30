@@ -101,18 +101,25 @@ function Escudo({ equipo }) {
 function FilaEquipos({ partido, marcador }) {
   const vsStyle = partido.es_especial ? 'destacado-vs' : 'vs-badge'
   return (
-    <div className="partido-fila">
-      <div className="equipo-lado local">
-        <span className="equipo-nombre">{partido.equipo_local?.nombre}</span>
-        <Escudo equipo={partido.equipo_local} />
+    <div>
+      <div className="partido-fila">
+        <div className="equipo-lado local">
+          <span className="equipo-nombre">{partido.equipo_local?.nombre}</span>
+          <Escudo equipo={partido.equipo_local} />
+        </div>
+        <div className="marcador-central">
+          {marcador || <div className={vsStyle}>VS</div>}
+        </div>
+        <div className="equipo-lado visitante">
+          <Escudo equipo={partido.equipo_visitante} />
+          <span className="equipo-nombre">{partido.equipo_visitante?.nombre}</span>
+        </div>
       </div>
-      <div className="marcador-central">
-        {marcador || <div className={vsStyle}>VS</div>}
-      </div>
-      <div className="equipo-lado visitante">
-        <Escudo equipo={partido.equipo_visitante} />
-        <span className="equipo-nombre">{partido.equipo_visitante?.nombre}</span>
-      </div>
+      {partido.hora_estimada && (
+        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--texto-suave)', marginTop: 4 }}>
+          🕐 {partido.hora_estimada.slice(0, 5)} hs
+        </div>
+      )}
     </div>
   )
 }
