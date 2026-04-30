@@ -33,6 +33,7 @@ export default function Admin() {
 // ─────────────────────────────────────────────
 
 function AdminSemana() {
+  const [catAbierta, setCatAbierta] = useState(null)
   const [fechasActivas, setFechasActivas] = useState([])
   const [fechasProximas, setFechasProximas] = useState([])
   const [equipos, setEquipos] = useState([])
@@ -49,7 +50,7 @@ function AdminSemana() {
       supabase.from('fechas').select('*, categorias(nombre)')
         .eq('activa', false).eq('resultados_cargados', false)
         .order('categoria_id').order('numero')
-        .limit(20),
+        .limit(50),
       supabase.from('equipos').select('*').order('nombre')
     ])
     setFechasActivas(activas || [])
@@ -62,39 +63,62 @@ function AdminSemana() {
 
   return (
     <div>
-      {fechasActivas.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">📋</div>
-          <div className="empty-title">No hay fechas activas</div>
-          <p style={{ fontSize: 13, color: 'var(--texto-suave)' }}>Activá una desde la lista de abajo o desde la pestaña Fechas.</p>
-        </div>
-      )}
-
-      {fechasActivas.map(fecha => (
-        <FechaActiva key={fecha.id} fecha={fecha} equipos={equipos} onRefresh={cargar} />
-      ))}
-
-      {fechasProximas.length > 0 && (
-        <div className="card" style={{ marginTop: 8 }}>
-          <div className="card-header" style={{ marginBottom: 4 }}>
-            <span className="card-title">Próximas fechas</span>
-            <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>inactivas · activá cuando llegue la semana</span>
-          </div>
-          {fechasProximas.map(f => (
-            <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--gris-borde)', gap: 8, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span className={`cat-badge ${CAT_CLASS[f.categoria_id]}`}>{CAT_LABELS[f.categoria_id]}</span>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>Fecha {f.numero}</span>
-                {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
+      {[1,2,3,4,5].map(cat => {
+        const activas = fechasActivas.filter(f => f.categoria_id === cat)
+        const proximas = fechasProximas.filter(f => f.categoria_id === cat)
+        const estaAbierto = catAbierta === cat
+        return (
+          <div key={cat} className="card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
+            <button
+              onClick={() => setCatAbierta(estaAbierto ? null : cat)}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', textAlign: 'left' }}
+            >
+              <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
+              {activas.length > 0 && (
+                <span style={{ fontSize: 11, background: '#16a34a', color: 'white', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                  ● {activas.length} activa{activas.length > 1 ? 's' : ''}
+                </span>
+              )}
+              {proximas.length > 0 && activas.length === 0 && (
+                <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>{proximas.length} pendiente{proximas.length > 1 ? 's' : ''}</span>
+              )}
+              {activas.length === 0 && proximas.length === 0 && (
+                <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>sin fechas</span>
+              )}
+              <span style={{ marginLeft: 'auto', color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
+            </button>
+            {estaAbierto && (
+              <div style={{ borderTop: '1px solid var(--gris-borde)', padding: '8px 12px 12px' }}>
+                {activas.length === 0 && proximas.length === 0 && (
+                  <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '8px 0 0' }}>No hay fechas activas ni próximas para este torneo.</p>
+                )}
+                {activas.map(fecha => (
+                  <FechaActiva key={fecha.id} fecha={fecha} equipos={equipos} onRefresh={cargar} />
+                ))}
+                {proximas.length > 0 && (
+                  <div style={{ marginTop: activas.length > 0 ? 12 : 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                      Próximas (inactivas)
+                    </div>
+                    {proximas.map(f => (
+                      <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--gris)', borderRadius: 8, marginBottom: 6, gap: 8, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 600, fontSize: 14 }}>Fecha {f.numero}</span>
+                          {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
+                        </div>
+                        <button className="btn btn-primary btn-small" onClick={async () => {
+                          await supabase.from('fechas').update({ activa: true }).eq('id', f.id)
+                          cargar()
+                        }}>Activar</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <button className="btn btn-primary btn-small" onClick={async () => {
-                await supabase.from('fechas').update({ activa: true }).eq('id', f.id)
-                cargar()
-              }}>Activar</button>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -107,6 +131,8 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
   const [form, setForm] = useState({ local: '', visitante: '', hora: '', especial: false })
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState('')
+  const [editandoPartido, setEditandoPartido] = useState(null)
+  const [editForm, setEditForm] = useState({ local: '', visitante: '' })
 
   useEffect(() => { cargarPartidos() }, [fecha.id])
 
@@ -227,13 +253,41 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
                   {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)', fontSize: 12 }}>vs</span> {p.equipo_visitante?.nombre}
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 <button className="btn btn-small btn-secondary" onClick={() => toggleEspecial(p)} title={p.es_especial ? 'Quitar especial' : 'Marcar especial'}>
                   {p.es_especial ? '★' : '☆'}
                 </button>
+                <button className="btn btn-small btn-secondary" title="Editar equipos" onClick={() => {
+                  setEditandoPartido(editandoPartido === p.id ? null : p.id)
+                  setEditForm({ local: String(p.equipo_local_id), visitante: String(p.equipo_visitante_id) })
+                }}>✏️</button>
                 <button className="btn btn-small btn-danger" onClick={() => eliminarPartido(p.id)}>×</button>
               </div>
             </div>
+            {editandoPartido === p.id && (
+              <div style={{ padding: '8px 0 10px', borderBottom: '1px solid var(--gris-borde)', background: 'rgba(201,162,39,0.04)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                  <select className="form-select" style={{ fontSize: 13 }} value={editForm.local} onChange={e => setEditForm(f => ({ ...f, local: e.target.value }))}>
+                    {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
+                  </select>
+                  <select className="form-select" style={{ fontSize: 13 }} value={editForm.visitante} onChange={e => setEditForm(f => ({ ...f, visitante: e.target.value }))}>
+                    {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
+                  </select>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="btn btn-primary btn-small" onClick={async () => {
+                      if (editForm.local === editForm.visitante) { flash('Equipos deben ser distintos'); return }
+                      await supabase.from('partidos').update({
+                        equipo_local_id: parseInt(editForm.local),
+                        equipo_visitante_id: parseInt(editForm.visitante)
+                      }).eq('id', p.id)
+                      setEditandoPartido(null)
+                      cargarPartidos()
+                    }}>✓</button>
+                    <button className="btn btn-secondary btn-small" onClick={() => setEditandoPartido(null)}>✕</button>
+                  </div>
+                </div>
+              </div>
+            )}
           ))}
         </div>
       )}
@@ -347,7 +401,7 @@ function AdminFechas() {
   const [catBulk, setCatBulk] = useState(1)
   const [loadingBulk, setLoadingBulk] = useState(false)
   const [msgBulk, setMsgBulk] = useState('')
-  const [filtroCat, setFiltroCat] = useState(0)
+  const [catAbierta, setCatAbierta] = useState(null)
 
   useEffect(() => { cargar() }, [])
 
@@ -398,8 +452,6 @@ function AdminFechas() {
     else setMsgBulk('Error: ' + error.message)
     setLoadingBulk(false)
   }
-
-  const fechasFiltradas = filtroCat === 0 ? fechas : fechas.filter(f => f.categoria_id === filtroCat)
 
   return (
     <div>
@@ -481,23 +533,30 @@ function AdminFechas() {
         )}
       </div>
 
-      {/* Lista de fechas con filtro */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--gris-borde)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span className="card-title" style={{ marginRight: 4 }}>Todas las fechas</span>
-          {[0, 1, 2, 3, 4, 5].map(c => (
-            <button key={c} onClick={() => setFiltroCat(c)}
-              className={`tab-btn ${filtroCat === c ? 'active' : ''}`}
-              style={{ padding: '3px 10px', fontSize: 12 }}>
-              {c === 0 ? 'Todas' : CAT_LABELS[c]}
+      {/* Lista de fechas por torneo (acordeones) */}
+      {[1,2,3,4,5].map(cat => {
+        const lista = fechas.filter(f => f.categoria_id === cat)
+        const estaAbierto = catAbierta === cat
+        return (
+          <div key={cat} className="card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
+            <button
+              onClick={() => setCatAbierta(estaAbierto ? null : cat)}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', textAlign: 'left' }}
+            >
+              <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
+              <span style={{ fontSize: 13, color: 'var(--texto-suave)' }}>{lista.length} fecha{lista.length !== 1 ? 's' : ''}</span>
+              <span style={{ marginLeft: 'auto', color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
             </button>
-          ))}
-        </div>
-        {fechasFiltradas.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: 'var(--texto-suave)' }}>No hay fechas</div>}
-        {fechasFiltradas.map(f => (
-          <FilaFecha key={f.id} f={f} onToggle={() => toggleActiva(f)} onRefresh={cargar} />
-        ))}
-      </div>
+            {estaAbierto && (
+              lista.length === 0
+                ? <div style={{ padding: '12px 16px', fontSize: 13, color: 'var(--texto-suave)', borderTop: '1px solid var(--gris-borde)' }}>No hay fechas para este torneo.</div>
+                : <div style={{ borderTop: '1px solid var(--gris-borde)' }}>
+                    {lista.map(f => <FilaFecha key={f.id} f={f} onToggle={() => toggleActiva(f)} onRefresh={cargar} />)}
+                  </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -869,10 +928,18 @@ function AdminStats() {
       supabase.from('fechas').select('id, categoria_id, numero, fecha_partido').eq('activa', true).eq('resultados_cargados', false),
       supabase.from('predicciones').select('*', { count: 'exact', head: true })
         .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-      supabase.from('puntos_fecha').select('total_puntos, usuario_id, perfiles(username)')
-        .order('total_puntos', { ascending: false }).limit(5)
+      supabase.from('puntos_fecha')
+        .select('fecha_id, total_puntos, perfiles(username), fechas(categoria_id, numero)')
+        .order('total_puntos', { ascending: false }).limit(100)
     ])
-    setStats({ totalUsuarios, totalGrupos, fechasActivas: fechasActivas || [], totalPredsHoy, topFecha: topFecha || [] })
+    // Dedup: máximo por fecha (el primero por orden desc es el más alto)
+    const vistas = new Set()
+    const topPorFecha = (topFecha || []).filter(p => {
+      if (vistas.has(p.fecha_id)) return false
+      vistas.add(p.fecha_id)
+      return true
+    }).slice(0, 10)
+    setStats({ totalUsuarios, totalGrupos, fechasActivas: fechasActivas || [], totalPredsHoy, topFecha: topPorFecha })
     setLoading(false)
   }
 
@@ -913,12 +980,18 @@ function AdminStats() {
 
       {stats.topFecha.length > 0 && (
         <div className="card">
-          <div className="card-header"><span className="card-title">🏆 Top puntajes históricos</span></div>
+          <div className="card-header"><span className="card-title">🏆 Top puntajes por fecha</span></div>
           {stats.topFecha.map((p, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 16 }}>{'🥇🥈🥉'[i] || `${i + 1}.`}</span>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{p.perfiles?.username || '—'}</span>
+                <span style={{ fontSize: 16, minWidth: 20 }}>{'🥇🥈🥉'[i] || `${i + 1}.`}</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{p.perfiles?.username || '—'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--texto-suave)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
+                    <span className={`cat-badge ${CAT_CLASS[p.fechas?.categoria_id]}`} style={{ fontSize: 9, padding: '1px 5px' }}>{CAT_LABELS[p.fechas?.categoria_id]}</span>
+                    Fecha {p.fechas?.numero}
+                  </div>
+                </div>
               </div>
               <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>
                 {p.total_puntos} <span style={{ fontSize: 12, color: 'var(--texto-suave)', fontWeight: 400 }}>pts</span>
