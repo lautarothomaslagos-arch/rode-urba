@@ -27,11 +27,25 @@ export default function Prode() {
   const [girando, setGirando] = useState(false)
   const [catsActivas, setCatsActivas] = useState(new Set())
 
-  useEffect(() => {
-    supabase.from('fechas').select('categoria_id')
-      .eq('activa', true).eq('resultados_cargados', false)
-      .then(({ data }) => setCatsActivas(new Set(data?.map(f => f.categoria_id) || [])))
-  }, [])
+  useEffect(() => { if (user) calcularPendientes() }, [user])
+
+  async function calcularPendientes() {
+    const { data: fechasActivas } = await supabase.from('fechas')
+      .select('id, categoria_id').eq('activa', true).eq('resultados_cargados', false)
+    if (!fechasActivas?.length) { setCatsActivas(new Set()); return }
+    const fids = fechasActivas.map(f => f.id)
+    const { data: partidos } = await supabase.from('partidos').select('id, fecha_id').in('fecha_id', fids)
+    const { data: preds } = await supabase.from('predicciones').select('partido_id')
+      .eq('usuario_id', user.id).in('partido_id', (partidos || []).map(p => p.id))
+    const predsSet = new Set((preds || []).map(p => p.partido_id))
+    const pendientes = new Set()
+    fechasActivas.forEach(f => {
+      const pts = (partidos || []).filter(p => p.fecha_id === f.id)
+      const completos = pts.filter(p => predsSet.has(p.id)).length
+      if (pts.length > 0 && completos < pts.length) pendientes.add(f.categoria_id)
+    })
+    setCatsActivas(pendientes)
+  }
 
   useEffect(() => { cargarFechas(cat) }, [cat])
   useEffect(() => { if (fechaId) cargarPartidos(fechaId) }, [fechaId])
@@ -98,6 +112,7 @@ export default function Prode() {
       await supabase.from('predicciones').upsert(upserts, { onConflict: 'usuario_id,partido_id' })
       setGuardado(true)
       setHayCAmbios(false)
+      calcularPendientes()
       setTimeout(() => setGuardado(false), 3000)
     }
     setGuardando(false)
