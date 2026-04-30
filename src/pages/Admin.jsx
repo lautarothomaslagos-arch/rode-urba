@@ -56,6 +56,8 @@ function AdminSemana() {
     setFechasActivas(activas || [])
     setFechasProximas(proximas || [])
     setEquipos(eqs || [])
+    const catsConActivas = [1,2,3,4,5].filter(c => (activas || []).some(f => f.categoria_id === c))
+    if (catsConActivas.length === 1) setCatAbierta(catsConActivas[0])
     setLoading(false)
   }
 

@@ -13,6 +13,7 @@ export default function Resultados() {
   const [preds, setPreds] = useState({})
   const [puntosFecha, setPuntosFecha] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [compartiendo, setCompartiendo] = useState(false)
 
   useEffect(() => { cargarFechas(cat) }, [cat])
   useEffect(() => { if (fechaId) cargarPartidos(fechaId) }, [fechaId])
@@ -105,9 +106,10 @@ export default function Resultados() {
           </div>
           {puntosFecha.bonus_pleno>0 && <div className="alert alert-gold" style={{marginBottom:8}}>¡Pleno! Acertaste todos los partidos (+5 pts)</div>}
           <button
+            disabled={compartiendo}
             onClick={async () => {
+              setCompartiendo(true)
               const numeroFecha = fi?.numero
-              // Busca todas las fechas con el mismo número (todos los torneos)
               const { data: todasFechas } = await supabase.from('fechas').select('id, categoria_id').eq('numero', numeroFecha)
               const fids = (todasFechas || []).map(f => f.id)
               const { data: allPuntos } = await supabase.from('puntos_fecha').select('*')
@@ -125,11 +127,18 @@ export default function Resultados() {
                 `https://pickandgo-prode.vercel.app`
               )
               window.open(`https://wa.me/?text=${msg}`, '_blank')
+              setCompartiendo(false)
             }}
-            style={{width:'100%',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,padding:'10px',color:'white',fontSize:13,fontWeight:600,cursor:'pointer',marginTop:4}}
+            style={{width:'100%',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,padding:'10px',color:'white',fontSize:13,fontWeight:600,cursor:'pointer',marginTop:4,opacity:compartiendo?0.7:1}}
           >
-            📲 Compartir resultado por WhatsApp
+            {compartiendo ? '⏳ Preparando...' : '📲 Compartir resultado por WhatsApp'}
           </button>
+        </div>
+      )}
+
+      {!loading && partidos.length > 0 && user && Object.keys(preds).length === 0 && (
+        <div className="alert" style={{background:'rgba(201,162,39,0.1)',border:'1px solid rgba(201,162,39,0.3)',color:'var(--dorado-oscuro)',marginBottom:12}}>
+          No cargaste predicciones para esta fecha
         </div>
       )}
 

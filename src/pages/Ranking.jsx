@@ -67,8 +67,7 @@ function FilaRanking({ item, idx, esYo, subVista, refProp }) {
 
 export default function Ranking() {
   const { perfil } = useAuth()
-  const [vista, setVista] = useState('personal')
-  const [subVista, setSubVista] = useState('anual')
+  const [modo, setModo] = useState('anual')
   const [busqueda, setBusqueda] = useState('')
   const [fechas, setFechas] = useState([])
   const [fechaNum, setFechaNum] = useState(null)
@@ -81,9 +80,9 @@ export default function Ranking() {
 
   useEffect(() => { cargarFechas() }, [])
   useEffect(() => {
-    if (vista === 'personal') cargarPersonal()
-    else cargarClubs()
-  }, [vista, subVista, fechaNum])
+    if (modo === 'clubes') cargarClubs()
+    else cargarPersonal()
+  }, [modo, fechaNum])
 
   useEffect(() => {
     if (!miFilaRef.current || !scrollContainerRef.current) return
@@ -93,7 +92,7 @@ export default function Ranking() {
     )
     observer.observe(miFilaRef.current)
     return () => observer.disconnect()
-  }, [lista, subVista])
+  }, [lista, modo])
 
   async function cargarFechas() {
     const { data } = await supabase.from('fechas')
@@ -108,7 +107,7 @@ export default function Ranking() {
   async function cargarPersonal() {
     setLoading(true)
     try {
-      if (subVista === 'anual') {
+      if (modo === 'anual') {
         const { data, error } = await supabase.from('puntos_totales')
           .select('puntos_acumulados, fechas_jugadas, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual, racha_maxima)')
           .eq('temporada_id', 1)
@@ -124,7 +123,7 @@ export default function Ranking() {
           agrupado[uid].fechas_jugadas = Math.max(agrupado[uid].fechas_jugadas, item.fechas_jugadas || 0)
         })
         setLista(Object.values(agrupado).sort((a,b) => b.puntos_acumulados - a.puntos_acumulados))
-      } else if (fechaNum !== null) {
+      } else if (modo === 'fecha' && fechaNum !== null) {
         const { data: fechasIds } = await supabase.from('fechas')
           .select('id').eq('numero', fechaNum).eq('resultados_cargados', true)
         const ids = fechasIds?.map(f => f.id) || []
@@ -201,18 +200,12 @@ export default function Ranking() {
       </div>
 
       <div className="tabs-box">
-        <button className={`tab-btn ${vista==='personal'?'active':''}`} onClick={() => setVista('personal')}>Ranking personal</button>
-        <button className={`tab-btn ${vista==='clubes'?'active':''}`} onClick={() => setVista('clubes')}>Por clubes</button>
+        <button className={`tab-btn ${modo==='anual'?'active':''}`} onClick={() => setModo('anual')}>Anual 2026</button>
+        <button className={`tab-btn ${modo==='fecha'?'active':''}`} onClick={() => setModo('fecha')}>Por fecha</button>
+        <button className={`tab-btn ${modo==='clubes'?'active':''}`} onClick={() => setModo('clubes')}>Por clubes</button>
       </div>
 
-      {vista === 'personal' && (
-        <div className="tabs-box">
-          <button className={`tab-btn ${subVista==='anual'?'active':''}`} onClick={() => setSubVista('anual')}>Anual 2026</button>
-          <button className={`tab-btn ${subVista==='fecha'?'active':''}`} onClick={() => setSubVista('fecha')}>Por fecha</button>
-        </div>
-      )}
-
-      {vista === 'personal' && subVista === 'fecha' && fechas.length > 0 && (
+      {modo === 'fecha' && fechas.length > 0 && (
         <div className="tabs-box" style={{marginBottom:16}}>
           {fechas.map(f => (
             <button key={f.numero} className={`tab-btn ${fechaNum===f.numero?'active':''}`}
@@ -223,7 +216,7 @@ export default function Ranking() {
         </div>
       )}
 
-      {vista === 'personal' && !loading && lista.length > 0 && (
+      {modo !== 'clubes' && !loading && lista.length > 0 && (
         <input
           className="form-input"
           placeholder="🔍 Buscar por usuario o club..."
@@ -235,13 +228,13 @@ export default function Ranking() {
 
       {loading && <div className="loading"><div className="spinner"></div></div>}
 
-      {!loading && vista === 'personal' && (
+      {!loading && modo !== 'clubes' && (
         lista.length === 0
           ? <div className="empty-state"><div className="empty-icon">🏆</div><div className="empty-title">Sin datos todavía</div></div>
           : <div className="card" style={{padding:0,overflow:'hidden'}}>
               <div style={{padding:'12px 16px',background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--dorado)',letterSpacing:1}}>
-                  {subVista==='anual' ? 'Ranking anual 2026' : `Fecha ${fechaNum} — todos los torneos`}
+                  {modo==='anual' ? 'Ranking anual 2026' : `Fecha ${fechaNum} — todos los torneos`}
                 </span>
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>
                   {busqueda ? `${listaFiltrada.length} resultados` : `${lista.length} participantes`}
@@ -258,7 +251,7 @@ export default function Ranking() {
                       item={item}
                       idx={idxReal}
                       esYo={esYo}
-                      subVista={subVista}
+                      subVista={modo}
                       refProp={esYo ? miFilaRef : null}
                     />
                   )
@@ -274,7 +267,7 @@ export default function Ranking() {
                     item={miItem}
                     idx={miIdx}
                     esYo={true}
-                    subVista={subVista}
+                    subVista={modo}
                     refProp={null}
                   />
                 </div>
@@ -282,7 +275,7 @@ export default function Ranking() {
             </div>
       )}
 
-      {!loading && vista === 'clubes' && (
+      {!loading && modo === 'clubes' && (
         listaClubs.length === 0
           ? <div className="empty-state"><div className="empty-icon">🏉</div><div className="empty-title">Sin datos de clubes todavía</div><p style={{fontSize:13}}>Los usuarios deben seleccionar su club en el perfil</p></div>
           : <div className="card" style={{padding:0,overflow:'hidden'}}>

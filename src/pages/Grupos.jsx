@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 export default function Grupos() {
   const { user, perfil } = useAuth()
-  const [seccion, setSeccion] = useState('mis-grupos')
+  const [searchParams] = useSearchParams()
+  const [seccion, setSeccion] = useState(() => searchParams.get('codigo') ? 'unirse' : 'mis-grupos')
   const [misGrupos, setMisGrupos] = useState([])
   const [grupoActivo, setGrupoActivo] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -55,7 +57,7 @@ export default function Grupos() {
         <CrearGrupo userId={user.id} onCreado={() => { cargarMisGrupos(); setSeccion('mis-grupos') }} />
       )}
       {seccion === 'unirse' && (
-        <UnirseGrupo userId={user.id} onUnido={() => { cargarMisGrupos(); setSeccion('mis-grupos') }} />
+        <UnirseGrupo userId={user.id} codigoInicial={searchParams.get('codigo') || ''} onUnido={() => { cargarMisGrupos(); setSeccion('mis-grupos') }} />
       )}
     </div>
   )
@@ -63,6 +65,8 @@ export default function Grupos() {
 
 // ---- MIS GRUPOS ----
 function MisGrupos({ grupos, loading, userId, onSelect, onRefresh }) {
+  const [copiado, setCopiado] = useState(null)
+
   async function abandonar(grupoId) {
     if (!confirm('¿Abandonar este grupo?')) return
     await supabase.from('grupo_miembros').delete().eq('grupo_id', grupoId).eq('usuario_id', userId)
@@ -108,12 +112,22 @@ function MisGrupos({ grupos, loading, userId, onSelect, onRefresh }) {
             >Ver ranking</button>
             <button
               className="btn btn-small"
-              style={{ background: 'transparent', border: '1px solid var(--gris-borde)', color: 'var(--texto-suave)' }}
+              style={{ background: 'transparent', border: '1px solid var(--gris-borde)', color: copiado === g.id ? 'var(--dorado-oscuro)' : 'var(--texto-suave)' }}
               onClick={() => {
                 navigator.clipboard.writeText(g.codigo)
-                alert('Código copiado: ' + g.codigo)
+                setCopiado(g.id)
+                setTimeout(() => setCopiado(null), 2000)
               }}
-            >📋 Copiar código</button>
+            >{copiado === g.id ? '✓ Copiado' : '📋 Copiar código'}</button>
+            <button
+              className="btn btn-small"
+              style={{ background: 'transparent', border: '1px solid var(--gris-borde)', color: copiado === `link-${g.id}` ? 'var(--dorado-oscuro)' : 'var(--texto-suave)' }}
+              onClick={() => {
+                navigator.clipboard.writeText(`https://pickandgo-prode.vercel.app/grupos?codigo=${g.codigo}`)
+                setCopiado(`link-${g.id}`)
+                setTimeout(() => setCopiado(null), 2000)
+              }}
+            >{copiado === `link-${g.id}` ? '✓ Link copiado' : '🔗 Copiar link'}</button>
             {g.creador_id !== userId && (
               <button
                 className="btn btn-small btn-danger"
@@ -137,6 +151,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const [fechaNum, setFechaNum] = useState(null)
   const [editando, setEditando] = useState(false)
   const [nuevoNombre, setNuevoNombre] = useState(grupo.nombre)
+  const [displayNombre, setDisplayNombre] = useState(grupo.nombre)
   const [subiendo, setSubiendo] = useState(false)
   const [preview, setPreview] = useState(grupo.imagen_url)
   const [msg, setMsg] = useState('')
@@ -247,7 +262,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
 
   async function guardarCambios() {
     const { error } = await supabase.from('grupos').update({ nombre: nuevoNombre }).eq('id', grupo.id)
-    if (!error) { setMsg('✓ Guardado'); setEditando(false); grupo.nombre = nuevoNombre }
+    if (!error) { setMsg('✓ Guardado'); setEditando(false); setDisplayNombre(nuevoNombre) }
     else setMsg('Error: ' + error.message)
     setTimeout(() => setMsg(''), 3000)
   }
@@ -294,7 +309,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
             {editando ? (
               <input className="form-input" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} style={{ marginBottom: 6 }} />
             ) : (
-              <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--azul)' }}>{grupo.nombre}</div>
+              <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--azul)' }}>{displayNombre}</div>
             )}
             <div style={{ fontSize: 12, color: 'var(--texto-suave)' }}>
               Código: <span style={{ fontWeight: 700, color: 'var(--dorado-oscuro)', letterSpacing: 1 }}>{grupo.codigo}</span>
@@ -346,7 +361,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--dorado)', letterSpacing: 1 }}>
-              {subVista === 'anual' ? `${grupo.nombre} — Anual` : `${grupo.nombre} — Fecha ${fechaNum}`}
+              {subVista === 'anual' ? `${displayNombre} — Anual` : `${displayNombre} — Fecha ${fechaNum}`}
             </span>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{ranking.length} participantes</span>
           </div>
@@ -445,8 +460,8 @@ function CrearGrupo({ userId, onCreado }) {
 }
 
 // ---- UNIRSE A GRUPO ----
-function UnirseGrupo({ userId, onUnido }) {
-  const [codigo, setCodigo] = useState('')
+function UnirseGrupo({ userId, codigoInicial, onUnido }) {
+  const [codigo, setCodigo] = useState(codigoInicial || '')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 

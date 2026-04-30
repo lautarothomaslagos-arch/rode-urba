@@ -3,6 +3,16 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
+function mensajeError(msg) {
+  if (!msg) return 'Ocurrió un error, intentá de nuevo'
+  if (msg.includes('already registered') || msg.includes('already been registered')) return 'Ya existe una cuenta con este email'
+  if (msg.includes('Password should be at least')) return 'La contraseña debe tener al menos 6 caracteres'
+  if (msg.includes('invalid format') || msg.includes('Unable to validate email')) return 'El formato del email no es válido'
+  if (msg.includes('rate limit') || msg.includes('too many')) return 'Demasiados intentos, esperá un momento'
+  if (msg.includes('not confirmed')) return 'Confirmá tu email antes de ingresar'
+  return 'Ocurrió un error, intentá de nuevo'
+}
+
 export default function Login({ modoInicial = 'login' }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,7 +41,7 @@ export default function Login({ modoInicial = 'login' }) {
         return
       }
       const { error } = await signUp({ email, password, username, nombreCompleto: nombre })
-      if (error) setError(error.message)
+      if (error) setError(mensajeError(error.message))
       else setModo('confirmacion')
     } else if (modo === 'recuperar') {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

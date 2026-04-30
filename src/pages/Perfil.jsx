@@ -36,6 +36,10 @@ export default function Perfil() {
   const [preview, setPreview] = useState(null)
   const [racha, setRacha] = useState({ actual: 0, maxima: 0 })
   const [stats, setStats] = useState(null)
+  const [pass1, setPass1] = useState('')
+  const [pass2, setPass2] = useState('')
+  const [msgPass, setMsgPass] = useState('')
+  const [loadingPass, setLoadingPass] = useState(false)
 
   useEffect(() => {
     if (perfil) {
@@ -57,13 +61,32 @@ export default function Perfil() {
   async function cargarStats() {
     const [{ data: totales }, { data: porFecha }] = await Promise.all([
       supabase.from('puntos_totales').select('puntos_acumulados').eq('usuario_id', user.id),
-      supabase.from('puntos_fecha').select('total_puntos').eq('usuario_id', user.id)
+      supabase.from('puntos_fecha').select('total_puntos, fechas(numero)').eq('usuario_id', user.id)
     ])
     const totalPuntos = totales?.reduce((s, r) => s + (r.puntos_acumulados || 0), 0) || 0
-    const totalFechas = porFecha?.length || 0
-    const mejorFecha = porFecha?.reduce((max, r) => Math.max(max, r.total_puntos || 0), 0) || 0
+    const mapaFechas = {}
+    porFecha?.forEach(p => {
+      const num = p.fechas?.numero
+      if (num == null) return
+      if (!mapaFechas[num]) mapaFechas[num] = 0
+      mapaFechas[num] += (p.total_puntos || 0)
+    })
+    const totalFechas = Object.keys(mapaFechas).length
+    const mejorFecha = Object.values(mapaFechas).reduce((max, v) => Math.max(max, v), 0) || 0
     const promedio = totalFechas > 0 ? Math.round(totalPuntos / totalFechas * 10) / 10 : 0
     setStats({ totalPuntos, totalFechas, mejorFecha, promedio })
+  }
+
+  async function cambiarPassword(e) {
+    e.preventDefault()
+    if (pass1.length < 6) { setMsgPass('Mínimo 6 caracteres'); return }
+    if (pass1 !== pass2) { setMsgPass('Las contraseñas no coinciden'); return }
+    setLoadingPass(true)
+    const { error } = await supabase.auth.updateUser({ password: pass1 })
+    if (error) setMsgPass('Error: ' + error.message)
+    else { setMsgPass('✓ Contraseña actualizada'); setPass1(''); setPass2('') }
+    setLoadingPass(false)
+    setTimeout(() => setMsgPass(''), 4000)
   }
 
   async function guardar(e) {
@@ -214,6 +237,27 @@ export default function Perfil() {
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </form>
+      </div>
+
+      {/* CAMBIAR CONTRASEÑA */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">🔐 Cambiar contraseña</span>
+        </div>
+        {msgPass && <div className={`alert ${msgPass.startsWith('Error') || msgPass === 'Mínimo 6 caracteres' || msgPass === 'Las contraseñas no coinciden' ? 'alert-error' : 'alert-success'}`}>{msgPass}</div>}
+        <form onSubmit={cambiarPassword}>
+          <div className="form-group">
+            <label className="form-label">Nueva contraseña</label>
+            <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" value={pass1} onChange={e => setPass1(e.target.value)} minLength={6} required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Repetir contraseña</label>
+            <input className="form-input" type="password" placeholder="Repetí la contraseña" value={pass2} onChange={e => setPass2(e.target.value)} minLength={6} required />
+          </div>
+          <button type="submit" className="btn btn-secondary" disabled={loadingPass}>
+            {loadingPass ? 'Guardando...' : 'Cambiar contraseña'}
           </button>
         </form>
       </div>
