@@ -119,6 +119,9 @@ export default function Navbar() {
             <Link to="/grupos" className={`mobile-menu-item ${isActive('/grupos')}`}>
               <span>👥</span> Grupos
             </Link>
+            <Link to="/perfil" className={`mobile-menu-item ${isActive('/perfil')}`}>
+              <span>👤</span> Mi perfil
+            </Link>
             {perfil?.es_admin && (
               <Link to="/admin" className={`mobile-menu-item ${isActive('/admin')}`}>
                 <span>⚙️</span> Admin
