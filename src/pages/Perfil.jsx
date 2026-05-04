@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { CATS, CAT_CLASS } from '../lib/constants'
 
 const CLUBES_URBA = [
   '--- Top 14 ---','Alumni','Atlético del Rosario','Belgrano Athletic','Buenos Aires C&RC','CASI','Champagnat','CUBA','Hindú Club','La Plata RC','Los Matreros','Newman','Regatas Bella Vista','SIC','Los Tilos',
@@ -13,21 +14,30 @@ const CLUBES_URBA = [
 ]
 
 const BASE = 'https://xmtsxdzwurxygqqccgdc.supabase.co/storage/v1/object/public/trofeos'
-
 const TROFEOS = [
-  { nombre: 'Puma',    minimo: 15, img: `${BASE}/trofeo_puma_v2.png`,     desc: 'Nivel seleccionado',    color: '#C9A227', bg: 'rgba(201,162,39,0.12)' },
-  { nombre: 'Capitán', minimo: 10, img: `${BASE}/trofeo_capitan_v2.png`,  desc: 'El referente del grupo', color: '#C9A227', bg: 'rgba(201,162,39,0.08)' },
-  { nombre: 'Titular', minimo: 6,  img: `${BASE}/trofeo_titular_v2.png`,  desc: 'Ganaste tu lugar',       color: '#9ca3af', bg: 'rgba(156,163,175,0.12)' },
-  { nombre: 'Suplente',minimo: 3,  img: `${BASE}/trofeo_suplente_v2.png`, desc: 'Entraste al equipo',     color: '#cd7c3e', bg: 'rgba(205,124,62,0.12)' },
+  { nombre: 'Puma',    minimo: 15, img: `${BASE}/trofeo_puma_v2.png`,     desc: 'Nivel seleccionado',     color: '#C9A227', bg: 'rgba(201,162,39,0.12)' },
+  { nombre: 'Capitán', minimo: 10, img: `${BASE}/trofeo_capitan_v2.png`,  desc: 'El referente del grupo',  color: '#C9A227', bg: 'rgba(201,162,39,0.08)' },
+  { nombre: 'Titular', minimo: 6,  img: `${BASE}/trofeo_titular_v2.png`,  desc: 'Ganaste tu lugar',        color: '#9ca3af', bg: 'rgba(156,163,175,0.12)' },
+  { nombre: 'Suplente',minimo: 3,  img: `${BASE}/trofeo_suplente_v2.png`, desc: 'Entraste al equipo',      color: '#cd7c3e', bg: 'rgba(205,124,62,0.12)' },
 ]
+function getTrofeo(r) { return TROFEOS.find(t => r >= t.minimo) || null }
 
-function getTrofeo(rachaMaxima) {
-  return TROFEOS.find(t => rachaMaxima >= t.minimo) || null
-}
+const CATS_SHORT = { 1: 'T14', 2: 'P.A', 3: 'P.B', 4: 'P.C', 5: '2da' }
+const LOGROS_CATS = ['Exactos', 'Rendimiento', 'Ranking', 'Puntos', 'Especiales']
+
+const TABS = [
+  { id: 'historial',      label: '📋 Historial' },
+  { id: 'logros',         label: '🏅 Logros' },
+  { id: 'datos',          label: '👤 Mis datos' },
+  { id: 'contrasena',     label: '🔐 Contraseña' },
+  { id: 'notificaciones', label: '🔔 Notificaciones' },
+  { id: 'invitar',        label: '📲 Invitar' },
+]
 
 export default function Perfil() {
   const { perfil, cargarPerfil, user } = useAuth()
   const { permiso, suscrito, cargando: cargandoNotif, suscribirse, desuscribirse } = usePushNotifications()
+
   const [nombre, setNombre] = useState('')
   const [club, setClub] = useState('')
   const [loading, setLoading] = useState(false)
@@ -40,7 +50,10 @@ export default function Perfil() {
   const [pass2, setPass2] = useState('')
   const [msgPass, setMsgPass] = useState('')
   const [loadingPass, setLoadingPass] = useState(false)
-  const [statsEquipos, setStatsEquipos] = useState([])
+  const [pestaña, setPestaña] = useState('historial')
+  const [historial, setHistorial] = useState([])
+  const [logros, setLogros] = useState([])
+  const [loadingPestaña, setLoadingPestaña] = useState(false)
 
   useEffect(() => {
     if (perfil) {
@@ -51,8 +64,14 @@ export default function Perfil() {
   }, [perfil])
 
   useEffect(() => {
-    if (user) { cargarRacha(); cargarStats(); cargarStatsEquipos() }
+    if (user) { cargarRacha(); cargarStats() }
   }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    if (pestaña === 'historial') cargarHistorial()
+    else if (pestaña === 'logros') cargarLogros()
+  }, [user, pestaña])
 
   async function cargarRacha() {
     const { data } = await supabase.from('perfiles').select('racha_actual, racha_maxima').eq('id', user.id).single()
@@ -83,37 +102,153 @@ export default function Perfil() {
     allTotales?.forEach(r => { byUser[r.usuario_id] = (byUser[r.usuario_id] || 0) + (r.puntos_acumulados || 0) })
     const sorted = Object.values(byUser).sort((a, b) => b - a)
     const posicion = sorted.findIndex(pts => pts <= totalPuntos) + 1
-    const totalJugadores = sorted.length
-    setStats({ totalPuntos, totalFechas, mejorFecha, promedio, pctAcierto, posicion, totalJugadores })
+    setStats({ totalPuntos, totalFechas, mejorFecha, promedio, pctAcierto, posicion, totalJugadores: sorted.length })
   }
 
-  async function cargarStatsEquipos() {
-    const { data } = await supabase.from('predicciones')
-      .select('goles_local, goles_visitante, partidos(resultado_local, resultado_visitante, equipo_local:equipo_local_id(id,nombre), equipo_visitante:equipo_visitante_id(id,nombre))')
+  async function cargarHistorial() {
+    setLoadingPestaña(true)
+    const { data: porFecha } = await supabase.from('puntos_fecha')
+      .select('total_puntos, bonus_pleno, fecha_id, fechas(numero, categoria_id)')
       .eq('usuario_id', user.id)
-    const equipoStats = {}
-    data?.forEach(pred => {
-      const p = pred.partidos
-      if (!p || p.resultado_local == null || p.resultado_visitante == null) return
-      const exacto = pred.goles_local === p.resultado_local && pred.goles_visitante === p.resultado_visitante
-      const signo = !exacto && (
-        (pred.goles_local > pred.goles_visitante && p.resultado_local > p.resultado_visitante) ||
-        (pred.goles_local < pred.goles_visitante && p.resultado_local < p.resultado_visitante) ||
-        (pred.goles_local === pred.goles_visitante && p.resultado_local === p.resultado_visitante)
-      )
-      const pts = exacto ? 3 : signo ? 1 : 0;
-      [p.equipo_local, p.equipo_visitante].forEach(equipo => {
-        if (!equipo) return
-        if (!equipoStats[equipo.id]) equipoStats[equipo.id] = { nombre: equipo.nombre, jugados: 0, acertados: 0, pts: 0 }
-        equipoStats[equipo.id].jugados++
-        if (exacto || signo) equipoStats[equipo.id].acertados++
-        equipoStats[equipo.id].pts += pts
-      })
+    if (!porFecha?.length) { setHistorial([]); setLoadingPestaña(false); return }
+
+    const allFechaIds = [...new Set(porFecha.map(p => p.fecha_id).filter(Boolean))]
+    const { data: allPuntos } = await supabase.from('puntos_fecha')
+      .select('usuario_id, total_puntos, fechas(numero)')
+      .in('fecha_id', allFechaIds)
+
+    const byNumAll = {}
+    allPuntos?.forEach(p => {
+      const num = p.fechas?.numero
+      if (num == null) return
+      if (!byNumAll[num]) byNumAll[num] = {}
+      byNumAll[num][p.usuario_id] = (byNumAll[num][p.usuario_id] || 0) + p.total_puntos
     })
-    setStatsEquipos(
-      Object.values(equipoStats)
-        .sort((a, b) => b.pts - a.pts || b.acertados - a.acertados || a.nombre.localeCompare(b.nombre))
+    const posicionPorFecha = {}
+    Object.entries(byNumAll).forEach(([num, pts]) => {
+      const s = Object.entries(pts).sort(([,a],[,b]) => b - a)
+      posicionPorFecha[num] = { pos: s.findIndex(([uid]) => uid === user.id) + 1, total: s.length }
+    })
+
+    const byNum = {}
+    porFecha.forEach(p => {
+      const num = p.fechas?.numero
+      const cat = p.fechas?.categoria_id
+      if (num == null) return
+      if (!byNum[num]) byNum[num] = { numero: num, totalPts: 0, pleno: 0, cats: new Set() }
+      byNum[num].totalPts += (p.total_puntos || 0)
+      byNum[num].pleno += (p.bonus_pleno || 0)
+      if (cat) byNum[num].cats.add(cat)
+    })
+
+    setHistorial(
+      Object.values(byNum)
+        .sort((a, b) => b.numero - a.numero)
+        .map(f => ({ ...f, cats: [...f.cats].sort((a,b) => a-b), ...(posicionPorFecha[f.numero] || {}) }))
     )
+    setLoadingPestaña(false)
+  }
+
+  async function cargarLogros() {
+    setLoadingPestaña(true)
+    const [{ data: porFechaRaw }, { data: preds }] = await Promise.all([
+      supabase.from('puntos_fecha')
+        .select('total_puntos, puntos_exactos, partidos_acertados, partidos_totales, bonus_pleno, fecha_id, fechas(numero)')
+        .eq('usuario_id', user.id),
+      supabase.from('predicciones')
+        .select('goles_local, goles_visitante, partidos(resultado_local, resultado_visitante, es_especial, fechas(numero, categoria_id))')
+        .eq('usuario_id', user.id)
+    ])
+
+    const byNum = {}
+    porFechaRaw?.forEach(p => {
+      const num = p.fechas?.numero
+      if (num == null) return
+      if (!byNum[num]) byNum[num] = { totalPts: 0, totalAcertados: 0, totalJugados: 0, pleno: 0 }
+      byNum[num].totalPts += (p.total_puntos || 0)
+      byNum[num].totalAcertados += (p.partidos_acertados || 0)
+      byNum[num].totalJugados += (p.partidos_totales || 0)
+      byNum[num].pleno += (p.bonus_pleno || 0)
+    })
+    const fechasJugadas = Object.values(byNum)
+    const totalPuntos = porFechaRaw?.reduce((s, p) => s + (p.total_puntos || 0), 0) || 0
+
+    const predsConRes = preds?.filter(p => p.partidos?.resultado_local != null) || []
+    const totalExactos = predsConRes.filter(p =>
+      p.goles_local === p.partidos.resultado_local && p.goles_visitante === p.partidos.resultado_visitante
+    ).length
+
+    const exactosPorFecha = {}
+    const catsPorFecha = {}
+    predsConRes.forEach(p => {
+      const num = p.partidos?.fechas?.numero
+      const cat = p.partidos?.fechas?.categoria_id
+      if (num == null) return
+      const exacto = p.goles_local === p.partidos.resultado_local && p.goles_visitante === p.partidos.resultado_visitante
+      if (exacto) exactosPorFecha[num] = (exactosPorFecha[num] || 0) + 1
+      if (cat) { if (!catsPorFecha[num]) catsPorFecha[num] = new Set(); catsPorFecha[num].add(cat) }
+    })
+
+    const reyDestacado = predsConRes.some(p => p.partidos.es_especial && p.goles_local === p.partidos.resultado_local && p.goles_visitante === p.partidos.resultado_visitante)
+    const empatePreciso = predsConRes.some(p => p.partidos.resultado_local === p.partidos.resultado_visitante && p.goles_local === p.partidos.resultado_local && p.goles_visitante === p.partidos.resultado_visitante)
+    const omnipresente = Object.values(catsPorFecha).some(cats => cats.size >= 5)
+    const invicto = fechasJugadas.some(f => f.totalJugados >= 3 && f.totalAcertados === f.totalJugados)
+    const pleno = fechasJugadas.some(f => f.pleno > 0)
+    const granSemana = fechasJugadas.some(f => f.totalPts >= 25)
+    const ojoClinico = fechasJugadas.some(f => f.totalJugados >= 4 && f.totalAcertados / f.totalJugados >= 0.7)
+    const hatTrick = Object.values(exactosPorFecha).some(n => n >= 3)
+    const francotirador = Object.values(exactosPorFecha).some(n => n >= 5)
+
+    const fechasSorted = Object.entries(byNum).sort(([a],[b]) => Number(a)-Number(b)).map(([num, f]) => ({ num: Number(num), ...f }))
+    let constante = false
+    for (let i = 0; i <= fechasSorted.length - 3; i++) {
+      const [f1, f2, f3] = fechasSorted.slice(i, i+3)
+      if (f2.num !== f1.num+1 || f3.num !== f2.num+1) continue
+      if ([f1,f2,f3].every(f => f.totalJugados >= 3 && f.totalAcertados / f.totalJugados >= 0.6)) { constante = true; break }
+    }
+
+    const allFechaIds = [...new Set(porFechaRaw?.map(p => p.fecha_id).filter(Boolean) || [])]
+    let lider = false, podio = false, contLider = 0, contPodio = 0
+    if (allFechaIds.length) {
+      const { data: allPuntos } = await supabase.from('puntos_fecha')
+        .select('usuario_id, total_puntos, fechas(numero)').in('fecha_id', allFechaIds)
+      const byNumAll = {}
+      allPuntos?.forEach(p => {
+        const num = p.fechas?.numero
+        if (num == null) return
+        if (!byNumAll[num]) byNumAll[num] = {}
+        byNumAll[num][p.usuario_id] = (byNumAll[num][p.usuario_id] || 0) + p.total_puntos
+      })
+      Object.values(byNumAll).forEach(pts => {
+        const s = Object.entries(pts).sort(([,a],[,b]) => b-a)
+        const pos = s.findIndex(([uid]) => uid === user.id) + 1
+        if (pos > 0) { if (pos === 1) { lider = true; contLider++ } if (pos <= 3) { podio = true; contPodio++ } }
+      })
+    }
+
+    setLogros([
+      { id:'primer_exacto',  icon:'🎯', nombre:'Primer exacto',    desc:'Tu primer resultado exacto',                       cat:'Exactos',     desbloqueado: totalExactos >= 1 },
+      { id:'hat_trick',      icon:'⚽', nombre:'Hat-trick',         desc:'3 exactos en la misma fecha',                     cat:'Exactos',     desbloqueado: hatTrick },
+      { id:'francotirador',  icon:'⚡', nombre:'Francotirador',     desc:'5 exactos en la misma fecha',                     cat:'Exactos',     desbloqueado: francotirador },
+      { id:'diez_exactos',   icon:'🏹', nombre:'10 exactos',        desc:'10 exactos acumulados',                           cat:'Exactos',     desbloqueado: totalExactos >= 10,  progreso: totalExactos < 10 ? `${totalExactos}/10` : null },
+      { id:'veinticinco',    icon:'💎', nombre:'25 exactos',        desc:'25 exactos acumulados',                           cat:'Exactos',     desbloqueado: totalExactos >= 25,  progreso: totalExactos < 25 ? `${totalExactos}/25` : null },
+      { id:'pleno',          icon:'💥', nombre:'Pleno',             desc:'Bonus pleno en una fecha',                        cat:'Rendimiento', desbloqueado: pleno },
+      { id:'invicto',        icon:'🛡️', nombre:'Invicto',           desc:'Fecha sin ningún partido fallado',                 cat:'Rendimiento', desbloqueado: invicto },
+      { id:'ojo_clinico',    icon:'👁️', nombre:'Ojo clínico',       desc:'70%+ de acierto en una fecha (mín. 4)',           cat:'Rendimiento', desbloqueado: ojoClinico },
+      { id:'constante',      icon:'🔄', nombre:'Constante',         desc:'3 fechas seguidas con 60%+ de acierto',           cat:'Rendimiento', desbloqueado: constante },
+      { id:'gran_semana',    icon:'📊', nombre:'Gran semana',       desc:'25+ pts en una semana (todos los torneos)',        cat:'Rendimiento', desbloqueado: granSemana },
+      { id:'podio',          icon:'🥇', nombre:'Podio',             desc:'Top 3 en una fecha',                              cat:'Ranking',     desbloqueado: podio },
+      { id:'lider',          icon:'👑', nombre:'Líder',             desc:'#1 en una fecha',                                 cat:'Ranking',     desbloqueado: lider },
+      { id:'rey',            icon:'🏆', nombre:'Rey',               desc:'#1 en 3 fechas distintas',                        cat:'Ranking',     desbloqueado: contLider >= 3, progreso: contLider < 3 ? `${contLider}/3` : null },
+      { id:'podio_habitual', icon:'🥈', nombre:'Podio habitual',    desc:'Top 3 en 5 fechas distintas',                     cat:'Ranking',     desbloqueado: contPodio >= 5, progreso: contPodio < 5 ? `${contPodio}/5` : null },
+      { id:'cincuenton',     icon:'🔢', nombre:'Cincuentón',        desc:'50 pts acumulados',                               cat:'Puntos',      desbloqueado: totalPuntos >= 50,  progreso: totalPuntos < 50 ? `${totalPuntos}/50` : null },
+      { id:'centenario',     icon:'💯', nombre:'Centenario',        desc:'100 pts acumulados',                              cat:'Puntos',      desbloqueado: totalPuntos >= 100, progreso: totalPuntos < 100 ? `${totalPuntos}/100` : null },
+      { id:'bicentenario',   icon:'🚀', nombre:'Bicentenario',      desc:'200 pts acumulados',                              cat:'Puntos',      desbloqueado: totalPuntos >= 200, progreso: totalPuntos < 200 ? `${totalPuntos}/200` : null },
+      { id:'rey_destacado',  icon:'⭐', nombre:'Rey del destacado', desc:'Exacto en el partido especial',                   cat:'Especiales',  desbloqueado: reyDestacado },
+      { id:'empate_preciso', icon:'🤝', nombre:'Empate preciso',    desc:'Exacto en un partido que terminó empatado',       cat:'Especiales',  desbloqueado: empatePreciso },
+      { id:'omnipresente',   icon:'🌍', nombre:'Omnipresente',      desc:'Predijiste en los 5 torneos en la misma fecha',   cat:'Especiales',  desbloqueado: omnipresente },
+    ])
+    setLoadingPestaña(false)
   }
 
   async function cambiarPassword(e) {
@@ -153,9 +288,7 @@ export default function Perfil() {
       setPreview(data.publicUrl + '?t=' + Date.now())
       cargarPerfil(user.id)
       setMsg('✓ Foto actualizada')
-    } catch(err) {
-      setMsg('Error al subir: ' + err.message)
-    }
+    } catch(err) { setMsg('Error al subir: ' + err.message) }
     setSubiendo(false)
     setTimeout(() => setMsg(''), 4000)
   }
@@ -170,19 +303,11 @@ export default function Perfil() {
         <h1 className="page-title">Mi <span className="page-title-accent">perfil</span></h1>
       </div>
 
+      {/* ===== SECCIÓN FIJA ===== */}
       <div className="card">
-        {/* Header avatar + username */}
         <div style={{display:'flex',alignItems:'center',gap:20,marginBottom:20,paddingBottom:20,borderBottom:'2px solid var(--gris)'}}>
-          <div style={{position:'relative',flexShrink:0}}>
-            <div style={{width:80,height:80,borderRadius:'50%',background:'linear-gradient(135deg,var(--dorado),var(--dorado-oscuro))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:700,color:'var(--azul)',overflow:'hidden',border:'3px solid var(--dorado)'}}>
-              {preview
-                ? <img src={preview} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
-                : ini}
-            </div>
-            <label style={{position:'absolute',bottom:-2,right:-2,width:26,height:26,background:'var(--rojo-vivo)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',border:'2px solid white',fontSize:16,color:'white',fontWeight:700}}>
-              {subiendo ? '⟳' : '+'}
-              <input type="file" accept="image/jpeg,image/png,image/webp" style={{display:'none'}} onChange={subirFoto} disabled={subiendo} />
-            </label>
+          <div style={{width:80,height:80,borderRadius:'50%',background:'linear-gradient(135deg,var(--dorado),var(--dorado-oscuro))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:700,color:'var(--azul)',overflow:'hidden',border:'3px solid var(--dorado)',flexShrink:0}}>
+            {preview ? <img src={preview} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
           </div>
           <div style={{flex:1}}>
             <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:22,fontWeight:700,color:'var(--azul)'}}>@{perfil?.username}</div>
@@ -191,17 +316,16 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* ESTADÍSTICAS */}
         {stats && (
           <div style={{marginBottom:20}}>
             <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Mis estadísticas 2026</div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
               {[
-                { v: stats.totalPuntos, l: 'Total pts', color: 'var(--azul)' },
-                { v: stats.totalFechas, l: 'Fechas', color: 'var(--texto)' },
-                { v: stats.mejorFecha,  l: 'Mejor fecha', color: 'var(--dorado-oscuro)' },
-                { v: `${stats.promedio}`, l: 'Promedio', color: 'var(--texto)' },
-                { v: `${stats.pctAcierto}%`, l: 'Acierto', color: '#16a34a' },
+                { v: stats.totalPuntos,              l: 'Total pts',    color: 'var(--azul)' },
+                { v: stats.totalFechas,              l: 'Fechas',       color: 'var(--texto)' },
+                { v: stats.mejorFecha,               l: 'Mejor fecha',  color: 'var(--dorado-oscuro)' },
+                { v: `${stats.promedio}`,            l: 'Promedio',     color: 'var(--texto)' },
+                { v: `${stats.pctAcierto}%`,         l: 'Acierto',      color: '#16a34a' },
                 { v: stats.posicion ? `#${stats.posicion}` : '—', l: `de ${stats.totalJugadores}`, color: 'var(--azul)' },
               ].map((s, i) => (
                 <div key={i} style={{textAlign:'center',padding:'10px 6px',background:'var(--gris)',borderRadius:10,border:'1px solid var(--gris-borde)'}}>
@@ -213,166 +337,227 @@ export default function Perfil() {
           </div>
         )}
 
-        {/* RACHA Y TROFEO */}
-        <div style={{marginBottom:20}}>
-          <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Racha de fechas jugadas</div>
-          <div style={{display:'flex',gap:10,marginBottom:12}}>
-            <div style={{flex:1,textAlign:'center',padding:'10px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
-              <div style={{fontSize:26,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--azul)',lineHeight:1}}>
-                {racha.actual > 0 ? '🔥' : '—'} {racha.actual}
-              </div>
-              <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha actual</div>
-            </div>
-            <div style={{flex:1,textAlign:'center',padding:'10px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
-              <div style={{fontSize:26,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--dorado-oscuro)',lineHeight:1}}>
-                🏆 {racha.maxima}
-              </div>
-              <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha máxima</div>
-            </div>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Racha de fechas jugadas</div>
+        <div style={{display:'flex',gap:10,marginBottom:12}}>
+          <div style={{flex:1,textAlign:'center',padding:'10px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
+            <div style={{fontSize:26,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--azul)',lineHeight:1}}>{racha.actual > 0 ? '🔥' : '—'} {racha.actual}</div>
+            <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha actual</div>
           </div>
-
-          {trofeo ? (
-            <div style={{display:'flex',alignItems:'center',gap:16,padding:'14px',background:trofeo.bg,borderRadius:12,border:`1.5px solid ${trofeo.color}40`}}>
-              <img src={trofeo.img} alt={trofeo.nombre} style={{width:56,height:56,objectFit:'contain',flexShrink:0}} />
-              <div>
-                <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:18,fontWeight:700,color:trofeo.color,letterSpacing:1}}>{trofeo.nombre.toUpperCase()}</div>
-                <div style={{fontSize:13,color:'var(--texto)',marginTop:2}}>"{trofeo.desc}"</div>
-                <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:3}}>Desbloqueado con {trofeo.minimo} fechas consecutivas</div>
-              </div>
-            </div>
-          ) : (
-            <div style={{padding:'12px 16px',background:'var(--gris)',borderRadius:10,textAlign:'center'}}>
-              <div style={{fontSize:13,color:'var(--texto-suave)'}}>
-                Todavía no tenés trofeo — completá {proximoTrofeo ? proximoTrofeo.minimo : 3} fechas consecutivas para ganar el primero 🏆
-              </div>
-            </div>
-          )}
-
-          {trofeo && proximoTrofeo && (
-            <div style={{marginTop:8,padding:'10px 14px',background:'var(--gris)',borderRadius:8,display:'flex',alignItems:'center',gap:10}}>
-              <img src={proximoTrofeo.img} alt={proximoTrofeo.nombre} style={{width:28,height:28,objectFit:'contain',opacity:0.4,flexShrink:0}} />
-              <div style={{fontSize:12,color:'var(--texto-suave)'}}>
-                Próximo: <strong style={{color:'var(--texto)'}}>{proximoTrofeo.nombre}</strong> — {proximoTrofeo.minimo} fechas consecutivas
-              </div>
-            </div>
-          )}
+          <div style={{flex:1,textAlign:'center',padding:'10px 8px',background:'rgba(201,162,39,0.08)',borderRadius:10,border:'1px solid rgba(201,162,39,0.25)'}}>
+            <div style={{fontSize:26,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--dorado-oscuro)',lineHeight:1}}>🏆 {racha.maxima}</div>
+            <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:4,textTransform:'uppercase',letterSpacing:0.5}}>Racha máxima</div>
+          </div>
         </div>
-
-        {/* MIS RIVALES */}
-        {statsEquipos.length > 0 && (
-          <div style={{marginBottom:20}}>
-            <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Mis rivales</div>
-            <div style={{maxHeight:260,overflowY:'auto'}}>
-              {statsEquipos.map((e, i) => {
-                const pct = Math.round(e.acertados / e.jugados * 100)
-                const color = pct >= 70 ? '#16a34a' : pct >= 40 ? 'var(--dorado-oscuro)' : '#dc2626'
-                const barColor = pct >= 70 ? '#16a34a' : pct >= 40 ? 'var(--dorado)' : '#dc2626'
-                return (
-                  <div key={e.nombre} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:i < statsEquipos.length-1 ? '1px solid var(--gris-borde)' : 'none'}}>
-                    <span style={{fontSize:11,color:'var(--texto-suave)',width:18,flexShrink:0,textAlign:'right'}}>{i+1}</span>
-                    <span style={{flex:1,fontSize:12,fontWeight:500,color:'var(--texto)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.nombre}</span>
-                    <span style={{fontSize:11,color:'var(--texto-suave)',flexShrink:0,width:20,textAlign:'right'}}>{e.jugados}j</span>
-                    <div style={{width:44,height:5,background:'var(--gris-borde)',borderRadius:3,flexShrink:0,overflow:'hidden'}}>
-                      <div style={{width:`${pct}%`,height:'100%',background:barColor,borderRadius:3}} />
-                    </div>
-                    <span style={{fontSize:12,fontWeight:700,color,width:34,textAlign:'right',flexShrink:0}}>{pct}%</span>
-                    <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,color:'var(--azul)',width:24,textAlign:'right',flexShrink:0}}>{e.pts}</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {msg && <div className={`alert ${msg.startsWith('Error')||msg.startsWith('La imagen')?'alert-error':'alert-success'}`}>{msg}</div>}
-
-        <form onSubmit={guardar}>
-          <div className="form-group">
-            <label className="form-label">Nombre completo</label>
-            <input className="form-input" type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Tu nombre" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Club al que pertenecés</label>
-            <select className="form-select" value={club} onChange={e => setClub(e.target.value)}>
-              <option value="">Seleccioná tu club</option>
-              {CLUBES_URBA.map((c,i) => (
-                c.startsWith('---')
-                  ? <option key={i} disabled style={{fontWeight:700,color:'#999'}}>{c}</option>
-                  : <option key={i} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar cambios'}
-          </button>
-        </form>
-      </div>
-
-      {/* CAMBIAR CONTRASEÑA */}
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">🔐 Cambiar contraseña</span>
-        </div>
-        {msgPass && <div className={`alert ${msgPass.startsWith('Error') || msgPass === 'Mínimo 6 caracteres' || msgPass === 'Las contraseñas no coinciden' ? 'alert-error' : 'alert-success'}`}>{msgPass}</div>}
-        <form onSubmit={cambiarPassword}>
-          <div className="form-group">
-            <label className="form-label">Nueva contraseña</label>
-            <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" value={pass1} onChange={e => setPass1(e.target.value)} minLength={6} required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Repetir contraseña</label>
-            <input className="form-input" type="password" placeholder="Repetí la contraseña" value={pass2} onChange={e => setPass2(e.target.value)} minLength={6} required />
-          </div>
-          <button type="submit" className="btn btn-secondary" disabled={loadingPass}>
-            {loadingPass ? 'Guardando...' : 'Cambiar contraseña'}
-          </button>
-        </form>
-      </div>
-
-      {/* INVITAR AMIGOS */}
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">👥 Invitá a un amigo</span>
-        </div>
-        <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>
-          ¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.
-        </p>
-        <button className="btn btn-primary" onClick={() => {
-          const mensaje = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
-          window.open(`https://wa.me/?text=${mensaje}`, '_blank')
-        }}>
-          📲 Invitar por WhatsApp
-        </button>
-      </div>
-
-      {/* NOTIFICACIONES */}
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">🔔 Notificaciones</span>
-        </div>
-        {'Notification' in window ? (
-          permiso === 'denied' ? (
-            <div className="alert alert-error">Bloqueaste las notificaciones. Para activarlas andá a la configuración de tu navegador y permitilas para este sitio.</div>
-          ) : (
+        {trofeo ? (
+          <div style={{display:'flex',alignItems:'center',gap:16,padding:'14px',background:trofeo.bg,borderRadius:12,border:`1.5px solid ${trofeo.color}40`}}>
+            <img src={trofeo.img} alt={trofeo.nombre} style={{width:56,height:56,objectFit:'contain',flexShrink:0}} />
             <div>
-              <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>
-                Recibí recordatorios antes del cierre del prode y avisos cuando se cargan los resultados.
-              </p>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',background:'var(--gris)',borderRadius:10,marginBottom:8}}>
-                <div>
-                  <div style={{fontWeight:600,fontSize:14}}>{suscrito ? '✅ Notificaciones activadas' : '🔕 Notificaciones desactivadas'}</div>
-                  <div style={{fontSize:12,color:'var(--texto-suave)',marginTop:2}}>{suscrito ? 'Vas a recibir recordatorios y resultados' : 'No estás recibiendo avisos'}</div>
-                </div>
-                <button className={`btn ${suscrito ? 'btn-secondary' : 'btn-primary'} btn-small`} onClick={suscrito ? desuscribirse : suscribirse} disabled={cargandoNotif}>
-                  {cargandoNotif ? '...' : suscrito ? 'Desactivar' : 'Activar'}
-                </button>
-              </div>
-              {suscrito && <div style={{fontSize:12,color:'var(--texto-suave)',lineHeight:1.8}}>Vas a recibir avisos: 24hs, 12hs, 4hs y 2hs antes del cierre · Al cargarse los resultados</div>}
+              <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:18,fontWeight:700,color:trofeo.color,letterSpacing:1}}>{trofeo.nombre.toUpperCase()}</div>
+              <div style={{fontSize:13,color:'var(--texto)',marginTop:2}}>"{trofeo.desc}"</div>
+              <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:3}}>Desbloqueado con {trofeo.minimo} fechas consecutivas</div>
             </div>
-          )
+          </div>
         ) : (
-          <div className="alert alert-info">Tu navegador no soporta notificaciones push.</div>
+          <div style={{padding:'12px 16px',background:'var(--gris)',borderRadius:10,textAlign:'center'}}>
+            <div style={{fontSize:13,color:'var(--texto-suave)'}}>Todavía no tenés trofeo — completá {proximoTrofeo ? proximoTrofeo.minimo : 3} fechas consecutivas para ganar el primero 🏆</div>
+          </div>
         )}
+        {trofeo && proximoTrofeo && (
+          <div style={{marginTop:8,padding:'10px 14px',background:'var(--gris)',borderRadius:8,display:'flex',alignItems:'center',gap:10}}>
+            <img src={proximoTrofeo.img} alt={proximoTrofeo.nombre} style={{width:28,height:28,objectFit:'contain',opacity:0.4,flexShrink:0}} />
+            <div style={{fontSize:12,color:'var(--texto-suave)'}}>Próximo: <strong style={{color:'var(--texto)'}}>{proximoTrofeo.nombre}</strong> — {proximoTrofeo.minimo} fechas consecutivas</div>
+          </div>
+        )}
+      </div>
+
+      {/* ===== TABS ===== */}
+      <div className="tabs-wrap">
+        <div className="tabs-box">
+          {TABS.map(t => (
+            <button key={t.id} className={`tab-btn ${pestaña === t.id ? 'active' : ''}`} onClick={() => setPestaña(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ===== CONTENIDO ===== */}
+      <div className="card">
+
+        {/* HISTORIAL */}
+        {pestaña === 'historial' && (
+          loadingPestaña
+            ? <div className="loading"><div className="spinner"></div></div>
+            : historial.length === 0
+              ? <div className="empty-state" style={{padding:'32px 20px'}}>
+                  <div className="empty-icon">📋</div>
+                  <div className="empty-title">Sin historial todavía</div>
+                  <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>Aparecerá cuando se carguen los resultados de tu primera fecha</p>
+                </div>
+              : <div>
+                  <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:12}}>Mis fechas jugadas</div>
+                  {historial.map(f => (
+                    <div key={f.numero} style={{display:'flex',alignItems:'center',padding:'10px 0',borderBottom:'1px solid var(--gris-borde)',gap:10}}>
+                      <div style={{minWidth:60}}>
+                        <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--azul)'}}>Fecha {f.numero}</div>
+                        <div style={{display:'flex',gap:3,flexWrap:'wrap',marginTop:3}}>
+                          {f.cats.map(cat => (
+                            <span key={cat} className={`cat-badge ${CAT_CLASS[cat]}`} style={{fontSize:9,padding:'1px 5px'}}>{CATS_SHORT[cat]}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{flex:1}} />
+                      <div style={{textAlign:'right'}}>
+                        <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:22,fontWeight:700,color:'var(--azul)'}}>{f.totalPts}</span>
+                        <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:3}}>pts</span>
+                        {f.pleno > 0 && <div style={{fontSize:10,color:'var(--dorado-oscuro)',fontWeight:700}}>💥 pleno</div>}
+                      </div>
+                      {f.pos > 0 && (
+                        <div style={{textAlign:'center',minWidth:46,background:'var(--gris)',borderRadius:8,padding:'4px 6px',flexShrink:0}}>
+                          <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:16,fontWeight:700,color: f.pos <= 3 ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>{f.pos <= 3 ? ['🥇','🥈','🥉'][f.pos-1] : `#${f.pos}`}</div>
+                          <div style={{fontSize:9,color:'var(--texto-suave)'}}>de {f.total}</div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+        )}
+
+        {/* LOGROS */}
+        {pestaña === 'logros' && (
+          loadingPestaña
+            ? <div className="loading"><div className="spinner"></div></div>
+            : <div>
+                {LOGROS_CATS.map(cat => {
+                  const catLogros = logros.filter(l => l.cat === cat)
+                  const desbloqueados = catLogros.filter(l => l.desbloqueado).length
+                  return (
+                    <div key={cat} style={{marginBottom:24}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                        <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1}}>{cat}</div>
+                        <div style={{fontSize:11,color:'var(--texto-suave)'}}>{desbloqueados}/{catLogros.length}</div>
+                      </div>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                        {catLogros.map(l => (
+                          <div key={l.id} style={{
+                            textAlign:'center', padding:'12px 8px', borderRadius:10, position:'relative',
+                            background: l.desbloqueado ? 'linear-gradient(135deg,var(--dorado-claro),#fff)' : 'var(--gris)',
+                            border: l.desbloqueado ? '1.5px solid rgba(201,162,39,0.4)' : '1px solid var(--gris-borde)',
+                            opacity: l.desbloqueado ? 1 : 0.55,
+                          }}>
+                            {l.desbloqueado && (
+                              <div style={{position:'absolute',top:5,right:5,width:14,height:14,borderRadius:'50%',background:'#16a34a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'white',fontWeight:700}}>✓</div>
+                            )}
+                            <div style={{fontSize:24,marginBottom:4}}>{l.icon}</div>
+                            <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:12,fontWeight:700,color:l.desbloqueado ? 'var(--azul)' : 'var(--texto-suave)',lineHeight:1.2,marginBottom:3}}>{l.nombre}</div>
+                            <div style={{fontSize:9,color:'var(--texto-suave)',lineHeight:1.3}}>{l.desc}</div>
+                            {l.progreso && <div style={{marginTop:5,fontSize:10,fontWeight:700,color:'var(--dorado-oscuro)',background:'rgba(201,162,39,0.1)',borderRadius:4,padding:'2px 6px',display:'inline-block'}}>{l.progreso}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+        )}
+
+        {/* MIS DATOS */}
+        {pestaña === 'datos' && (
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20,paddingBottom:16,borderBottom:'1px solid var(--gris-borde)'}}>
+              <div style={{position:'relative',flexShrink:0}}>
+                <div style={{width:64,height:64,borderRadius:'50%',background:'linear-gradient(135deg,var(--dorado),var(--dorado-oscuro))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:700,color:'var(--azul)',overflow:'hidden',border:'2px solid var(--dorado)'}}>
+                  {preview ? <img src={preview} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
+                </div>
+                <label style={{position:'absolute',bottom:-2,right:-2,width:22,height:22,background:'var(--rojo-vivo)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',border:'2px solid white',fontSize:14,color:'white',fontWeight:700}}>
+                  {subiendo ? '⟳' : '+'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" style={{display:'none'}} onChange={subirFoto} disabled={subiendo} />
+                </label>
+              </div>
+              <div style={{fontSize:13,color:'var(--texto-suave)'}}>Cambiá tu foto de perfil. Máximo 2MB.</div>
+            </div>
+            {msg && <div className={`alert ${msg.startsWith('Error')||msg.startsWith('La imagen')?'alert-error':'alert-success'}`}>{msg}</div>}
+            <form onSubmit={guardar}>
+              <div className="form-group">
+                <label className="form-label">Nombre completo</label>
+                <input className="form-input" type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Tu nombre" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Club al que pertenecés</label>
+                <select className="form-select" value={club} onChange={e => setClub(e.target.value)}>
+                  <option value="">Seleccioná tu club</option>
+                  {CLUBES_URBA.map((c,i) => (
+                    c.startsWith('---')
+                      ? <option key={i} disabled style={{fontWeight:700,color:'#999'}}>{c}</option>
+                      : <option key={i} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* CONTRASEÑA */}
+        {pestaña === 'contrasena' && (
+          <div>
+            {msgPass && <div className={`alert ${msgPass.startsWith('Error')||msgPass==='Mínimo 6 caracteres'||msgPass==='Las contraseñas no coinciden'?'alert-error':'alert-success'}`}>{msgPass}</div>}
+            <form onSubmit={cambiarPassword}>
+              <div className="form-group">
+                <label className="form-label">Nueva contraseña</label>
+                <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" value={pass1} onChange={e => setPass1(e.target.value)} minLength={6} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Repetir contraseña</label>
+                <input className="form-input" type="password" placeholder="Repetí la contraseña" value={pass2} onChange={e => setPass2(e.target.value)} minLength={6} required />
+              </div>
+              <button type="submit" className="btn btn-secondary" disabled={loadingPass}>
+                {loadingPass ? 'Guardando...' : 'Cambiar contraseña'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* NOTIFICACIONES */}
+        {pestaña === 'notificaciones' && (
+          <div>
+            {'Notification' in window ? (
+              permiso === 'denied'
+                ? <div className="alert alert-error">Bloqueaste las notificaciones. Para activarlas andá a la configuración de tu navegador y permitilas para este sitio.</div>
+                : <div>
+                    <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>Recibí recordatorios antes del cierre del prode y avisos cuando se cargan los resultados.</p>
+                    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',background:'var(--gris)',borderRadius:10,marginBottom:8}}>
+                      <div>
+                        <div style={{fontWeight:600,fontSize:14}}>{suscrito ? '✅ Notificaciones activadas' : '🔕 Notificaciones desactivadas'}</div>
+                        <div style={{fontSize:12,color:'var(--texto-suave)',marginTop:2}}>{suscrito ? 'Vas a recibir recordatorios y resultados' : 'No estás recibiendo avisos'}</div>
+                      </div>
+                      <button className={`btn ${suscrito?'btn-secondary':'btn-primary'} btn-small`} onClick={suscrito?desuscribirse:suscribirse} disabled={cargandoNotif}>
+                        {cargandoNotif ? '...' : suscrito ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </div>
+                    {suscrito && <div style={{fontSize:12,color:'var(--texto-suave)',lineHeight:1.8}}>Vas a recibir avisos: 24hs, 12hs, 4hs y 2hs antes del cierre · Al cargarse los resultados</div>}
+                  </div>
+            ) : (
+              <div className="alert alert-info">Tu navegador no soporta notificaciones push.</div>
+            )}
+          </div>
+        )}
+
+        {/* INVITAR */}
+        {pestaña === 'invitar' && (
+          <div>
+            <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.</p>
+            <button className="btn btn-primary" onClick={() => {
+              const msg = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
+              window.open(`https://wa.me/?text=${msg}`, '_blank')
+            }}>
+              📲 Invitar por WhatsApp
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   )
