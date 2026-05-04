@@ -23,7 +23,7 @@ const TROFEOS = [
 function getTrofeo(r) { return TROFEOS.find(t => r >= t.minimo) || null }
 
 const CATS_SHORT = { 1: 'T14', 2: 'P.A', 3: 'P.B', 4: 'P.C', 5: '2da' }
-const LOGROS_CATS = ['Exactos', 'Rendimiento', 'Ranking', 'Puntos', 'Especiales']
+const LOGROS_CATS = ['Exactos', 'Rendimiento', 'Ranking', 'Puntos', 'Especiales', 'Comunidad']
 
 const TABS = [
   { id: 'historial',      label: '📋 Historial' },
@@ -152,13 +152,14 @@ export default function Perfil() {
 
   async function cargarLogros() {
     setLoadingPestaña(true)
-    const [{ data: porFechaRaw }, { data: preds }] = await Promise.all([
+    const [{ data: porFechaRaw }, { data: preds }, { data: perfilData }] = await Promise.all([
       supabase.from('puntos_fecha')
         .select('total_puntos, puntos_exactos, partidos_acertados, partidos_totales, bonus_pleno, fecha_id, fechas(numero)')
         .eq('usuario_id', user.id),
       supabase.from('predicciones')
         .select('goles_local, goles_visitante, partidos(resultado_local, resultado_visitante, es_especial, fechas(numero, categoria_id))')
-        .eq('usuario_id', user.id)
+        .eq('usuario_id', user.id),
+      supabase.from('perfiles').select('invitaciones').eq('id', user.id).single()
     ])
 
     const byNum = {}
@@ -207,6 +208,7 @@ export default function Perfil() {
     const perfecta = fechasJugadas.some(f => f.totalJugados >= 3 && f.totalAcertados === f.totalJugados)
     const doblePleno = fechasJugadas.some(f => f.plenos >= 2)
     const coleccionista = catsConExacto.size >= 5
+    const invitaciones = perfilData?.invitaciones || 0
 
     const fechasSorted = Object.entries(byNum).sort(([a],[b]) => Number(a)-Number(b)).map(([num, f]) => ({ num: Number(num), ...f }))
     let constante = false
@@ -266,6 +268,9 @@ export default function Perfil() {
       { id:'perfecta',        icon:'💫', nombre:'Perfecta',           desc:'Todos los picks correctos en una fecha (mín. 3)',   cat:'Especiales',  desbloqueado: perfecta },
       { id:'doble_pleno',     icon:'🎆', nombre:'Doble pleno',        desc:'Bonus pleno en 2 torneos en la misma fecha',       cat:'Especiales',  desbloqueado: doblePleno },
       { id:'coleccionista',   icon:'🗂️', nombre:'Coleccionista',      desc:'Al menos 1 exacto en cada uno de los 5 torneos',   cat:'Especiales',  desbloqueado: coleccionista, progreso: !coleccionista ? `${catsConExacto.size}/5` : null },
+      { id:'embajador',       icon:'📢', nombre:'Embajador',          desc:'Compartiste la app 5 veces',                       cat:'Comunidad',   desbloqueado: invitaciones >= 5,  progreso: invitaciones < 5  ? `${invitaciones}/5`  : null },
+      { id:'promotor',        icon:'📣', nombre:'Promotor',           desc:'Compartiste la app 15 veces',                      cat:'Comunidad',   desbloqueado: invitaciones >= 15, progreso: invitaciones < 15 ? `${invitaciones}/15` : null },
+      { id:'leyenda_viral',   icon:'🎙️', nombre:'Leyenda viral',      desc:'Compartiste la app 30 veces',                      cat:'Comunidad',   desbloqueado: invitaciones >= 30, progreso: invitaciones < 30 ? `${invitaciones}/30` : null },
     ])
     setLoadingPestaña(false)
   }
@@ -310,6 +315,12 @@ export default function Perfil() {
     } catch(err) { setMsg('Error al subir: ' + err.message) }
     setSubiendo(false)
     setTimeout(() => setMsg(''), 4000)
+  }
+
+  async function registrarShare() {
+    await supabase.rpc('incrementar_invitaciones', { uid: user.id }).catch(() =>
+      supabase.from('perfiles').update({ invitaciones: (perfil?.invitaciones || 0) + 1 }).eq('id', user.id)
+    )
   }
 
   function toggleTab(id) { setPestaña(pestaña === id ? null : id) }
@@ -453,6 +464,7 @@ export default function Perfil() {
                                   `¿Jugás también? → pickandgo-prode.vercel.app`
                                 )
                                 window.open(`https://wa.me/?text=${msg}`, '_blank')
+                                registrarShare()
                                 setCompartiendoFecha(null)
                               }}
                               style={{flexShrink:0,background:'none',border:'none',cursor:'pointer',fontSize:16,padding:'4px',opacity:compartiendoFecha===f.numero?0.4:0.6,transition:'opacity 0.15s'}}
@@ -594,6 +606,7 @@ export default function Perfil() {
                   <button className="btn btn-primary" onClick={() => {
                     const msg = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
                     window.open(`https://wa.me/?text=${msg}`, '_blank')
+                    registrarShare()
                   }}>
                     📲 Invitar por WhatsApp
                   </button>
