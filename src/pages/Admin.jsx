@@ -203,10 +203,32 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
     flash('Enviando notificaciones...')
     try {
       const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { tipo: 'resultados', mensaje_extra: '¡Ya están los resultados! Entrá a ver tus puntos.' }
+        body: { tipo: 'resultados', fecha_numero: fecha.numero }
       })
-      if (!error) flash(`✓ Notificaciones enviadas a ${data?.enviadas || 0} usuarios`)
+      if (!error) flash(`✓ Enviadas a ${data?.enviadas || 0} usuarios (${data?.omitidas || 0} sin picks)`)
       else flash('Error al enviar notificaciones')
+    } catch (e) { flash('Error: ' + e.message) }
+  }
+
+  async function notificarApertura() {
+    flash('Notificando apertura...')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { tipo: 'apertura', numero: fecha.numero }
+      })
+      if (!error) flash(`✓ Apertura notificada a ${data?.enviadas || 0} usuarios`)
+      else flash('Error al notificar apertura')
+    } catch (e) { flash('Error: ' + e.message) }
+  }
+
+  async function notificarRacha() {
+    flash('Enviando alerta de racha...')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { tipo: 'racha_peligro' }
+      })
+      if (!error) flash(`✓ Alerta enviada a ${data?.enviadas || 0} usuarios con racha activa`)
+      else flash('Error al enviar alerta')
     } catch (e) { flash('Error: ' + e.message) }
   }
 
@@ -362,8 +384,16 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
                   {guardando ? 'Calculando...' : 'Guardar resultados y calcular puntos'}
                 </button>
                 <button className="btn btn-gold" style={{ width: '100%' }} onClick={notificar}>
-                  🔔 Notificar a todos los usuarios
+                  📊 Notificar resultados (con posición personal)
                 </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarApertura}>
+                    🏉 Notificar apertura
+                  </button>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarRacha}>
+                    🔥 Alertar rachas en peligro
+                  </button>
+                </div>
               </div>
             </div>
           )}
