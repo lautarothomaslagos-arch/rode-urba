@@ -282,7 +282,11 @@ export default function Ranking() {
 
       {!loading && modo !== 'clubes' && (
         lista.length === 0
-          ? <div className="empty-state"><div className="empty-icon">🏆</div><div className="empty-title">Sin datos todavía</div></div>
+          ? <div className="empty-state">
+              <div className="empty-icon">🏆</div>
+              <div className="empty-title">{modo === 'anual' ? 'El ranking arranca pronto' : `Sin datos para Fecha ${fechaNum}`}</div>
+              <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>{modo === 'anual' ? 'Aparecerá cuando se carguen los primeros resultados' : 'Los resultados de esta fecha aún no se cargaron'}</p>
+            </div>
           : <div className="card" style={{padding:0,overflow:'hidden'}}>
               <div style={{padding:'12px 16px',background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--dorado)',letterSpacing:1}}>
@@ -330,7 +334,11 @@ export default function Ranking() {
 
       {!loading && modo === 'clubes' && (
         listaClubs.length === 0
-          ? <div className="empty-state"><div className="empty-icon">🏉</div><div className="empty-title">Sin datos de clubes todavía</div><p style={{fontSize:13}}>Los usuarios deben seleccionar su club en el perfil</p></div>
+          ? <div className="empty-state">
+              <div className="empty-icon">🏉</div>
+              <div className="empty-title">Sin datos de clubes todavía</div>
+              <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>Los participantes deben elegir su club en la sección Perfil para aparecer acá</p>
+            </div>
           : <div className="card" style={{padding:0,overflow:'hidden'}}>
               <div style={{padding:'12px 16px',background:'linear-gradient(135deg,var(--rojo),var(--rojo-vivo))',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'white',letterSpacing:1}}>Ranking por clubes 2026</span>

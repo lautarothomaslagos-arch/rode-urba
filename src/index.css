@@ -117,8 +117,14 @@ body {
 
 .avatar-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 
+/* ===== ANIMACIONES ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== LAYOUT ===== */
-.container { max-width: 920px; margin: 0 auto; padding: 24px 16px; }
+.container { max-width: 920px; margin: 0 auto; padding: 24px 16px; animation: fadeIn 0.2s ease-out; }
 
 .page-header {
   display: flex;
@@ -189,10 +195,11 @@ body {
   background: var(--blanco);
   border-radius: var(--radio);
   border: 1.5px solid var(--gris-borde);
+  border-top: 2.5px solid var(--azul);
   padding: 16px;
   margin-bottom: 10px;
   transition: all 0.15s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .partido-card:hover { border-color: var(--dorado); box-shadow: 0 2px 12px rgba(201,162,39,0.15); }
@@ -405,6 +412,23 @@ body {
   margin-bottom: 16px;
   overflow-x: auto;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tabs-box::-webkit-scrollbar { display: none; }
+
+/* indicador de scroll: wrapper con gradiente derecho */
+.tabs-wrap {
+  position: relative;
+}
+.tabs-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: 36px;
+  background: linear-gradient(to right, transparent, var(--azul));
+  pointer-events: none;
+  border-radius: 0 var(--radio) var(--radio) 0;
 }
 
 .tab-btn {

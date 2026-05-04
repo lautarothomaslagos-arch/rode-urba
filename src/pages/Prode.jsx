@@ -160,12 +160,14 @@ export default function Prode() {
         <h1 className="page-title">Mis <span className="page-title-accent">predicciones</span></h1>
       </div>
 
-      <div className="tabs-box">
-        {[1,2,3,4,5].map(c => (
-          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>
-            {CATS[c]}{catsActivas.has(c) && <span style={{ display:'inline-block', width:5, height:5, borderRadius:'50%', background:'var(--dorado)', marginLeft:5, verticalAlign:'middle', boxShadow:'0 0 3px rgba(201,162,39,0.9)' }} />}
-          </button>
-        ))}
+      <div className="tabs-wrap">
+        <div className="tabs-box">
+          {[1,2,3,4,5].map(c => (
+            <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>
+              {CATS[c]}{catsActivas.has(c) && <span style={{ display:'inline-block', width:5, height:5, borderRadius:'50%', background:'var(--dorado)', marginLeft:5, verticalAlign:'middle', boxShadow:'0 0 3px rgba(201,162,39,0.9)' }} />}
+            </button>
+          ))}
+        </div>
       </div>
 
       {fechas.length > 1 && (

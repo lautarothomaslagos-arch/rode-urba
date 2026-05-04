@@ -56,10 +56,12 @@ export default function Resultados() {
         <h1 className="page-title">Mis <span className="page-title-accent">resultados</span></h1>
       </div>
 
-      <div className="tabs-box">
-        {[1,2,3,4,5].map(c => (
-          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
-        ))}
+      <div className="tabs-wrap">
+        <div className="tabs-box">
+          {[1,2,3,4,5].map(c => (
+            <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
+          ))}
+        </div>
       </div>
 
       {fechas.length > 0 && (
@@ -77,7 +79,8 @@ export default function Resultados() {
       {!loading && fechas.length === 0 && (
         <div className="empty-state">
           <div className="empty-icon">🏉</div>
-          <div className="empty-title">Sin resultados cargados aún</div>
+          <div className="empty-title">Sin resultados en {CATS[cat]}</div>
+          <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>Todavía no se cargaron resultados para este torneo</p>
         </div>
       )}
 
