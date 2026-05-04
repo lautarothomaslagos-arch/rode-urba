@@ -8,6 +8,7 @@ export default function Navbar() {
   const location = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [escudoClub, setEscudoClub] = useState(null)
+  const [hayFechaAbierta, setHayFechaAbierta] = useState(false)
   const isActive = (path) => location.pathname === path ? 'active' : ''
 
   useEffect(() => { setMenuAbierto(false) }, [location.pathname])
@@ -18,6 +19,12 @@ export default function Navbar() {
         .then(({ data }) => { if (data?.escudo_url) setEscudoClub(data.escudo_url) })
     }
   }, [perfil?.club])
+
+  useEffect(() => {
+    if (!user) return
+    supabase.from('fechas').select('id', { count: 'exact', head: true }).eq('activa', true)
+      .then(({ count }) => setHayFechaAbierta((count || 0) > 0))
+  }, [user])
 
   return (
     <>
@@ -34,7 +41,12 @@ export default function Navbar() {
           <>
             {/* Desktop menu */}
             <div className="navbar-menu desktop-menu">
-              <Link to="/prode" className={isActive('/prode')}>Predecir</Link>
+              <Link to="/prode" className={isActive('/prode')} style={{position:'relative'}}>
+                Predecir
+                {hayFechaAbierta && location.pathname !== '/prode' && (
+                  <span style={{position:'absolute',top:4,right:4,width:6,height:6,borderRadius:'50%',background:'var(--dorado)',boxShadow:'0 0 6px rgba(201,162,39,0.9)'}} />
+                )}
+              </Link>
               <Link to="/ranking" className={isActive('/ranking')}>Ranking</Link>
               <Link to="/resultados" className={isActive('/resultados')}>Resultados</Link>
               <Link to="/grupos" className={isActive('/grupos')}>Grupos</Link>
@@ -94,6 +106,9 @@ export default function Navbar() {
           <div className="mobile-menu">
             <Link to="/prode" className={`mobile-menu-item ${isActive('/prode')}`}>
               <span>🏉</span> Predecir
+              {hayFechaAbierta && location.pathname !== '/prode' && (
+                <span style={{marginLeft:'auto',width:8,height:8,borderRadius:'50%',background:'var(--dorado)',boxShadow:'0 0 6px rgba(201,162,39,0.9)',flexShrink:0}} />
+              )}
             </Link>
             <Link to="/ranking" className={`mobile-menu-item ${isActive('/ranking')}`}>
               <span>🏆</span> Ranking

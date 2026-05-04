@@ -156,11 +156,17 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const [preview, setPreview] = useState(grupo.imagen_url)
   const [msg, setMsg] = useState('')
   const [movimientos, setMovimientos] = useState({})
+  const [historial, setHistorial] = useState({})
+  const [loadingHistorial, setLoadingHistorial] = useState(false)
 
   const esAdmin = grupo.creador_id === userId
 
   useEffect(() => { cargarFechas(); cargarMiembros() }, [])
   useEffect(() => { cargarRanking() }, [subVista, fechaNum, miembros])
+  useEffect(() => {
+    if (subVista === 'fecha' && fechaNum && miembros.length) cargarHistorial()
+    else setHistorial({})
+  }, [subVista, fechaNum, miembros])
 
   async function cargarFechas() {
     const { data } = await supabase.from('fechas')
@@ -294,6 +300,28 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
     setLoading(false)
   }
 
+  async function cargarHistorial() {
+    setLoadingHistorial(true)
+    const uids = miembros.map(m => m.usuario_id)
+    const { data: fechasData } = await supabase.from('fechas')
+      .select('id').eq('numero', fechaNum).eq('resultados_cargados', true)
+    const fids = fechasData?.map(f => f.id) || []
+    if (!fids.length) { setHistorial({}); setLoadingHistorial(false); return }
+    const { data: partidos } = await supabase.from('partidos')
+      .select('id, es_especial, resultado_local, resultado_visitante, equipo_local:equipo_local_id(nombre,nombre_corto), equipo_visitante:equipo_visitante_id(nombre,nombre_corto)')
+      .in('fecha_id', fids).order('id')
+    const partidoIds = partidos?.map(p => p.id) || []
+    if (!partidoIds.length) { setHistorial({}); setLoadingHistorial(false); return }
+    const { data: preds } = await supabase.from('predicciones')
+      .select('partido_id, usuario_id, goles_local, goles_visitante')
+      .in('partido_id', partidoIds).in('usuario_id', uids)
+    const hist = {}
+    partidos?.forEach(p => { hist[p.id] = { partido: p, picks: {} } })
+    preds?.forEach(p => { if (hist[p.partido_id]) hist[p.partido_id].picks[p.usuario_id] = { local: p.goles_local, visitante: p.goles_visitante } })
+    setHistorial(hist)
+    setLoadingHistorial(false)
+  }
+
   async function expulsarMiembro(uid) {
     if (!confirm('¿Expulsar a este usuario del grupo?')) return
     await supabase.from('grupo_miembros').delete().eq('grupo_id', grupo.id).eq('usuario_id', uid)
@@ -404,8 +432,10 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
 
       {loading && <div className="loading"><div className="spinner"></div></div>}
 
+      {loadingHistorial && subVista === 'fecha' && <div className="loading" style={{padding:16}}><div className="spinner"></div></div>}
+
       {!loading && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: subVista === 'fecha' && Object.keys(historial).length > 0 ? 0 : 16 }}>
           <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--dorado)', letterSpacing: 1 }}>
               {subVista === 'anual' ? `${displayNombre} — Anual` : `${displayNombre} — Fecha ${fechaNum}`}
@@ -461,6 +491,67 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* HISTORIAL DE PICKS — solo en modo fecha, post-cierre */}
+      {!loading && !loadingHistorial && subVista === 'fecha' && Object.keys(historial).length > 0 && (
+        <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 16 }}>
+          <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--dorado)', letterSpacing: 1 }}>
+              Picks · Fecha {fechaNum}
+            </span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{Object.keys(historial).length} partidos</span>
+          </div>
+          {Object.values(historial).map(({ partido, picks }) => (
+            <div key={partido.id} style={{ borderBottom: '1px solid var(--gris-borde)' }}>
+              {/* Cabecera del partido */}
+              <div style={{ padding: '7px 16px', background: 'var(--gris)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--texto)' }}>
+                  {partido.equipo_local?.nombre_corto || partido.equipo_local?.nombre} — {partido.equipo_visitante?.nombre_corto || partido.equipo_visitante?.nombre}
+                </span>
+                <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 13, fontWeight: 700, color: 'white', background: 'var(--azul)', padding: '2px 8px', borderRadius: 4, letterSpacing: 1 }}>
+                  {partido.resultado_local} — {partido.resultado_visitante}
+                </span>
+              </div>
+              {/* Pick de cada miembro */}
+              {miembros.map(m => {
+                const pick = picks[m.usuario_id]
+                const esYo = m.usuario_id === userId
+                if (!pick) return (
+                  <div key={m.usuario_id} style={{ padding: '5px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.45, borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+                    <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{m.perfiles?.username}</span>
+                    <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>sin predicción</span>
+                  </div>
+                )
+                const mult = partido.es_especial ? 2 : 1
+                const exacto = pick.local === partido.resultado_local && pick.visitante === partido.resultado_visitante
+                const signo = !exacto && (
+                  (pick.local > pick.visitante && partido.resultado_local > partido.resultado_visitante) ||
+                  (pick.local < pick.visitante && partido.resultado_local < partido.resultado_visitante) ||
+                  (pick.local === pick.visitante && partido.resultado_local === partido.resultado_visitante)
+                )
+                return (
+                  <div key={m.usuario_id} style={{ padding: '5px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.03)', background: esYo ? '#fffdf5' : 'white' }}>
+                    <span style={{ fontSize: 12, color: 'var(--texto)', fontWeight: esYo ? 700 : 400 }}>
+                      {m.perfiles?.username}{esYo && <span style={{ fontSize: 10, color: 'var(--dorado-oscuro)', marginLeft: 4 }}>(vos)</span>}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--azul)' }}>
+                        {pick.local} — {pick.visitante}
+                      </span>
+                      {exacto
+                        ? <span className="resultado-badge badge-exacto">+{3 * mult}</span>
+                        : signo
+                          ? <span className="resultado-badge badge-signo">+{1 * mult}</span>
+                          : <span className="resultado-badge badge-nada">0</span>
+                      }
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ))}
         </div>
       )}
     </div>

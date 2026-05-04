@@ -40,6 +40,7 @@ export default function Perfil() {
   const [pass2, setPass2] = useState('')
   const [msgPass, setMsgPass] = useState('')
   const [loadingPass, setLoadingPass] = useState(false)
+  const [statsEquipos, setStatsEquipos] = useState([])
 
   useEffect(() => {
     if (perfil) {
@@ -50,7 +51,7 @@ export default function Perfil() {
   }, [perfil])
 
   useEffect(() => {
-    if (user) { cargarRacha(); cargarStats() }
+    if (user) { cargarRacha(); cargarStats(); cargarStatsEquipos() }
   }, [user])
 
   async function cargarRacha() {
@@ -84,6 +85,35 @@ export default function Perfil() {
     const posicion = sorted.findIndex(pts => pts <= totalPuntos) + 1
     const totalJugadores = sorted.length
     setStats({ totalPuntos, totalFechas, mejorFecha, promedio, pctAcierto, posicion, totalJugadores })
+  }
+
+  async function cargarStatsEquipos() {
+    const { data } = await supabase.from('predicciones')
+      .select('goles_local, goles_visitante, partidos(resultado_local, resultado_visitante, equipo_local:equipo_local_id(id,nombre), equipo_visitante:equipo_visitante_id(id,nombre))')
+      .eq('usuario_id', user.id)
+    const equipoStats = {}
+    data?.forEach(pred => {
+      const p = pred.partidos
+      if (!p || p.resultado_local == null || p.resultado_visitante == null) return
+      const exacto = pred.goles_local === p.resultado_local && pred.goles_visitante === p.resultado_visitante
+      const signo = !exacto && (
+        (pred.goles_local > pred.goles_visitante && p.resultado_local > p.resultado_visitante) ||
+        (pred.goles_local < pred.goles_visitante && p.resultado_local < p.resultado_visitante) ||
+        (pred.goles_local === pred.goles_visitante && p.resultado_local === p.resultado_visitante)
+      )
+      const pts = exacto ? 3 : signo ? 1 : 0;
+      [p.equipo_local, p.equipo_visitante].forEach(equipo => {
+        if (!equipo) return
+        if (!equipoStats[equipo.id]) equipoStats[equipo.id] = { nombre: equipo.nombre, jugados: 0, acertados: 0, pts: 0 }
+        equipoStats[equipo.id].jugados++
+        if (exacto || signo) equipoStats[equipo.id].acertados++
+        equipoStats[equipo.id].pts += pts
+      })
+    })
+    setStatsEquipos(
+      Object.values(equipoStats)
+        .sort((a, b) => b.pts - a.pts || b.acertados - a.acertados || a.nombre.localeCompare(b.nombre))
+    )
   }
 
   async function cambiarPassword(e) {
@@ -227,6 +257,32 @@ export default function Perfil() {
             </div>
           )}
         </div>
+
+        {/* MIS RIVALES */}
+        {statsEquipos.length > 0 && (
+          <div style={{marginBottom:20}}>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Mis rivales</div>
+            <div style={{maxHeight:260,overflowY:'auto'}}>
+              {statsEquipos.map((e, i) => {
+                const pct = Math.round(e.acertados / e.jugados * 100)
+                const color = pct >= 70 ? '#16a34a' : pct >= 40 ? 'var(--dorado-oscuro)' : '#dc2626'
+                const barColor = pct >= 70 ? '#16a34a' : pct >= 40 ? 'var(--dorado)' : '#dc2626'
+                return (
+                  <div key={e.nombre} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:i < statsEquipos.length-1 ? '1px solid var(--gris-borde)' : 'none'}}>
+                    <span style={{fontSize:11,color:'var(--texto-suave)',width:18,flexShrink:0,textAlign:'right'}}>{i+1}</span>
+                    <span style={{flex:1,fontSize:12,fontWeight:500,color:'var(--texto)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.nombre}</span>
+                    <span style={{fontSize:11,color:'var(--texto-suave)',flexShrink:0,width:20,textAlign:'right'}}>{e.jugados}j</span>
+                    <div style={{width:44,height:5,background:'var(--gris-borde)',borderRadius:3,flexShrink:0,overflow:'hidden'}}>
+                      <div style={{width:`${pct}%`,height:'100%',background:barColor,borderRadius:3}} />
+                    </div>
+                    <span style={{fontSize:12,fontWeight:700,color,width:34,textAlign:'right',flexShrink:0}}>{pct}%</span>
+                    <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,color:'var(--azul)',width:24,textAlign:'right',flexShrink:0}}>{e.pts}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {msg && <div className={`alert ${msg.startsWith('Error')||msg.startsWith('La imagen')?'alert-error':'alert-success'}`}>{msg}</div>}
 
