@@ -113,28 +113,37 @@ export default function Resultados() {
             onClick={async () => {
               setCompartiendo(true)
               const numeroFecha = fi?.numero
-              const { data: todasFechas } = await supabase.from('fechas').select('id, categoria_id').eq('numero', numeroFecha)
+              const { data: todasFechas } = await supabase.from('fechas').select('id').eq('numero', numeroFecha)
               const fids = (todasFechas || []).map(f => f.id)
-              const { data: allPuntos } = await supabase.from('puntos_fecha').select('*')
-                .eq('usuario_id', user.id).in('fecha_id', fids)
+              const [{ data: allPuntos }, { data: rankingPuntos }] = await Promise.all([
+                supabase.from('puntos_fecha').select('total_puntos, puntos_exactos, puntos_signo, bonus_pleno, bonus_mitad')
+                  .eq('usuario_id', user.id).in('fecha_id', fids),
+                supabase.from('puntos_fecha').select('usuario_id, total_puntos').in('fecha_id', fids)
+              ])
               const tot = (allPuntos || []).reduce((a, p) => ({
                 pts: a.pts + (p.total_puntos || 0),
                 exactos: a.exactos + (p.puntos_exactos || 0),
                 signo: a.signo + (p.puntos_signo || 0),
                 bonus: a.bonus + (p.bonus_pleno || 0) + (p.bonus_mitad || 0),
               }), { pts: 0, exactos: 0, signo: 0, bonus: 0 })
+              const byUser = {}
+              rankingPuntos?.forEach(p => { byUser[p.usuario_id] = (byUser[p.usuario_id] || 0) + p.total_puntos })
+              const sorted = Object.entries(byUser).sort(([,a],[,b]) => b - a)
+              const pos = sorted.findIndex(([uid]) => uid === user.id) + 1
+              const total = sorted.length
+              const posTexto = pos === 1 ? '🥇 1ro' : pos === 2 ? '🥈 2do' : pos === 3 ? '🥉 3ro' : `#${pos}`
               const msg = encodeURIComponent(
-                `🏉 Pick&Go · Fecha ${numeroFecha} URBA 2026\n` +
-                `Mis puntos: ${tot.pts} 🎯\n` +
+                `🏉 Pick&Go · Fecha ${numeroFecha} · URBA 2026\n` +
+                `${pos > 0 ? `Quedé ${posTexto} de ${total} con ` : ''}${tot.pts} pts${tot.bonus > 0 ? ' 💥' : ''}\n` +
                 `(${tot.exactos} exactos · ${tot.signo} signo${tot.bonus > 0 ? ` · ${tot.bonus} bonus` : ''})\n\n` +
-                `https://pickandgo-prode.vercel.app`
+                `¿Jugás también? → pickandgo-prode.vercel.app`
               )
               window.open(`https://wa.me/?text=${msg}`, '_blank')
               setCompartiendo(false)
             }}
             style={{width:'100%',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,padding:'10px',color:'white',fontSize:13,fontWeight:600,cursor:'pointer',marginTop:4,opacity:compartiendo?0.7:1}}
           >
-            {compartiendo ? '⏳ Preparando...' : '📲 Compartir resultado por WhatsApp'}
+            {compartiendo ? '⏳ Preparando...' : '📲 Compartir resultado'}
           </button>
         </div>
       )}

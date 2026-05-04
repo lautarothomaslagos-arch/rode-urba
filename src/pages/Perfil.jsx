@@ -54,6 +54,7 @@ export default function Perfil() {
   const [historial, setHistorial] = useState([])
   const [logros, setLogros] = useState([])
   const [loadingPestaña, setLoadingPestaña] = useState(false)
+  const [compartiendoFecha, setCompartiendoFecha] = useState(null)
 
   useEffect(() => {
     if (perfil) {
@@ -441,6 +442,24 @@ export default function Perfil() {
                                 <div style={{fontSize:9,color:'var(--texto-suave)'}}>de {f.total}</div>
                               </div>
                             )}
+                            <button
+                              disabled={compartiendoFecha === f.numero}
+                              onClick={() => {
+                                setCompartiendoFecha(f.numero)
+                                const posTexto = f.pos === 1 ? '🥇 1ro' : f.pos === 2 ? '🥈 2do' : f.pos === 3 ? '🥉 3ro' : `#${f.pos}`
+                                const msg = encodeURIComponent(
+                                  `🏉 Pick&Go · Fecha ${f.numero} · URBA 2026\n` +
+                                  `${f.pos > 0 ? `Quedé ${posTexto} de ${f.total} con ` : ''}${f.totalPts} pts${f.pleno > 0 ? ' 💥' : ''}\n\n` +
+                                  `¿Jugás también? → pickandgo-prode.vercel.app`
+                                )
+                                window.open(`https://wa.me/?text=${msg}`, '_blank')
+                                setCompartiendoFecha(null)
+                              }}
+                              style={{flexShrink:0,background:'none',border:'none',cursor:'pointer',fontSize:16,padding:'4px',opacity:compartiendoFecha===f.numero?0.4:0.6,transition:'opacity 0.15s'}}
+                              title="Compartir resultado"
+                            >
+                              📲
+                            </button>
                           </div>
                         ))}
                       </div>
