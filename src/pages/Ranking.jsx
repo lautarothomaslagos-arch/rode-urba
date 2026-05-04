@@ -86,6 +86,7 @@ export default function Ranking() {
 
   useEffect(() => { cargarFechas() }, [])
   useEffect(() => {
+    setMovimientos({})
     if (modo === 'clubes') cargarClubs()
     else cargarPersonal()
   }, [modo, fechaNum])

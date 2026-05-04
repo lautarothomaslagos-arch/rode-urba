@@ -113,7 +113,7 @@ export default function Resultados() {
             onClick={async () => {
               setCompartiendo(true)
               const numeroFecha = fi?.numero
-              const { data: todasFechas } = await supabase.from('fechas').select('id').eq('numero', numeroFecha)
+              const { data: todasFechas } = await supabase.from('fechas').select('id').eq('numero', numeroFecha).eq('resultados_cargados', true)
               const fids = (todasFechas || []).map(f => f.id)
               const [{ data: allPuntos }, { data: rankingPuntos }] = await Promise.all([
                 supabase.from('puntos_fecha').select('total_puntos, puntos_exactos, puntos_signo, bonus_pleno, bonus_mitad')

@@ -205,7 +205,10 @@ export default function Perfil() {
     const ojoClinico = fechasJugadas.some(f => f.totalJugados >= 4 && f.totalAcertados / f.totalJugados >= 0.7)
     const hatTrick = Object.values(exactosPorFecha).some(n => n >= 3)
     const francotirador = Object.values(exactosPorFecha).some(n => n >= 5)
-    const perfecta = fechasJugadas.some(f => f.totalJugados >= 3 && f.totalAcertados === f.totalJugados)
+    const perfecta = Object.entries(exactosPorFecha).some(([num, count]) => {
+      const f = byNum[Number(num)]
+      return f && f.totalJugados >= 3 && count === f.totalJugados
+    })
     const doblePleno = fechasJugadas.some(f => f.plenos >= 2)
     const coleccionista = catsConExacto.size >= 5
     const invitaciones = perfilData?.invitaciones || 0
