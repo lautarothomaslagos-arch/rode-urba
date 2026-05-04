@@ -119,11 +119,10 @@ function FilaEquipos({ partido, marcador }) {
   )
 }
 
-export function PartidoCardPrediccion({ partido, pred, abierto, onUpdate }) {
+export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate }) {
   const [girando, setGirando] = useState(false)
-  const tienePred = pred?.local !== undefined && pred?.visitante !== undefined
 
-  const estiloCard = partido.es_especial ? {} : tienePred ? {
+  const estiloCard = partido.es_especial ? {} : saved ? {
     borderColor: 'var(--dorado)',
     background: 'linear-gradient(135deg, var(--dorado-claro), #ffffff)'
   } : {}

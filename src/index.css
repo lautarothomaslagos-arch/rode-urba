@@ -166,8 +166,8 @@ body {
   transition: all 0.15s; letter-spacing: 0.3px;
 }
 
-.btn-primary { background: linear-gradient(135deg, var(--rojo-vivo), var(--rojo)); color: white; box-shadow: 0 2px 8px rgba(139,0,0,0.3); }
-.btn-primary:hover { background: linear-gradient(135deg, var(--rojo), #6b0000); transform: translateY(-1px); }
+.btn-primary { background: linear-gradient(135deg, var(--dorado), var(--dorado-oscuro)); color: var(--azul); box-shadow: 0 2px 8px rgba(201,162,39,0.35); }
+.btn-primary:hover { background: linear-gradient(135deg, #d4aa2e, var(--dorado-oscuro)); transform: translateY(-1px); }
 .btn-gold { background: linear-gradient(135deg, var(--dorado), var(--dorado-oscuro)); color: var(--azul); font-weight: 700; }
 .btn-gold:hover { opacity: 0.9; transform: translateY(-1px); }
 .btn-secondary { background: var(--gris); color: var(--texto); border: 1px solid var(--gris-borde); }
@@ -180,7 +180,7 @@ body {
 .form-group { margin-bottom: 16px; }
 .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--texto-suave); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; }
 .form-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gris-borde); border-radius: var(--radio); font-size: 14px; color: var(--texto); background: var(--blanco); transition: border-color 0.15s; font-family: 'Inter', sans-serif; }
-.form-input:focus { outline: none; border-color: var(--rojo-vivo); box-shadow: 0 0 0 3px rgba(178,34,34,0.08); }
+.form-input:focus { outline: none; border-color: var(--dorado); box-shadow: 0 0 0 3px rgba(201,162,39,0.12); }
 .form-select { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gris-borde); border-radius: var(--radio); font-size: 14px; background: var(--blanco); font-family: 'Inter', sans-serif; }
 
 /* ===== PARTIDO CARD ===== */

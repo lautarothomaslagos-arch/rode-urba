@@ -13,6 +13,30 @@ function estaAbierto(cierre) {
   return new Date() < new Date(cierre)
 }
 
+function useCountdown(cierre) {
+  const [texto, setTexto] = useState('')
+  const [urgente, setUrgente] = useState(false)
+  useEffect(() => {
+    if (!cierre) return
+    function actualizar() {
+      const diff = new Date(cierre) - new Date()
+      if (diff <= 0) { setTexto('Cerradas'); setUrgente(false); return }
+      const d = Math.floor(diff / 86400000)
+      const h = Math.floor((diff % 86400000) / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setUrgente(diff < 3600000)
+      if (d > 0) setTexto(`${d}d ${h}h ${m}m`)
+      else if (h > 0) setTexto(`${h}h ${m}m`)
+      else setTexto(`${m}m ${s}s`)
+    }
+    actualizar()
+    const iv = setInterval(actualizar, 1000)
+    return () => clearInterval(iv)
+  }, [cierre])
+  return { texto, urgente }
+}
+
 export default function Prode() {
   const { user } = useAuth()
   const [cat, setCat] = useState(1)
@@ -26,6 +50,7 @@ export default function Prode() {
   const [loading, setLoading] = useState(true)
   const [girando, setGirando] = useState(false)
   const [catsActivas, setCatsActivas] = useState(new Set())
+  const [savedPreds, setSavedPreds] = useState(new Set())
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
@@ -72,6 +97,7 @@ export default function Prode() {
       const m = {}
       pr?.forEach(p => { m[p.partido_id] = { local: p.goles_local, visitante: p.goles_visitante } })
       setPreds(m)
+      setSavedPreds(new Set((pr || []).map(p => p.partido_id)))
     }
     setHayCAmbios(false)
     setLoading(false)
@@ -110,6 +136,7 @@ export default function Prode() {
       }))
     if (upserts.length) {
       await supabase.from('predicciones').upsert(upserts, { onConflict: 'usuario_id,partido_id' })
+      setSavedPreds(prev => new Set([...prev, ...upserts.map(u => u.partido_id)]))
       setGuardado(true)
       setHayCAmbios(false)
       calcularPendientes()
@@ -120,6 +147,7 @@ export default function Prode() {
 
   const fi = fechas.find(f => f.id === fechaId)
   const abierto = estaAbierto(fi?.cierre_predicciones)
+  const { texto: countdownTexto, urgente: countdownUrgente } = useCountdown(fi?.cierre_predicciones)
 
   const totalPartidos = partidos.length
   const predsCompletas = partidos.filter(p => preds[p.id]?.local !== undefined && preds[p.id]?.visitante !== undefined).length
@@ -176,9 +204,20 @@ export default function Prode() {
               {abierto ? '● Abiertas' : '✕ Cerradas'}
             </span>
           </div>
-          {fi.cierre_predicciones && (
+          {fi.cierre_predicciones && abierto && (
+            <div style={{fontSize:12,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
+              <span style={{color:'var(--texto-suave)'}}>Cierra en</span>
+              <span style={{
+                fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:14,
+                color: countdownUrgente ? '#dc2626' : 'var(--dorado-oscuro)',
+                background: countdownUrgente ? '#fef2f2' : 'var(--dorado-claro)',
+                padding:'2px 8px',borderRadius:6,letterSpacing:0.5
+              }}>{countdownTexto}</span>
+            </div>
+          )}
+          {fi.cierre_predicciones && !abierto && (
             <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:5}}>
-              Cierre: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
+              Cerró: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
             </div>
           )}
         </div>
@@ -217,6 +256,7 @@ export default function Prode() {
           partido={partido}
           pred={preds[partido.id]}
           abierto={abierto}
+          saved={savedPreds.has(partido.id)}
           onUpdate={updPred}
         />
       ))}
