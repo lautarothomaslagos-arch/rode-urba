@@ -155,6 +155,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const [subiendo, setSubiendo] = useState(false)
   const [preview, setPreview] = useState(grupo.imagen_url)
   const [msg, setMsg] = useState('')
+  const [movimientos, setMovimientos] = useState({})
 
   const esAdmin = grupo.creador_id === userId
 
@@ -209,7 +210,29 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
           }
         })
 
-        setRanking(Object.values(agrupado).sort((a, b) => b.puntos_acumulados - a.puntos_acumulados))
+        const currentList = Object.values(agrupado).sort((a, b) => b.puntos_acumulados - a.puntos_acumulados)
+        setRanking(currentList)
+
+        // Movimientos anual: restar puntos de la última fecha
+        const { data: allFechasA } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
+        const latestNumA = allFechasA?.[0]?.numero
+        if (latestNumA != null) {
+          const latestIdsA = (allFechasA || []).filter(f => f.numero === latestNumA).map(f => f.id)
+          const { data: latestPtsA } = await supabase.from('puntos_fecha').select('usuario_id, total_puntos').in('fecha_id', latestIdsA).in('usuario_id', uids)
+          const deduct = {}
+          latestPtsA?.forEach(p => { deduct[p.usuario_id] = (deduct[p.usuario_id] || 0) + (p.total_puntos || 0) })
+          const prevList = currentList.map(item => ({ ...item, puntos_acumulados: (item.puntos_acumulados || 0) - (deduct[item.usuario_id] || 0) })).sort((a, b) => b.puntos_acumulados - a.puntos_acumulados)
+          const prevPos = {}
+          prevList.forEach((item, idx) => { prevPos[item.usuario_id] = idx + 1 })
+          const movs = {}
+          currentList.forEach((item, idx) => {
+            const prev = prevPos[item.usuario_id]
+            if (prev == null || deduct[item.usuario_id] == null) return
+            const delta = prev - (idx + 1)
+            movs[item.usuario_id] = { delta: Math.abs(delta), dir: delta > 0 ? 'up' : delta < 0 ? 'down' : 'same' }
+          })
+          setMovimientos(movs)
+        }
       } else if (fechaNum !== null) {
         const { data: fechasIds } = await supabase.from('fechas')
           .select('id').eq('numero', fechaNum).eq('resultados_cargados', true)
@@ -239,7 +262,31 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
           }
         })
 
-        setRanking(Object.values(agrupado).sort((a, b) => b.total_puntos - a.total_puntos))
+        const currentListF = Object.values(agrupado).sort((a, b) => b.total_puntos - a.total_puntos)
+        setRanking(currentListF)
+
+        // Movimientos por fecha: comparar con fecha anterior
+        const { data: allFechasF } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
+        const prevNumF = (allFechasF || []).find(f => f.numero < fechaNum)?.numero
+        if (prevNumF != null) {
+          const prevIdsF = (allFechasF || []).filter(f => f.numero === prevNumF).map(f => f.id)
+          const { data: prevDataF } = await supabase.from('puntos_fecha').select('usuario_id, total_puntos').in('fecha_id', prevIdsF).in('usuario_id', uids)
+          const prevAgrF = {}
+          prevDataF?.forEach(p => { prevAgrF[p.usuario_id] = (prevAgrF[p.usuario_id] || 0) + (p.total_puntos || 0) })
+          const prevSortedF = Object.entries(prevAgrF).sort(([, a], [, b]) => b - a)
+          const prevPosF = {}
+          prevSortedF.forEach(([uid], idx) => { prevPosF[uid] = idx + 1 })
+          const movsF = {}
+          currentListF.forEach((item, idx) => {
+            const prev = prevPosF[item.usuario_id]
+            if (prev == null) return
+            const delta = prev - (idx + 1)
+            movsF[item.usuario_id] = { delta: Math.abs(delta), dir: delta > 0 ? 'up' : delta < 0 ? 'down' : 'same' }
+          })
+          setMovimientos(movsF)
+        } else {
+          setMovimientos({})
+        }
       }
     } catch (e) {
       console.error(e)
@@ -369,14 +416,23 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
             const esYo = item.usuario_id === userId
             const av = item.perfiles?.avatar_url
             const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+            const pts = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
+            const liderPts = subVista === 'anual' ? ranking[0]?.puntos_acumulados : ranking[0]?.total_puntos
+            const diff = idx > 0 ? pts - liderPts : null
+            const mov = movimientos[item.usuario_id]
             return (
               <div key={item.usuario_id} style={{
                 display: 'flex', alignItems: 'center', padding: '10px 16px',
                 borderBottom: '1px solid var(--gris-borde)', gap: 0,
                 background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
               }}>
-                <div className={`ranking-pos ${posClass(idx)}`} style={{ width: 36, flexShrink: 0, textAlign: 'center' }}>
-                  {medal(idx) || (idx + 1)}
+                <div style={{ width: 36, flexShrink: 0, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx + 1)}</div>
+                  {mov && mov.dir !== 'same' && mov.delta > 0 && (
+                    <span style={{ fontSize: 9, fontWeight: 700, color: mov.dir === 'up' ? '#16a34a' : '#dc2626', lineHeight: 1 }}>
+                      {mov.dir === 'up' ? '▲' : '▼'}{mov.delta}
+                    </span>
+                  )}
                 </div>
                 <div className="avatar-circle" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0, marginLeft: 8 }}>
                   {av ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
@@ -392,10 +448,9 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
                 </div>
                 <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div>
-                    <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>
-                      {subVista === 'anual' ? item.puntos_acumulados : item.total_puntos}
-                    </span>
+                    <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>{pts}</span>
                     <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
+                    {diff !== null && <div style={{ fontSize: 10, color: 'var(--texto-suave)', textAlign: 'right' }}>{diff} del líder</div>}
                   </div>
                   {esAdmin && item.usuario_id !== userId && (
                     <button className="btn btn-small btn-danger" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => expulsarMiembro(item.usuario_id)}>

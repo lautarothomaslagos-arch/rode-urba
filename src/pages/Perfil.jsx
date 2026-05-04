@@ -59,9 +59,10 @@ export default function Perfil() {
   }
 
   async function cargarStats() {
-    const [{ data: totales }, { data: porFecha }] = await Promise.all([
+    const [{ data: totales }, { data: porFecha }, { data: allTotales }] = await Promise.all([
       supabase.from('puntos_totales').select('puntos_acumulados').eq('usuario_id', user.id),
-      supabase.from('puntos_fecha').select('total_puntos, fechas(numero)').eq('usuario_id', user.id)
+      supabase.from('puntos_fecha').select('total_puntos, fechas(numero), partidos_acertados, partidos_totales').eq('usuario_id', user.id),
+      supabase.from('puntos_totales').select('usuario_id, puntos_acumulados').eq('temporada_id', 1)
     ])
     const totalPuntos = totales?.reduce((s, r) => s + (r.puntos_acumulados || 0), 0) || 0
     const mapaFechas = {}
@@ -74,7 +75,15 @@ export default function Perfil() {
     const totalFechas = Object.keys(mapaFechas).length
     const mejorFecha = Object.values(mapaFechas).reduce((max, v) => Math.max(max, v), 0) || 0
     const promedio = totalFechas > 0 ? Math.round(totalPuntos / totalFechas * 10) / 10 : 0
-    setStats({ totalPuntos, totalFechas, mejorFecha, promedio })
+    const totalAcertados = porFecha?.reduce((s, r) => s + (r.partidos_acertados || 0), 0) || 0
+    const totalJugados = porFecha?.reduce((s, r) => s + (r.partidos_totales || 0), 0) || 0
+    const pctAcierto = totalJugados > 0 ? Math.round(totalAcertados / totalJugados * 100) : 0
+    const byUser = {}
+    allTotales?.forEach(r => { byUser[r.usuario_id] = (byUser[r.usuario_id] || 0) + (r.puntos_acumulados || 0) })
+    const sorted = Object.values(byUser).sort((a, b) => b - a)
+    const posicion = sorted.findIndex(pts => pts <= totalPuntos) + 1
+    const totalJugadores = sorted.length
+    setStats({ totalPuntos, totalFechas, mejorFecha, promedio, pctAcierto, posicion, totalJugadores })
   }
 
   async function cambiarPassword(e) {
@@ -156,12 +165,14 @@ export default function Perfil() {
         {stats && (
           <div style={{marginBottom:20}}>
             <div style={{fontSize:11,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:10}}>Mis estadísticas 2026</div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
               {[
                 { v: stats.totalPuntos, l: 'Total pts', color: 'var(--azul)' },
                 { v: stats.totalFechas, l: 'Fechas', color: 'var(--texto)' },
                 { v: stats.mejorFecha,  l: 'Mejor fecha', color: 'var(--dorado-oscuro)' },
-                { v: stats.promedio,    l: 'Promedio', color: 'var(--texto)' },
+                { v: `${stats.promedio}`, l: 'Promedio', color: 'var(--texto)' },
+                { v: `${stats.pctAcierto}%`, l: 'Acierto', color: '#16a34a' },
+                { v: stats.posicion ? `#${stats.posicion}` : '—', l: `de ${stats.totalJugadores}`, color: 'var(--azul)' },
               ].map((s, i) => (
                 <div key={i} style={{textAlign:'center',padding:'10px 6px',background:'var(--gris)',borderRadius:10,border:'1px solid var(--gris-borde)'}}>
                   <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:22,fontWeight:700,color:s.color,lineHeight:1}}>{s.v}</div>

@@ -15,7 +15,7 @@ function getTrofeo(rachaMaxima) {
   return TROFEOS.find(t => rachaMaxima >= t.minimo) || null
 }
 
-function FilaRanking({ item, idx, esYo, subVista, refProp }) {
+function FilaRanking({ item, idx, esYo, subVista, refProp, movimiento }) {
   const av = item.perfiles?.avatar_url
   const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
   const racha = item.perfiles?.racha_actual || 0
@@ -33,8 +33,13 @@ function FilaRanking({ item, idx, esYo, subVista, refProp }) {
         background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
       }}
     >
-      <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
-        {medal(idx) || (idx+1)}
+      <div style={{width:36,flexShrink:0,textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
+        <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx+1)}</div>
+        {movimiento && movimiento.dir !== 'same' && movimiento.delta > 0 && (
+          <span style={{fontSize:9,fontWeight:700,color:movimiento.dir==='up'?'#16a34a':'#dc2626',lineHeight:1}}>
+            {movimiento.dir==='up'?'▲':'▼'}{movimiento.delta}
+          </span>
+        )}
       </div>
       <div className="avatar-circle" style={{width:34,height:34,fontSize:13,flexShrink:0,marginLeft:8}}>
         {av ? <img src={av} alt={ini} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
@@ -68,6 +73,7 @@ function FilaRanking({ item, idx, esYo, subVista, refProp }) {
 export default function Ranking() {
   const { perfil } = useAuth()
   const [modo, setModo] = useState('anual')
+  const [movimientos, setMovimientos] = useState({})
   const [busqueda, setBusqueda] = useState('')
   const [fechas, setFechas] = useState([])
   const [fechaNum, setFechaNum] = useState(null)
@@ -122,7 +128,29 @@ export default function Ranking() {
           agrupado[uid].puntos_acumulados += (item.puntos_acumulados || 0)
           agrupado[uid].fechas_jugadas = Math.max(agrupado[uid].fechas_jugadas, item.fechas_jugadas || 0)
         })
-        setLista(Object.values(agrupado).sort((a,b) => b.puntos_acumulados - a.puntos_acumulados))
+        const currentList = Object.values(agrupado).sort((a,b) => b.puntos_acumulados - a.puntos_acumulados)
+        setLista(currentList)
+
+        // Movimientos anual: restar última fecha
+        const { data: allFechas } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
+        const latestNum = allFechas?.[0]?.numero
+        if (latestNum != null) {
+          const latestIds = (allFechas || []).filter(f => f.numero === latestNum).map(f => f.id)
+          const { data: latestPts } = await supabase.from('puntos_fecha').select('usuario_id, total_puntos').in('fecha_id', latestIds)
+          const deduct = {}
+          latestPts?.forEach(p => { deduct[p.usuario_id] = (deduct[p.usuario_id] || 0) + (p.total_puntos || 0) })
+          const prevList = currentList.map(item => ({ ...item, puntos_acumulados: (item.puntos_acumulados || 0) - (deduct[item.usuario_id] || 0) })).sort((a,b) => b.puntos_acumulados - a.puntos_acumulados)
+          const prevPos = {}
+          prevList.forEach((item, idx) => { prevPos[item.usuario_id] = idx + 1 })
+          const movs = {}
+          currentList.forEach((item, idx) => {
+            const prev = prevPos[item.usuario_id]
+            if (prev == null || deduct[item.usuario_id] == null) return
+            const delta = prev - (idx + 1)
+            movs[item.usuario_id] = { delta: Math.abs(delta), dir: delta > 0 ? 'up' : delta < 0 ? 'down' : 'same' }
+          })
+          setMovimientos(movs)
+        }
       } else if (modo === 'fecha' && fechaNum !== null) {
         const { data: fechasIds } = await supabase.from('fechas')
           .select('id').eq('numero', fechaNum).eq('resultados_cargados', true)
@@ -146,7 +174,31 @@ export default function Ranking() {
           agrupado[uid].bonus_pleno += (item.bonus_pleno || 0)
           agrupado[uid].bonus_mitad += (item.bonus_mitad || 0)
         })
-        setLista(Object.values(agrupado).sort((a,b) => b.total_puntos - a.total_puntos))
+        const currentListF = Object.values(agrupado).sort((a,b) => b.total_puntos - a.total_puntos)
+        setLista(currentListF)
+
+        // Movimientos por fecha: comparar con fecha anterior
+        const { data: allFechasF } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
+        const prevNumF = (allFechasF || []).find(f => f.numero < fechaNum)?.numero
+        if (prevNumF != null) {
+          const prevIdsF = (allFechasF || []).filter(f => f.numero === prevNumF).map(f => f.id)
+          const { data: prevDataF } = await supabase.from('puntos_fecha').select('usuario_id, total_puntos').in('fecha_id', prevIdsF)
+          const prevAgrF = {}
+          prevDataF?.forEach(p => { prevAgrF[p.usuario_id] = (prevAgrF[p.usuario_id] || 0) + (p.total_puntos || 0) })
+          const prevSortedF = Object.entries(prevAgrF).sort(([,a],[,b]) => b - a)
+          const prevPosF = {}
+          prevSortedF.forEach(([uid], idx) => { prevPosF[uid] = idx + 1 })
+          const movsF = {}
+          currentListF.forEach((item, idx) => {
+            const prev = prevPosF[item.usuario_id]
+            if (prev == null) return
+            const delta = prev - (idx + 1)
+            movsF[item.usuario_id] = { delta: Math.abs(delta), dir: delta > 0 ? 'up' : delta < 0 ? 'down' : 'same' }
+          })
+          setMovimientos(movsF)
+        } else {
+          setMovimientos({})
+        }
       }
     } catch(e) {
       console.error('Error ranking:', e)
@@ -253,6 +305,7 @@ export default function Ranking() {
                       esYo={esYo}
                       subVista={modo}
                       refProp={esYo ? miFilaRef : null}
+                      movimiento={movimientos[item.usuario_id]}
                     />
                   )
                 })}

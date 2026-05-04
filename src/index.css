@@ -22,7 +22,8 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f0f0f0;
+  background: linear-gradient(160deg, #e8ecf5 0%, #f0f0f2 100%);
+  background-attachment: fixed;
   color: var(--texto);
   min-height: 100vh;
 }
@@ -310,7 +311,7 @@ body {
 /* ===== AUTH ===== */
 .auth-container {
   min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
-  background: linear-gradient(135deg, var(--azul) 0%, #0f1928 60%, #1a0000 100%);
+  background: linear-gradient(135deg, var(--azul-medio) 0%, var(--azul) 60%, #0f1928 100%);
 }
 
 .auth-card {
