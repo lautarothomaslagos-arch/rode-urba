@@ -195,7 +195,7 @@ body {
   background: var(--blanco);
   border-radius: var(--radio);
   border: 1.5px solid var(--gris-borde);
-  border-top: 2px solid var(--azul-claro);
+  border-top: 1.5px solid var(--azul);
   padding: 16px;
   margin-bottom: 10px;
   transition: all 0.15s;
