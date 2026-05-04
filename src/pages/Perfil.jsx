@@ -318,9 +318,9 @@ export default function Perfil() {
   }
 
   async function registrarShare() {
-    await supabase.rpc('incrementar_invitaciones', { uid: user.id }).catch(() =>
-      supabase.from('perfiles').update({ invitaciones: (perfil?.invitaciones || 0) + 1 }).eq('id', user.id)
-    )
+    const { data } = await supabase.from('perfiles').select('invitaciones').eq('id', user.id).single()
+    await supabase.from('perfiles').update({ invitaciones: (data?.invitaciones || 0) + 1 }).eq('id', user.id)
+    if (pestaña === 'logros') cargarLogros()
   }
 
   function toggleTab(id) { setPestaña(pestaña === id ? null : id) }

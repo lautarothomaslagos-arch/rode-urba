@@ -140,7 +140,8 @@ export default function Resultados() {
               )
               window.open(`https://wa.me/?text=${msg}`, '_blank')
               supabase.from('perfiles').select('invitaciones').eq('id', user.id).single()
-                .then(({ data }) => supabase.from('perfiles').update({ invitaciones: (data?.invitaciones || 0) + 1 }).eq('id', user.id))
+                .then(({ data }) => supabase.from('perfiles')
+                  .update({ invitaciones: (data?.invitaciones || 0) + 1 }).eq('id', user.id))
               setCompartiendo(false)
             }}
             style={{width:'100%',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:8,padding:'10px',color:'white',fontSize:13,fontWeight:600,cursor:'pointer',marginTop:4,opacity:compartiendo?0.7:1}}
