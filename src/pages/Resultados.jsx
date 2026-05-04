@@ -82,24 +82,24 @@ export default function Resultados() {
       )}
 
       {!loading && puntosFecha && (
-        <div className="card" style={{background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',border:'none',marginBottom:16}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-            <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.8)'}}>
+        <div className="card" style={{background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',border:'none',marginBottom:16,padding:'12px 14px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.8)'}}>
               <span className={`cat-badge ${CAT_CLASS[cat]}`} style={{marginRight:8}}>{CATS[cat]}</span>
               Fecha {fi?.numero}
             </span>
-            <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:32,fontWeight:700,color:'var(--dorado)'}}>
-              {puntosFecha.total_puntos} <span style={{fontSize:16,fontWeight:400,color:'rgba(255,255,255,0.6)'}}>pts</span>
+            <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:22,fontWeight:700,color:'var(--dorado)'}}>
+              {puntosFecha.total_puntos} <span style={{fontSize:13,fontWeight:400,color:'rgba(255,255,255,0.6)'}}>pts</span>
             </span>
           </div>
-          <div className="puntos-resumen">
+          <div className="puntos-resumen" style={{marginBottom:10}}>
             {[
               {v: puntosFecha.puntos_exactos, l:'Exactos'},
               {v: puntosFecha.puntos_signo, l:'Signo'},
               {v: (puntosFecha.bonus_pleno||0)+(puntosFecha.bonus_mitad||0), l:'Bonus'},
             ].map((p,i) => (
-              <div key={i} className="punt-item" style={{background:'rgba(255,255,255,0.1)'}}>
-                <div className="punt-valor" style={{color:i===2?'var(--dorado)':'white'}}>{p.v}</div>
+              <div key={i} className="punt-item" style={{background:'rgba(255,255,255,0.1)',padding:'8px 6px'}}>
+                <div className="punt-valor" style={{color:i===2?'var(--dorado)':'white',fontSize:18}}>{p.v}</div>
                 <div className="punt-label" style={{color:'rgba(255,255,255,0.6)'}}>{p.l}</div>
               </div>
             ))}

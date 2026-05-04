@@ -33,10 +33,10 @@ function FilaRanking({ item, idx, esYo, subVista, refProp, movimiento }) {
         background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
       }}
     >
-      <div style={{width:36,flexShrink:0,textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
+      <div style={{width:44,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',gap:3}}>
         <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx+1)}</div>
         {movimiento && movimiento.dir !== 'same' && movimiento.delta > 0 && (
-          <span style={{fontSize:9,fontWeight:700,color:movimiento.dir==='up'?'#16a34a':'#dc2626',lineHeight:1}}>
+          <span style={{fontSize:8,fontWeight:700,color:movimiento.dir==='up'?'#16a34a':'#dc2626',lineHeight:1}}>
             {movimiento.dir==='up'?'▲':'▼'}{movimiento.delta}
           </span>
         )}
