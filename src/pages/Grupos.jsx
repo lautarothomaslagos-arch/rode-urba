@@ -175,13 +175,18 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   }, [menuAbierto])
 
   useEffect(() => {
-    if (!miFilaRef.current || !scrollContainerRef.current) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setMiFilaVisible(entry.isIntersecting),
-      { root: scrollContainerRef.current, threshold: 0.5 }
-    )
-    observer.observe(miFilaRef.current)
-    return () => observer.disconnect()
+    setMiFilaVisible(true)
+    const container = scrollContainerRef.current
+    if (!container) return
+    const checkVisible = () => {
+      if (!miFilaRef.current) { setMiFilaVisible(true); return }
+      const cr = container.getBoundingClientRect()
+      const rr = miFilaRef.current.getBoundingClientRect()
+      setMiFilaVisible(rr.top < cr.bottom && rr.bottom > cr.top)
+    }
+    checkVisible()
+    container.addEventListener('scroll', checkVisible)
+    return () => container.removeEventListener('scroll', checkVisible)
   }, [ranking, subVista])
 
   useEffect(() => { cargarFechas(); cargarMiembros() }, [])
@@ -497,7 +502,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
       {!loading && (() => {
         const miIdx = ranking.findIndex(item => item.usuario_id === userId)
         const miItem = miIdx >= 0 ? ranking[miIdx] : null
-        const FilaGrupo = ({ item, idx, refProp }) => {
+        const renderFila = (item, idx, ref) => {
           const esYo = item.usuario_id === userId
           const av = item.perfiles?.avatar_url
           const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
@@ -506,7 +511,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
           const diff = idx > 0 ? pts - liderPts : null
           const mov = movimientos[item.usuario_id]
           return (
-            <div ref={refProp} key={item.usuario_id} style={{
+            <div ref={ref} key={item.usuario_id} style={{
               display: 'flex', alignItems: 'center', padding: '10px 16px',
               borderBottom: '1px solid var(--gris-borde)', gap: 0,
               background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
@@ -548,13 +553,11 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{ranking.length} participantes</span>
             </div>
             <div ref={scrollContainerRef} style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-              {ranking.map((item, idx) => (
-                <FilaGrupo key={item.usuario_id} item={item} idx={idx} refProp={item.usuario_id === userId ? miFilaRef : null} />
-              ))}
+              {ranking.map((item, idx) => renderFila(item, idx, item.usuario_id === userId ? miFilaRef : null))}
             </div>
             {miItem && !miFilaVisible && (
               <div style={{ borderTop: '2px solid var(--dorado)' }}>
-                <FilaGrupo item={miItem} idx={miIdx} refProp={null} />
+                {renderFila(miItem, miIdx, null)}
               </div>
             )}
           </div>

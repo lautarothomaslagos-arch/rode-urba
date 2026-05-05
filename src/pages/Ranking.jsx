@@ -92,13 +92,18 @@ export default function Ranking() {
   }, [modo, fechaNum])
 
   useEffect(() => {
-    if (!miFilaRef.current || !scrollContainerRef.current) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setMiFilaVisible(entry.isIntersecting),
-      { root: scrollContainerRef.current, threshold: 0.5 }
-    )
-    observer.observe(miFilaRef.current)
-    return () => observer.disconnect()
+    setMiFilaVisible(true)
+    const container = scrollContainerRef.current
+    if (!container) return
+    const checkVisible = () => {
+      if (!miFilaRef.current) { setMiFilaVisible(true); return }
+      const cr = container.getBoundingClientRect()
+      const rr = miFilaRef.current.getBoundingClientRect()
+      setMiFilaVisible(rr.top < cr.bottom && rr.bottom > cr.top)
+    }
+    checkVisible()
+    container.addEventListener('scroll', checkVisible)
+    return () => container.removeEventListener('scroll', checkVisible)
   }, [lista, modo])
 
   async function cargarFechas() {
