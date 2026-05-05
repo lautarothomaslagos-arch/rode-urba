@@ -996,10 +996,10 @@ function AdminStats() {
       supabase.from('puntos_fecha')
         .select('usuario_id, total_puntos, perfiles(username), fechas(numero, fecha_partido)'),
       supabase.from('puntos_fecha')
-        .select('usuario_id, total_puntos, puntos_exactos, perfiles(username)'),
+        .select('usuario_id, total_puntos, puntos_exactos, perfiles(username), fechas(numero)'),
       latestIds.length
-        ? supabase.from('puntos_fecha').select('*', { count: 'exact', head: true }).in('fecha_id', latestIds)
-        : Promise.resolve({ count: 0 }),
+        ? supabase.from('puntos_fecha').select('usuario_id').in('fecha_id', latestIds)
+        : Promise.resolve({ data: [] }),
       supabase.from('perfiles').select('username, racha_actual'),
       supabase.from('puntos_totales').select('usuario_id, puntos_acumulados, perfiles(club)').eq('temporada_id', 1),
     ])
@@ -1020,13 +1020,22 @@ function AdminStats() {
     })
     const topPorFecha = Object.values(mejorPorFecha).sort((a, b) => b.total - a.total).slice(0, 10)
 
-    // Promedio pts/participación
-    const promedioPts = allPuntosFecha?.length > 0
-      ? Math.round((allPuntosFecha.reduce((s, p) => s + (p.total_puntos || 0), 0) / allPuntosFecha.length) * 10) / 10
+    // Promedio pts por usuario por fecha (agrupado por usuario+número de fecha)
+    const porUsuarioFecha = {}
+    allPuntosFecha?.forEach(p => {
+      const num = p.fechas?.numero
+      if (num == null) return
+      const key = `${p.usuario_id}_${num}`
+      if (!porUsuarioFecha[key]) porUsuarioFecha[key] = 0
+      porUsuarioFecha[key] += (p.total_puntos || 0)
+    })
+    const valsUF = Object.values(porUsuarioFecha)
+    const promedioPts = valsUF.length > 0
+      ? Math.round((valsUF.reduce((s, v) => s + v, 0) / valsUF.length) * 10) / 10
       : 0
 
-    // % participación última fecha
-    const participacionUlt = participacionUltRes.count || 0
+    // % participación última fecha (usuarios únicos)
+    const participacionUlt = new Set(participacionUltRes.data?.map(r => r.usuario_id) || []).size
     const pctUlt = totalUsuarios > 0 ? Math.round((participacionUlt / totalUsuarios) * 100) : 0
 
     // Top exactos acumulados
