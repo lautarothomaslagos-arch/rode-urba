@@ -160,7 +160,10 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const [loadingHistorial, setLoadingHistorial] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [expulsando, setExpulsando] = useState(false)
+  const [miFilaVisible, setMiFilaVisible] = useState(true)
   const menuRef = useRef(null)
+  const miFilaRef = useRef(null)
+  const scrollContainerRef = useRef(null)
 
   const esAdmin = grupo.creador_id === userId
 
@@ -170,6 +173,16 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [menuAbierto])
+
+  useEffect(() => {
+    if (!miFilaRef.current || !scrollContainerRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setMiFilaVisible(entry.isIntersecting),
+      { root: scrollContainerRef.current, threshold: 0.5 }
+    )
+    observer.observe(miFilaRef.current)
+    return () => observer.disconnect()
+  }, [ranking, subVista])
 
   useEffect(() => { cargarFechas(); cargarMiembros() }, [])
   useEffect(() => { cargarRanking() }, [subVista, fechaNum, miembros])
@@ -481,58 +494,72 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
 
       {loadingHistorial && subVista === 'fecha' && <div className="loading" style={{padding:16}}><div className="spinner"></div></div>}
 
-      {!loading && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: subVista === 'fecha' && Object.keys(historial).length > 0 ? 0 : 16 }}>
-          <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--dorado)', letterSpacing: 1 }}>
-              {subVista === 'anual' ? `${displayNombre} — Anual` : `${displayNombre} — Fecha ${fechaNum}`}
-            </span>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{ranking.length} participantes</span>
-          </div>
-          {ranking.map((item, idx) => {
-            const esYo = item.usuario_id === userId
-            const av = item.perfiles?.avatar_url
-            const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
-            const pts = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
-            const liderPts = subVista === 'anual' ? ranking[0]?.puntos_acumulados : ranking[0]?.total_puntos
-            const diff = idx > 0 ? pts - liderPts : null
-            const mov = movimientos[item.usuario_id]
-            return (
-              <div key={item.usuario_id} style={{
-                display: 'flex', alignItems: 'center', padding: '10px 16px',
-                borderBottom: '1px solid var(--gris-borde)', gap: 0,
-                background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
-              }}>
-                <div style={{ width: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-                  <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx + 1)}</div>
-                  {mov && mov.dir !== 'same' && mov.delta > 0 && (
-                    <span style={{ fontSize: 8, fontWeight: 700, color: mov.dir === 'up' ? '#16a34a' : '#dc2626', lineHeight: 1 }}>
-                      {mov.dir === 'up' ? '▲' : '▼'}{mov.delta}
-                    </span>
-                  )}
-                </div>
-                <div className="avatar-circle" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0, marginLeft: 8 }}>
-                  {av ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
-                </div>
-                <div style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.perfiles?.username || 'Usuario'}
-                    </span>
-                    {esYo && <span style={{ fontSize: 10, background: 'var(--dorado)', color: 'var(--azul)', padding: '1px 6px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>VOS</span>}
-                  </div>
-                  {item.perfiles?.club && <div style={{ fontSize: 11, color: 'var(--texto-suave)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.perfiles.club}</div>}
-                </div>
-                <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8 }}>
-                  <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>{pts}</span>
-                  <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
-                  {diff !== null && <div style={{ fontSize: 10, color: 'var(--texto-suave)', textAlign: 'right' }}>{diff} del líder</div>}
-                </div>
+      {!loading && (() => {
+        const miIdx = ranking.findIndex(item => item.usuario_id === userId)
+        const miItem = miIdx >= 0 ? ranking[miIdx] : null
+        const FilaGrupo = ({ item, idx, refProp }) => {
+          const esYo = item.usuario_id === userId
+          const av = item.perfiles?.avatar_url
+          const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+          const pts = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
+          const liderPts = subVista === 'anual' ? ranking[0]?.puntos_acumulados : ranking[0]?.total_puntos
+          const diff = idx > 0 ? pts - liderPts : null
+          const mov = movimientos[item.usuario_id]
+          return (
+            <div ref={refProp} key={item.usuario_id} style={{
+              display: 'flex', alignItems: 'center', padding: '10px 16px',
+              borderBottom: '1px solid var(--gris-borde)', gap: 0,
+              background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
+            }}>
+              <div style={{ width: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx + 1)}</div>
+                {mov && mov.dir !== 'same' && mov.delta > 0 && (
+                  <span style={{ fontSize: 8, fontWeight: 700, color: mov.dir === 'up' ? '#16a34a' : '#dc2626', lineHeight: 1 }}>
+                    {mov.dir === 'up' ? '▲' : '▼'}{mov.delta}
+                  </span>
+                )}
               </div>
-            )
-          })}
-        </div>
-      )}
+              <div className="avatar-circle" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0, marginLeft: 8 }}>
+                {av ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
+              </div>
+              <div style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.perfiles?.username || 'Usuario'}
+                  </span>
+                  {esYo && <span style={{ fontSize: 10, background: 'var(--dorado)', color: 'var(--azul)', padding: '1px 6px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>VOS</span>}
+                </div>
+                {item.perfiles?.club && <div style={{ fontSize: 11, color: 'var(--texto-suave)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.perfiles.club}</div>}
+              </div>
+              <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8 }}>
+                <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>{pts}</span>
+                <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
+                {diff !== null && <div style={{ fontSize: 10, color: 'var(--texto-suave)', textAlign: 'right' }}>{diff} del líder</div>}
+              </div>
+            </div>
+          )
+        }
+        return (
+          <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: subVista === 'fecha' && Object.keys(historial).length > 0 ? 0 : 16 }}>
+            <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--dorado)', letterSpacing: 1 }}>
+                {subVista === 'anual' ? `${displayNombre} — Anual` : `${displayNombre} — Fecha ${fechaNum}`}
+              </span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{ranking.length} participantes</span>
+            </div>
+            <div ref={scrollContainerRef} style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+              {ranking.map((item, idx) => (
+                <FilaGrupo key={item.usuario_id} item={item} idx={idx} refProp={item.usuario_id === userId ? miFilaRef : null} />
+              ))}
+            </div>
+            {miItem && !miFilaVisible && (
+              <div style={{ borderTop: '2px solid var(--dorado)' }}>
+                <FilaGrupo item={miItem} idx={miIdx} refProp={null} />
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* HISTORIAL DE PICKS — solo en modo fecha, post-cierre */}
       {!loading && !loadingHistorial && subVista === 'fecha' && Object.keys(historial).length > 0 && (
