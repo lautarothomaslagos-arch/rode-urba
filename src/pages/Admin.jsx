@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const CAT_LABELS = { 1: 'Top 14', 2: 'Primera A', 3: 'Primera B', 4: 'Primera C', 5: 'Segunda División' }
@@ -38,6 +38,7 @@ function AdminSemana() {
   const [fechasProximas, setFechasProximas] = useState([])
   const [equipos, setEquipos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [subTab, setSubTab] = useState('fechas')
 
   useEffect(() => { cargar() }, [])
 
@@ -65,55 +66,157 @@ function AdminSemana() {
 
   return (
     <div>
-      {[1,2,3,4,5].map(cat => {
-        const activas = fechasActivas.filter(f => f.categoria_id === cat)
-        const proximas = fechasProximas.filter(f => f.categoria_id === cat)
-        const estaAbierto = catAbierta === cat
-        return (
-          <div key={cat} className="card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
-            <button
-              onClick={() => setCatAbierta(estaAbierto ? null : cat)}
-              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '14px 16px', textAlign: 'left' }}
-            >
-              <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
-              <span style={{ flex: 1 }} />
-              <span style={{ fontSize: 12, color: 'var(--texto-suave)', marginRight: 10 }}>
-                {activas.length > 0 ? `${activas.length} fecha${activas.length > 1 ? 's' : ''}` : proximas.length > 0 ? `${proximas.length} próxima${proximas.length > 1 ? 's' : ''}` : 'sin fechas'}
-              </span>
-              <span style={{ color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
-            </button>
-            {estaAbierto && (
-              <div style={{ borderTop: '1px solid var(--gris-borde)', padding: '8px 12px 12px' }}>
-                {activas.length === 0 && proximas.length === 0 && (
-                  <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '8px 0 0' }}>No hay fechas activas ni próximas para este torneo.</p>
-                )}
-                {activas.map(fecha => (
-                  <FechaActiva key={fecha.id} fecha={fecha} equipos={equipos} onRefresh={cargar} />
-                ))}
-                {proximas.length > 0 && (
-                  <div style={{ marginTop: activas.length > 0 ? 12 : 4 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
-                      Próximas (inactivas)
-                    </div>
-                    {proximas.map(f => (
-                      <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--gris)', borderRadius: 8, marginBottom: 6, gap: 8, flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontWeight: 600, fontSize: 14 }}>Fecha {f.numero}</span>
-                          {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
-                        </div>
-                        <button className="btn btn-primary btn-small" onClick={async () => {
-                          await supabase.from('fechas').update({ activa: true }).eq('id', f.id)
-                          cargar()
-                        }}>Activar</button>
-                      </div>
+      <div className="tabs-box" style={{ marginBottom: 16 }}>
+        <button className={`tab-btn ${subTab === 'fechas' ? 'active' : ''}`} onClick={() => setSubTab('fechas')}>📋 Fechas activas</button>
+        <button className={`tab-btn ${subTab === 'notificaciones' ? 'active' : ''}`} onClick={() => setSubTab('notificaciones')}>🔔 Notificaciones</button>
+      </div>
+
+      {subTab === 'notificaciones' && <NotificacionesSemana fechasActivas={fechasActivas} />}
+
+      {subTab === 'fechas' && (
+        <div>
+          {[1,2,3,4,5].map(cat => {
+            const activas = fechasActivas.filter(f => f.categoria_id === cat)
+            const proximas = fechasProximas.filter(f => f.categoria_id === cat)
+            const estaAbierto = catAbierta === cat
+            return (
+              <div key={cat} className="card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
+                <button
+                  onClick={() => setCatAbierta(estaAbierto ? null : cat)}
+                  style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '14px 16px', textAlign: 'left' }}
+                >
+                  <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
+                  <span style={{ flex: 1 }} />
+                  <span style={{ fontSize: 12, color: 'var(--texto-suave)', marginRight: 10 }}>
+                    {activas.length > 0 ? `${activas.length} fecha${activas.length > 1 ? 's' : ''}` : proximas.length > 0 ? `${proximas.length} próxima${proximas.length > 1 ? 's' : ''}` : 'sin fechas'}
+                  </span>
+                  <span style={{ color: 'var(--dorado)', fontSize: 20, transition: 'transform 0.2s', transform: estaAbierto ? 'rotate(90deg)' : 'none' }}>›</span>
+                </button>
+                {estaAbierto && (
+                  <div style={{ borderTop: '1px solid var(--gris-borde)', padding: '8px 12px 12px' }}>
+                    {activas.length === 0 && proximas.length === 0 && (
+                      <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '8px 0 0' }}>No hay fechas activas ni próximas para este torneo.</p>
+                    )}
+                    {activas.map(fecha => (
+                      <FechaActiva key={fecha.id} fecha={fecha} equipos={equipos} onRefresh={cargar} />
                     ))}
+                    {proximas.length > 0 && (
+                      <div style={{ marginTop: activas.length > 0 ? 12 : 4 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                          Próximas (inactivas)
+                        </div>
+                        {proximas.map(f => (
+                          <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--gris)', borderRadius: 8, marginBottom: 6, gap: 8, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontWeight: 600, fontSize: 14 }}>Fecha {f.numero}</span>
+                              {f.fecha_partido && <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>{f.fecha_partido}</span>}
+                            </div>
+                            <button className="btn btn-primary btn-small" onClick={async () => {
+                              await supabase.from('fechas').update({ activa: true }).eq('id', f.id)
+                              cargar()
+                            }}>Activar</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NotificacionesSemana({ fechasActivas }) {
+  const [msg, setMsg] = useState('')
+  const [fechaSelId, setFechaSelId] = useState(null)
+
+  useEffect(() => {
+    if (fechasActivas.length > 0 && !fechaSelId) setFechaSelId(fechasActivas[0].id)
+  }, [fechasActivas])
+
+  function flash(texto) { setMsg(texto); setTimeout(() => setMsg(''), 4000) }
+
+  const fechaSel = fechasActivas.find(f => f.id === fechaSelId)
+
+  async function notificarResultados() {
+    if (!fechaSel) return
+    flash('Enviando notificaciones...')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { tipo: 'resultados', fecha_numero: fechaSel.numero }
+      })
+      if (!error) flash(`✓ Enviadas a ${data?.enviadas || 0} usuarios (${data?.omitidas || 0} sin picks)`)
+      else flash('Error al enviar notificaciones')
+    } catch (e) { flash('Error: ' + e.message) }
+  }
+
+  async function notificarApertura() {
+    if (!fechaSel) return
+    flash('Notificando apertura...')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { tipo: 'apertura', numero: fechaSel.numero }
+      })
+      if (!error) flash(`✓ Apertura notificada a ${data?.enviadas || 0} usuarios`)
+      else flash('Error al notificar apertura')
+    } catch (e) { flash('Error: ' + e.message) }
+  }
+
+  async function notificarRacha() {
+    flash('Enviando alerta de racha...')
+    try {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { tipo: 'racha_peligro' }
+      })
+      if (!error) flash(`✓ Alerta enviada a ${data?.enviadas || 0} usuarios con racha activa`)
+      else flash('Error al enviar alerta')
+    } catch (e) { flash('Error: ' + e.message) }
+  }
+
+  return (
+    <div>
+      {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: 12 }}>{msg}</div>}
+      {fechasActivas.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', color: 'var(--texto-suave)', padding: 24, fontSize: 14 }}>
+          No hay fechas activas en este momento
+        </div>
+      ) : (
+        <div className="card">
+          {fechasActivas.length > 1 && (
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label className="form-label">Fecha</label>
+              <select className="form-select" value={fechaSelId || ''} onChange={e => setFechaSelId(parseInt(e.target.value))}>
+                {fechasActivas.map(f => (
+                  <option key={f.id} value={f.id}>{CAT_LABELS[f.categoria_id]} — Fecha {f.numero}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {fechaSel && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <span className={`cat-badge ${CAT_CLASS[fechaSel.categoria_id]}`}>{CAT_LABELS[fechaSel.categoria_id]}</span>
+              <span style={{ fontWeight: 600, fontSize: 15 }}>Fecha {fechaSel.numero}</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button className="btn btn-gold" onClick={notificarResultados} disabled={!fechaSel} style={{ width: '100%' }}>
+              📊 Notificar resultados
+            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-secondary" onClick={notificarApertura} disabled={!fechaSel} style={{ flex: 1 }}>
+                🏉 Apertura
+              </button>
+              <button className="btn btn-secondary" onClick={notificarRacha} style={{ flex: 1 }}>
+                🔥 Rachas en peligro
+              </button>
+            </div>
           </div>
-        )
-      })}
+        </div>
+      )}
     </div>
   )
 }
@@ -199,39 +302,6 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
     onRefresh()
   }
 
-  async function notificar() {
-    flash('Enviando notificaciones...')
-    try {
-      const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { tipo: 'resultados', fecha_numero: fecha.numero }
-      })
-      if (!error) flash(`✓ Enviadas a ${data?.enviadas || 0} usuarios (${data?.omitidas || 0} sin picks)`)
-      else flash('Error al enviar notificaciones')
-    } catch (e) { flash('Error: ' + e.message) }
-  }
-
-  async function notificarApertura() {
-    flash('Notificando apertura...')
-    try {
-      const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { tipo: 'apertura', numero: fecha.numero }
-      })
-      if (!error) flash(`✓ Apertura notificada a ${data?.enviadas || 0} usuarios`)
-      else flash('Error al notificar apertura')
-    } catch (e) { flash('Error: ' + e.message) }
-  }
-
-  async function notificarRacha() {
-    flash('Enviando alerta de racha...')
-    try {
-      const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { tipo: 'racha_peligro' }
-      })
-      if (!error) flash(`✓ Alerta enviada a ${data?.enviadas || 0} usuarios con racha activa`)
-      else flash('Error al enviar alerta')
-    } catch (e) { flash('Error: ' + e.message) }
-  }
-
   async function desactivar() {
     if (!confirm('¿Desactivar esta fecha?')) return
     await supabase.from('fechas').update({ activa: false }).eq('id', fecha.id)
@@ -240,7 +310,6 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
 
   return (
     <div className="card" style={{ marginBottom: 12 }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span className={`cat-badge ${CAT_CLASS[fecha.categoria_id]}`}>{CAT_LABELS[fecha.categoria_id]}</span>
@@ -257,7 +326,6 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
 
       {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: 8 }}>{msg}</div>}
 
-      {/* Lista de partidos */}
       {partidos.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '0 0 10px' }}>Sin partidos cargados aún.</p>
       ) : (
@@ -311,7 +379,6 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
         </div>
       )}
 
-      {/* Agregar partido */}
       {!mostrarForm ? (
         <button className="btn btn-secondary btn-small" onClick={() => setMostrarForm(true)}>➕ Agregar partido</button>
       ) : (
@@ -343,27 +410,6 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
         </div>
       )}
 
-      {/* Notificaciones */}
-      {partidos.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--gris-borde)', marginTop: 12, paddingTop: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Notificaciones</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn btn-gold" style={{ width: '100%' }} onClick={notificar}>
-              📊 Notificar resultados
-            </button>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarApertura}>
-                🏉 Apertura
-              </button>
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarRacha}>
-                🔥 Rachas en peligro
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Resultados */}
       {partidos.length > 0 && (
         <div style={{ borderTop: '1px solid var(--gris-borde)', marginTop: 12, paddingTop: 12 }}>
           <button
@@ -430,11 +476,6 @@ function AdminFechas() {
   const [form, setForm] = useState({ categoria_id: 1, numero: '', fecha_partido: '', cierre: '', activar: true })
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
-  const [mostrarBulk, setMostrarBulk] = useState(false)
-  const [filasbulk, setFilasBulk] = useState([{ numero: '', fecha_partido: '' }])
-  const [catBulk, setCatBulk] = useState(1)
-  const [loadingBulk, setLoadingBulk] = useState(false)
-  const [msgBulk, setMsgBulk] = useState('')
   const [catAbierta, setCatAbierta] = useState(null)
 
   useEffect(() => { cargar() }, [])
@@ -467,29 +508,8 @@ function AdminFechas() {
     cargar()
   }
 
-  function agregarFila() { setFilasBulk(prev => [...prev, { numero: '', fecha_partido: '' }]) }
-  function eliminarFila(i) { setFilasBulk(prev => prev.filter((_, idx) => idx !== i)) }
-  function actualizarFila(i, campo, val) { setFilasBulk(prev => prev.map((f, idx) => idx === i ? { ...f, [campo]: val } : f)) }
-
-  async function crearTodas() {
-    const validas = filasbulk.filter(f => f.numero && f.fecha_partido)
-    if (!validas.length) { setMsgBulk('Error: completá al menos una fila'); return }
-    setLoadingBulk(true); setMsgBulk('')
-    const inserts = validas.map(f => ({
-      categoria_id: parseInt(catBulk), numero: parseInt(f.numero), temporada_id: 1,
-      fecha_partido: f.fecha_partido,
-      cierre_predicciones: calcularCierreDefault(f.fecha_partido) ? new Date(calcularCierreDefault(f.fecha_partido)).toISOString() : null,
-      activa: false
-    }))
-    const { error } = await supabase.from('fechas').insert(inserts)
-    if (!error) { setMsgBulk(`✓ ${inserts.length} fechas creadas como inactivas`); setFilasBulk([{ numero: '', fecha_partido: '' }]); cargar() }
-    else setMsgBulk('Error: ' + error.message)
-    setLoadingBulk(false)
-  }
-
   return (
     <div>
-      {/* Nueva fecha */}
       <div className="card">
         <div className="card-header"><span className="card-title">Nueva fecha</span></div>
         {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`}>{msg}</div>}
@@ -521,53 +541,6 @@ function AdminFechas() {
         <button className="btn btn-primary" onClick={guardar} disabled={loading}>Crear fecha</button>
       </div>
 
-      {/* Carga masiva (colapsada) */}
-      <div className="card">
-        <button
-          onClick={() => setMostrarBulk(!mostrarBulk)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: 0, textAlign: 'left' }}
-        >
-          <span className="card-title">📦 Carga masiva de fechas</span>
-          <span style={{ marginLeft: 'auto', fontSize: 18, color: 'var(--dorado)', transition: 'transform 0.2s', transform: mostrarBulk ? 'rotate(90deg)' : 'none' }}>›</span>
-        </button>
-        {!mostrarBulk && (
-          <p style={{ fontSize: 12, color: 'var(--texto-suave)', marginTop: 6, marginBottom: 0 }}>
-            Cargá todas las fechas del torneo de una vez como inactivas.
-          </p>
-        )}
-        {mostrarBulk && (
-          <div style={{ marginTop: 14 }}>
-            {msgBulk && <div className={`alert ${msgBulk.startsWith('Error') ? 'alert-error' : 'alert-success'}`}>{msgBulk}</div>}
-            <div className="form-group">
-              <label className="form-label">Categoría</label>
-              <select className="form-select" value={catBulk} onChange={e => setCatBulk(e.target.value)} style={{ maxWidth: 200 }}>
-                {[1, 2, 3, 4, 5].map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 32px', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase' }}>Nº</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase' }}>Fecha del partido</span>
-              <span></span>
-            </div>
-            {filasbulk.map((fila, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 32px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                <input className="form-input" type="number" placeholder="5" value={fila.numero} onChange={e => actualizarFila(i, 'numero', e.target.value)} style={{ padding: '8px 10px' }} />
-                <input className="form-input" type="date" value={fila.fecha_partido} onChange={e => actualizarFila(i, 'fecha_partido', e.target.value)} style={{ padding: '8px 10px' }} />
-                <button onClick={() => eliminarFila(i)} disabled={filasbulk.length === 1}
-                  style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--rojo)', opacity: filasbulk.length === 1 ? 0.3 : 1 }}>×</button>
-              </div>
-            ))}
-            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-              <button className="btn btn-secondary btn-small" onClick={agregarFila}>+ Fila</button>
-              <button className="btn btn-primary" onClick={crearTodas} disabled={loadingBulk}>
-                {loadingBulk ? 'Creando...' : `Crear ${filasbulk.filter(f => f.numero && f.fecha_partido).length || ''} fechas (inactivas)`}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Lista de fechas por torneo (acordeones) */}
       {[1,2,3,4,5].map(cat => {
         const lista = fechas.filter(f => f.categoria_id === cat)
         const estaAbierto = catAbierta === cat
@@ -599,10 +572,17 @@ function AdminFechas() {
 function FilaFecha({ f, onToggle, onRefresh }) {
   const [editando, setEditando] = useState(false)
   const [editFecha, setEditFecha] = useState(f.fecha_partido || '')
-  const [editCierre, setEditCierre] = useState(
-    f.cierre_predicciones ? f.cierre_predicciones.slice(0, 16) : ''
-  )
+  const [editCierre, setEditCierre] = useState(f.cierre_predicciones ? f.cierre_predicciones.slice(0, 16) : '')
   const [guardando, setGuardando] = useState(false)
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!menuAbierto) return
+    const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuAbierto(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuAbierto])
 
   async function guardarEdicion() {
     setGuardando(true)
@@ -616,6 +596,12 @@ function FilaFecha({ f, onToggle, onRefresh }) {
     onRefresh()
   }
 
+  async function eliminarFecha() {
+    if (!confirm(`¿Eliminar la Fecha ${f.numero}? Esta acción no se puede deshacer.`)) return
+    await supabase.from('fechas').delete().eq('id', f.id)
+    onRefresh()
+  }
+
   return (
     <div style={{ borderBottom: '1px solid var(--gris-borde)', opacity: f.activa ? 1 : 0.6 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', gap: 8 }}>
@@ -626,11 +612,31 @@ function FilaFecha({ f, onToggle, onRefresh }) {
           {!f.activa && <span style={{ fontSize: 11, background: 'var(--gris-borde)', color: 'var(--texto-suave)', padding: '1px 6px', borderRadius: 20 }}>inactiva</span>}
           {f.resultados_cargados && <span className="cierre-badge cierre-abierto" style={{ fontSize: 11 }}>✓ Resultados</span>}
         </div>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button className="btn btn-small btn-secondary" onClick={() => setEditando(!editando)}>✏️</button>
-          <button className={`btn btn-small ${f.activa ? 'btn-secondary' : 'btn-primary'}`} onClick={onToggle}>
-            {f.activa ? 'Desactivar' : 'Activar'}
-          </button>
+        <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => setMenuAbierto(v => !v)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--texto-suave)', padding: '4px 8px', borderRadius: 6, lineHeight: 1 }}
+          >⋮</button>
+          {menuAbierto && (
+            <div style={{ position: 'absolute', right: 0, top: '100%', background: 'white', border: '1px solid var(--gris-borde)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 160, overflow: 'hidden' }}>
+              <button
+                onClick={() => { setEditando(!editando); setMenuAbierto(false) }}
+                style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                ✏️ Editar fecha
+              </button>
+              <button
+                onClick={() => { onToggle(); setMenuAbierto(false) }}
+                style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {f.activa ? '🔴 Desactivar' : '🟢 Activar'}
+              </button>
+              <div style={{ borderTop: '1px solid var(--gris-borde)' }} />
+              <button
+                onClick={() => { setMenuAbierto(false); eliminarFecha() }}
+                style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 8 }}>
+                🗑️ Eliminar
+              </button>
+            </div>
+          )}
         </div>
       </div>
       {editando && (
@@ -749,6 +755,14 @@ function AdminUsuarios() {
     setTimeout(() => setMsg(''), 3000)
   }
 
+  async function eliminarUsuario(usuario) {
+    if (!confirm(`¿Eliminar permanentemente a @${usuario.username}? Esta acción no se puede deshacer.`)) return
+    const { error } = await supabase.from('perfiles').delete().eq('id', usuario.id)
+    if (!error) { setMsg('✓ Usuario eliminado'); setExpandido(null); cargar() }
+    else setMsg('Error: ' + error.message)
+    setTimeout(() => setMsg(''), 3000)
+  }
+
   const filtrados = usuarios.filter(u =>
     u.username?.toLowerCase().includes(busqueda.toLowerCase()) ||
     u.nombre_completo?.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -817,9 +831,12 @@ function AdminUsuarios() {
                       Registrado: {u.created_at ? new Date(u.created_at).toLocaleDateString('es-AR') : '—'}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
                     <button className={`btn btn-small ${u.es_admin ? 'btn-secondary' : 'btn-primary'}`} onClick={e => { e.stopPropagation(); toggleAdmin(u) }}>
                       {u.es_admin ? '🔓 Quitar admin' : '🔐 Dar admin'}
+                    </button>
+                    <button className="btn btn-small btn-danger" onClick={e => { e.stopPropagation(); eliminarUsuario(u) }}>
+                      🗑️ Eliminar usuario
                     </button>
                     <button className="btn btn-small btn-secondary" onClick={e => { e.stopPropagation(); setExpandido(null) }}>Cerrar</button>
                   </div>
@@ -951,12 +968,25 @@ function AdminStats() {
 
   async function cargar() {
     setLoading(true)
+
+    const { data: fechasConResultados } = await supabase.from('fechas')
+      .select('id, numero')
+      .eq('resultados_cargados', true)
+      .order('numero', { ascending: false })
+      .limit(20)
+    const latestNum = fechasConResultados?.[0]?.numero
+    const latestIds = (fechasConResultados || []).filter(f => f.numero === latestNum).map(f => f.id)
+
     const [
       { count: totalUsuarios },
       { count: totalGrupos },
       { data: fechasActivas },
       { count: totalPredsHoy },
-      { data: topFecha }
+      { data: topFecha },
+      { data: allPuntosFecha },
+      participacionUltRes,
+      { data: perfilesRacha },
+      { data: puntosClubsData },
     ] = await Promise.all([
       supabase.from('perfiles').select('*', { count: 'exact', head: true }),
       supabase.from('grupos').select('*', { count: 'exact', head: true }),
@@ -964,9 +994,17 @@ function AdminStats() {
       supabase.from('predicciones').select('*', { count: 'exact', head: true })
         .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       supabase.from('puntos_fecha')
-        .select('usuario_id, total_puntos, perfiles(username), fechas(numero, fecha_partido)')
+        .select('usuario_id, total_puntos, perfiles(username), fechas(numero, fecha_partido)'),
+      supabase.from('puntos_fecha')
+        .select('usuario_id, total_puntos, puntos_exactos, perfiles(username)'),
+      latestIds.length
+        ? supabase.from('puntos_fecha').select('*', { count: 'exact', head: true }).in('fecha_id', latestIds)
+        : Promise.resolve({ count: 0 }),
+      supabase.from('perfiles').select('username, racha_actual'),
+      supabase.from('puntos_totales').select('usuario_id, puntos_acumulados, perfiles(club)').eq('temporada_id', 1),
     ])
-    // Agrupa por (usuario_id, fecha numero) sumando todos los torneos
+
+    // Top puntajes por fecha
     const mapa = {}
     ;(topFecha || []).forEach(p => {
       const num = p.fechas?.numero
@@ -976,13 +1014,59 @@ function AdminStats() {
       if (!mapa[key]) mapa[key] = { username: p.perfiles?.username, numero: num, fecha_partido: p.fechas?.fecha_partido, total: 0 }
       mapa[key].total += p.total_puntos || 0
     })
-    // Por cada numero de fecha, el mejor usuario
     const mejorPorFecha = {}
     Object.values(mapa).forEach(g => {
       if (!mejorPorFecha[g.numero] || g.total > mejorPorFecha[g.numero].total) mejorPorFecha[g.numero] = g
     })
     const topPorFecha = Object.values(mejorPorFecha).sort((a, b) => b.total - a.total).slice(0, 10)
-    setStats({ totalUsuarios, totalGrupos, fechasActivas: fechasActivas || [], totalPredsHoy, topFecha: topPorFecha })
+
+    // Promedio pts/participación
+    const promedioPts = allPuntosFecha?.length > 0
+      ? Math.round((allPuntosFecha.reduce((s, p) => s + (p.total_puntos || 0), 0) / allPuntosFecha.length) * 10) / 10
+      : 0
+
+    // % participación última fecha
+    const participacionUlt = participacionUltRes.count || 0
+    const pctUlt = totalUsuarios > 0 ? Math.round((participacionUlt / totalUsuarios) * 100) : 0
+
+    // Top exactos acumulados
+    const exactosPorUsuario = {}
+    allPuntosFecha?.forEach(p => {
+      if (!exactosPorUsuario[p.usuario_id]) exactosPorUsuario[p.usuario_id] = { exactos: 0, username: p.perfiles?.username }
+      exactosPorUsuario[p.usuario_id].exactos += (p.puntos_exactos || 0)
+    })
+    const topExactos = Object.values(exactosPorUsuario)
+      .filter(v => v.exactos > 0)
+      .sort((a, b) => b.exactos - a.exactos)
+      .slice(0, 3)
+
+    // Rachas activas
+    const racha3 = (perfilesRacha || []).filter(p => (p.racha_actual || 0) >= 3).length
+    const racha5 = (perfilesRacha || []).filter(p => (p.racha_actual || 0) >= 5).length
+    const racha10 = (perfilesRacha || []).filter(p => (p.racha_actual || 0) >= 10).length
+
+    // Top clubes
+    const clubesMap = {}
+    puntosClubsData?.forEach(p => {
+      const club = p.perfiles?.club
+      if (!club || club.startsWith('---') || club === 'Otro club') return
+      if (!clubesMap[club]) clubesMap[club] = { club, puntos: 0 }
+      clubesMap[club].puntos += (p.puntos_acumulados || 0)
+    })
+    const topClubes = Object.values(clubesMap).sort((a, b) => b.puntos - a.puntos).slice(0, 3)
+
+    setStats({
+      totalUsuarios, totalGrupos,
+      fechasActivas: fechasActivas || [],
+      totalPredsHoy,
+      topFecha: topPorFecha,
+      promedioPts,
+      pctUlt,
+      latestNum,
+      topExactos,
+      racha3, racha5, racha10,
+      topClubes,
+    })
     setLoading(false)
   }
 
@@ -991,19 +1075,49 @@ function AdminStats() {
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 16 }}>
         {[
-          { v: stats.totalUsuarios, l: 'Usuarios', icon: '👥', color: 'var(--azul)' },
-          { v: stats.totalGrupos,   l: 'Grupos',   icon: '🏉', color: 'var(--dorado-oscuro)' },
-          { v: stats.fechasActivas.length, l: 'Fechas activas', icon: '📅', color: '#16a34a' },
-          { v: stats.totalPredsHoy, l: 'Preds esta semana', icon: '✏️', color: 'var(--rojo-vivo)' },
+          { v: stats.totalUsuarios,        l: 'Usuarios',           icon: '👥', color: 'var(--azul)' },
+          { v: stats.totalGrupos,          l: 'Grupos',             icon: '🏉', color: 'var(--dorado-oscuro)' },
+          { v: stats.fechasActivas.length, l: 'Fechas activas',     icon: '📅', color: '#16a34a' },
+          { v: stats.totalPredsHoy,        l: 'Preds esta semana',  icon: '✏️', color: 'var(--rojo-vivo)' },
+          { v: stats.promedioPts,          l: 'Avg pts/fecha',      icon: '📈', color: '#0891b2' },
+          { v: `${stats.pctUlt}%`,         l: stats.latestNum ? `Partic. F${stats.latestNum}` : 'Partic. ult.', icon: '🎯', color: '#7c3aed' },
         ].map((s, i) => (
           <div key={i} className="card" style={{ textAlign: 'center', padding: '16px 12px' }}>
             <div style={{ fontSize: 24, marginBottom: 6 }}>{s.icon}</div>
-            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 32, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.v ?? '—'}</div>
+            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 28, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.v ?? '—'}</div>
             <div style={{ fontSize: 11, color: 'var(--texto-suave)', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</div>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <div className="card" style={{ margin: 0 }}>
+          <div className="card-header" style={{ marginBottom: 8 }}><span className="card-title">🔥 Rachas activas</span></div>
+          {[
+            { v: stats.racha3,  l: '≥ 3 fechas', color: '#ea580c' },
+            { v: stats.racha5,  l: '≥ 5 fechas', color: '#dc2626' },
+            { v: stats.racha10, l: '≥ 10 fechas', color: '#7c3aed' },
+          ].map((r, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < 2 ? '1px solid var(--gris-borde)' : 'none' }}>
+              <span style={{ fontSize: 13, color: 'var(--texto)' }}>{r.l}</span>
+              <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: r.color }}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+
+        {stats.topClubes.length > 0 && (
+          <div className="card" style={{ margin: 0 }}>
+            <div className="card-header" style={{ marginBottom: 8 }}><span className="card-title">🏉 Top clubes</span></div>
+            {stats.topClubes.map((c, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < stats.topClubes.length - 1 ? '1px solid var(--gris-borde)' : 'none' }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{['🥇','🥈','🥉'][i]} {c.club}</span>
+                <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--azul)' }}>{c.puntos}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card">
@@ -1020,6 +1134,20 @@ function AdminStats() {
           ))
         )}
       </div>
+
+      {stats.topExactos.length > 0 && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">🎯 Más exactos acumulados</span></div>
+          {stats.topExactos.map((p, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < stats.topExactos.length - 1 ? '1px solid var(--gris-borde)' : 'none' }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>{['🥇','🥈','🥉'][i]} {p.username || '—'}</span>
+              <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--azul)' }}>
+                {p.exactos} <span style={{ fontSize: 11, color: 'var(--texto-suave)', fontWeight: 400 }}>pts exactos</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {stats.topFecha.length > 0 && (
         <div className="card">

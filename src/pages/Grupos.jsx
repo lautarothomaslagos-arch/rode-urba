@@ -161,8 +161,14 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [expulsando, setExpulsando] = useState(false)
   const menuRef = useRef(null)
+  const scrollContainerRef = useRef(null)
+  const miFilaRef = useRef(null)
+  const [mostrarSticky, setMostrarSticky] = useState(false)
 
   const esAdmin = grupo.creador_id === userId
+
+  const miItemGrupo = ranking.find(item => item.usuario_id === userId)
+  const miIdxGrupo = ranking.findIndex(item => item.usuario_id === userId)
 
   useEffect(() => {
     if (!menuAbierto) return
@@ -171,6 +177,24 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [menuAbierto])
 
+  useEffect(() => {
+    if (!miItemGrupo) { setMostrarSticky(false); return }
+
+    const checkVisibility = () => {
+      if (!miFilaRef.current || !scrollContainerRef.current) {
+        setMostrarSticky(false)
+        return
+      }
+      const rowRect = miFilaRef.current.getBoundingClientRect()
+      const containerRect = scrollContainerRef.current.getBoundingClientRect()
+      const visible = rowRect.top < containerRect.bottom && rowRect.bottom > containerRect.top
+      setMostrarSticky(!visible)
+    }
+
+    checkVisibility()
+    document.addEventListener('scroll', checkVisibility, { capture: true })
+    return () => document.removeEventListener('scroll', checkVisibility, { capture: true })
+  }, [miItemGrupo, ranking])
 
   useEffect(() => { cargarFechas(); cargarMiembros() }, [])
   useEffect(() => { cargarRanking() }, [subVista, fechaNum, miembros])
@@ -220,7 +244,6 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
           agrupado[uid].fechas_jugadas = Math.max(agrupado[uid].fechas_jugadas, item.fechas_jugadas || 0)
         })
 
-        // Incluir miembros sin puntos
         miembros.forEach(m => {
           if (!agrupado[m.usuario_id]) {
             agrupado[m.usuario_id] = { usuario_id: m.usuario_id, puntos_acumulados: 0, fechas_jugadas: 0, perfiles: m.perfiles }
@@ -230,7 +253,6 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
         const currentList = Object.values(agrupado).sort((a, b) => b.puntos_acumulados - a.puntos_acumulados)
         setRanking(currentList)
 
-        // Movimientos anual: restar puntos de la última fecha
         const { data: allFechasA } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
         const latestNumA = allFechasA?.[0]?.numero
         if (latestNumA != null) {
@@ -282,7 +304,6 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
         const currentListF = Object.values(agrupado).sort((a, b) => b.total_puntos - a.total_puntos)
         setRanking(currentListF)
 
-        // Movimientos por fecha: comparar con fecha anterior
         const { data: allFechasF } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
         const prevNumF = (allFechasF || []).find(f => f.numero < fechaNum)?.numero
         if (prevNumF != null) {
@@ -375,6 +396,50 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const medal = (i) => ['🥇', '🥈', '🥉'][i] || null
   const posClass = (i) => i === 0 ? 'pos-1' : i === 1 ? 'pos-2' : i === 2 ? 'pos-3' : ''
 
+  function renderFila(item, idx, esYo, sticky, ref) {
+    const av = item.perfiles?.avatar_url
+    const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+    const pts = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
+    const liderPts = subVista === 'anual' ? ranking[0]?.puntos_acumulados : ranking[0]?.total_puntos
+    const diff = idx > 0 ? pts - liderPts : null
+    const mov = movimientos[item.usuario_id]
+
+    return (
+      <div ref={ref || undefined} key={sticky ? 'sticky' : item.usuario_id} style={{
+        display: 'flex', alignItems: 'center', padding: '10px 16px',
+        borderBottom: sticky ? 'none' : '1px solid var(--gris-borde)', gap: 0,
+        background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white',
+        ...(sticky ? { borderTop: '2px solid var(--dorado)', borderRadius: '0 0 10px 10px', boxShadow: '0 -3px 10px rgba(0,0,0,0.08)' } : {})
+      }}>
+        <div style={{ width: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+          <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx + 1)}</div>
+          {mov && mov.dir !== 'same' && mov.delta > 0 && (
+            <span style={{ fontSize: 8, fontWeight: 700, color: mov.dir === 'up' ? '#16a34a' : '#dc2626', lineHeight: 1 }}>
+              {mov.dir === 'up' ? '▲' : '▼'}{mov.delta}
+            </span>
+          )}
+        </div>
+        <div className="avatar-circle" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0, marginLeft: 8 }}>
+          {av ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
+        </div>
+        <div style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {item.perfiles?.username || 'Usuario'}
+            </span>
+            {esYo && <span style={{ fontSize: 10, background: 'var(--dorado)', color: 'var(--azul)', padding: '1px 6px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>VOS</span>}
+          </div>
+          {item.perfiles?.club && <div style={{ fontSize: 11, color: 'var(--texto-suave)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.perfiles.club}</div>}
+        </div>
+        <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8 }}>
+          <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>{pts}</span>
+          <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
+          {diff !== null && <div style={{ fontSize: 10, color: 'var(--texto-suave)', textAlign: 'right' }}>{diff} del líder</div>}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
       {/* Header del grupo */}
@@ -462,7 +527,6 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
         ← Volver a mis grupos
       </button>
 
-      {/* Tabs ranking */}
       <div className="tabs-box">
         <button className={`tab-btn ${subVista === 'anual' ? 'active' : ''}`} onClick={() => setSubVista('anual')}>Anual 2026</button>
         <button className={`tab-btn ${subVista === 'fecha' ? 'active' : ''}`} onClick={() => setSubVista('fecha')}>Por fecha</button>
@@ -490,55 +554,16 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
             </span>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{ranking.length} participantes</span>
           </div>
-          <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <div ref={scrollContainerRef} style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             {ranking.map((item, idx) => {
               const esYo = item.usuario_id === userId
-              const av = item.perfiles?.avatar_url
-              const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
-              const pts = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
-              const liderPts = subVista === 'anual' ? ranking[0]?.puntos_acumulados : ranking[0]?.total_puntos
-              const diff = idx > 0 ? pts - liderPts : null
-              const mov = movimientos[item.usuario_id]
-              return (
-                <div key={item.usuario_id} style={{
-                  display: 'flex', alignItems: 'center', padding: '10px 16px',
-                  borderBottom: '1px solid var(--gris-borde)', gap: 0,
-                  background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white',
-                  ...(esYo ? { position: 'sticky', bottom: 0, zIndex: 2, borderTop: '2px solid var(--dorado)', boxShadow: '0 -2px 8px rgba(0,0,0,0.06)' } : {})
-                }}>
-                  <div style={{ width: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-                    <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx + 1)}</div>
-                    {mov && mov.dir !== 'same' && mov.delta > 0 && (
-                      <span style={{ fontSize: 8, fontWeight: 700, color: mov.dir === 'up' ? '#16a34a' : '#dc2626', lineHeight: 1 }}>
-                        {mov.dir === 'up' ? '▲' : '▼'}{mov.delta}
-                      </span>
-                    )}
-                  </div>
-                  <div className="avatar-circle" style={{ width: 34, height: 34, fontSize: 13, flexShrink: 0, marginLeft: 8 }}>
-                    {av ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.perfiles?.username || 'Usuario'}
-                      </span>
-                      {esYo && <span style={{ fontSize: 10, background: 'var(--dorado)', color: 'var(--azul)', padding: '1px 6px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>VOS</span>}
-                    </div>
-                    {item.perfiles?.club && <div style={{ fontSize: 11, color: 'var(--texto-suave)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.perfiles.club}</div>}
-                  </div>
-                  <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8 }}>
-                    <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>{pts}</span>
-                    <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
-                    {diff !== null && <div style={{ fontSize: 10, color: 'var(--texto-suave)', textAlign: 'right' }}>{diff} del líder</div>}
-                  </div>
-                </div>
-              )
+              return renderFila(item, idx, esYo, false, esYo ? miFilaRef : null)
             })}
           </div>
+          {mostrarSticky && miItemGrupo && renderFila(miItemGrupo, miIdxGrupo, true, true, null)}
         </div>
       )}
 
-      {/* HISTORIAL DE PICKS — solo en modo fecha, post-cierre */}
       {!loading && !loadingHistorial && subVista === 'fecha' && Object.keys(historial).length > 0 && (
         <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 16 }}>
           <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -549,7 +574,6 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
           </div>
           {Object.values(historial).map(({ partido, picks }) => (
             <div key={partido.id} style={{ borderBottom: '1px solid var(--gris-borde)' }}>
-              {/* Cabecera del partido */}
               <div style={{ padding: '7px 16px', background: 'var(--gris)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--texto)' }}>
                   {partido.equipo_local?.nombre_corto || partido.equipo_local?.nombre} — {partido.equipo_visitante?.nombre_corto || partido.equipo_visitante?.nombre}
@@ -558,7 +582,6 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
                   {partido.resultado_local} — {partido.resultado_visitante}
                 </span>
               </div>
-              {/* Pick de cada miembro */}
               {miembros.map(m => {
                 const pick = picks[m.usuario_id]
                 const esYo = m.usuario_id === userId
@@ -618,7 +641,6 @@ function CrearGrupo({ userId, onCreado }) {
 
     if (error) { setMsg('Error: ' + error.message); setLoading(false); return }
 
-    // Unirse automáticamente al grupo creado
     await supabase.from('grupo_miembros').insert({ grupo_id: data.id, usuario_id: userId })
     setMsg('✓ Grupo creado')
     setLoading(false)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -15,7 +15,7 @@ function getTrofeo(rachaMaxima) {
   return TROFEOS.find(t => rachaMaxima >= t.minimo) || null
 }
 
-function FilaRanking({ item, idx, esYo, subVista, movimiento }) {
+function FilaRanking({ item, idx, esYo, subVista, movimiento, refProp, sticky }) {
   const av = item.perfiles?.avatar_url
   const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
   const racha = item.perfiles?.racha_actual || 0
@@ -26,11 +26,12 @@ function FilaRanking({ item, idx, esYo, subVista, movimiento }) {
 
   return (
     <div
+      ref={refProp || undefined}
       style={{
         display:'flex', alignItems:'center', padding:'10px 16px',
-        borderBottom:'1px solid var(--gris-borde)', gap:0,
+        borderBottom: sticky ? 'none' : '1px solid var(--gris-borde)', gap:0,
         background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white',
-        ...(esYo ? { position:'sticky', bottom:0, zIndex:2, borderTop:'2px solid var(--dorado)', boxShadow:'0 -2px 8px rgba(0,0,0,0.06)' } : {})
+        ...(sticky ? { borderTop: '2px solid var(--dorado)', borderRadius: '0 0 10px 10px', boxShadow: '0 -3px 10px rgba(0,0,0,0.08)' } : {})
       }}
     >
       <div style={{width:44,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',gap:3}}>
@@ -80,6 +81,9 @@ export default function Ranking() {
   const [lista, setLista] = useState([])
   const [listaClubs, setListaClubs] = useState([])
   const [loading, setLoading] = useState(true)
+  const scrollContainerRef = useRef(null)
+  const miFilaRef = useRef(null)
+  const [mostrarSticky, setMostrarSticky] = useState(false)
 
   useEffect(() => { cargarFechas() }, [])
   useEffect(() => {
@@ -87,6 +91,28 @@ export default function Ranking() {
     if (modo === 'clubes') cargarClubs()
     else cargarPersonal()
   }, [modo, fechaNum])
+
+  const miIdx = lista.findIndex(item => item.perfiles?.username === perfil?.username)
+  const miItem = miIdx >= 0 ? lista[miIdx] : null
+
+  useEffect(() => {
+    if (!miItem || modo === 'clubes') { setMostrarSticky(false); return }
+
+    const checkVisibility = () => {
+      if (!miFilaRef.current || !scrollContainerRef.current) {
+        setMostrarSticky(false)
+        return
+      }
+      const rowRect = miFilaRef.current.getBoundingClientRect()
+      const containerRect = scrollContainerRef.current.getBoundingClientRect()
+      const visible = rowRect.top < containerRect.bottom && rowRect.bottom > containerRect.top
+      setMostrarSticky(!visible)
+    }
+
+    checkVisibility()
+    document.addEventListener('scroll', checkVisibility, { capture: true })
+    return () => document.removeEventListener('scroll', checkVisibility, { capture: true })
+  }, [miItem, lista, busqueda, modo])
 
   async function cargarFechas() {
     const { data } = await supabase.from('fechas')
@@ -119,7 +145,6 @@ export default function Ranking() {
         const currentList = Object.values(agrupado).sort((a,b) => b.puntos_acumulados - a.puntos_acumulados)
         setLista(currentList)
 
-        // Movimientos anual: restar última fecha
         const { data: allFechas } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
         const latestNum = allFechas?.[0]?.numero
         if (latestNum != null) {
@@ -165,7 +190,6 @@ export default function Ranking() {
         const currentListF = Object.values(agrupado).sort((a,b) => b.total_puntos - a.total_puntos)
         setLista(currentListF)
 
-        // Movimientos por fecha: comparar con fecha anterior
         const { data: allFechasF } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
         const prevNumF = (allFechasF || []).find(f => f.numero < fechaNum)?.numero
         if (prevNumF != null) {
@@ -226,9 +250,6 @@ export default function Ranking() {
   const medal = (i) => ['🥇','🥈','🥉'][i] || null
   const posClass = (i) => i===0?'pos-1':i===1?'pos-2':i===2?'pos-3':''
 
-  const miIdx = lista.findIndex(item => item.perfiles?.username === perfil?.username)
-  const miItem = miIdx >= 0 ? lista[miIdx] : null
-
   const listaFiltrada = busqueda.trim()
     ? lista.filter(item =>
         item.perfiles?.username?.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -288,7 +309,7 @@ export default function Ranking() {
                 </span>
               </div>
 
-              <div style={{maxHeight:'60vh',overflowY:'auto'}}>
+              <div ref={scrollContainerRef} style={{maxHeight:'60vh',overflowY:'auto'}}>
                 {listaFiltrada.map((item, idx) => {
                   const esYo = item.perfiles?.username === perfil?.username
                   const idxReal = lista.indexOf(item)
@@ -300,6 +321,7 @@ export default function Ranking() {
                       esYo={esYo}
                       subVista={modo}
                       movimiento={movimientos[item.usuario_id]}
+                      refProp={esYo ? miFilaRef : null}
                     />
                   )
                 })}
@@ -307,6 +329,17 @@ export default function Ranking() {
                   <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)',fontSize:13}}>Sin resultados para "{busqueda}"</div>
                 )}
               </div>
+
+              {mostrarSticky && miItem && (
+                <FilaRanking
+                  item={miItem}
+                  idx={miIdx}
+                  esYo={true}
+                  subVista={modo}
+                  movimiento={movimientos[miItem.usuario_id]}
+                  sticky={true}
+                />
+              )}
             </div>
       )}
 
