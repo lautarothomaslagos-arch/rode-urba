@@ -981,7 +981,7 @@ function AdminStats() {
       { count: totalUsuarios },
       { count: totalGrupos },
       { data: fechasActivas },
-      { count: totalPredsHoy },
+      { data: predsData },
       { data: topFecha },
       { data: allPuntosFecha },
       participacionUltRes,
@@ -991,7 +991,7 @@ function AdminStats() {
       supabase.from('perfiles').select('*', { count: 'exact', head: true }),
       supabase.from('grupos').select('*', { count: 'exact', head: true }),
       supabase.from('fechas').select('id, categoria_id, numero, fecha_partido').eq('activa', true).eq('resultados_cargados', false),
-      supabase.from('predicciones').select('*', { count: 'exact', head: true })
+      supabase.from('predicciones').select('usuario_id')
         .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       supabase.from('puntos_fecha')
         .select('usuario_id, total_puntos, perfiles(username), fechas(numero, fecha_partido)'),
@@ -1019,6 +1019,8 @@ function AdminStats() {
       if (!mejorPorFecha[g.numero] || g.total > mejorPorFecha[g.numero].total) mejorPorFecha[g.numero] = g
     })
     const topPorFecha = Object.values(mejorPorFecha).sort((a, b) => b.total - a.total).slice(0, 10)
+
+    const totalPredsHoy = new Set(predsData?.map(p => p.usuario_id) || []).size
 
     // Promedio pts por usuario por fecha (agrupado por usuario+número de fecha)
     const porUsuarioFecha = {}
@@ -1089,7 +1091,7 @@ function AdminStats() {
           { v: stats.totalUsuarios,        l: 'Usuarios',           icon: '👥', color: 'var(--azul)' },
           { v: stats.totalGrupos,          l: 'Grupos',             icon: '🏉', color: 'var(--dorado-oscuro)' },
           { v: stats.fechasActivas.length, l: 'Fechas activas',     icon: '📅', color: '#16a34a' },
-          { v: stats.totalPredsHoy,        l: 'Preds esta semana',  icon: '✏️', color: 'var(--rojo-vivo)' },
+          { v: stats.totalPredsHoy,        l: 'Jugadores esta semana', icon: '✏️', color: 'var(--rojo-vivo)' },
           { v: stats.promedioPts,          l: 'Avg pts/fecha',      icon: '📈', color: '#0891b2' },
           { v: `${stats.pctUlt}%`,         l: stats.latestNum ? `Partic. F${stats.latestNum}` : 'Partic. ult.', icon: '🎯', color: '#7c3aed' },
         ].map((s, i) => (
