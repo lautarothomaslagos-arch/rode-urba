@@ -343,6 +343,26 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
         </div>
       )}
 
+      {/* Notificaciones */}
+      {partidos.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--gris-borde)', marginTop: 12, paddingTop: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Notificaciones</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button className="btn btn-gold" style={{ width: '100%' }} onClick={notificar}>
+              📊 Notificar resultados
+            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarApertura}>
+                🏉 Apertura
+              </button>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarRacha}>
+                🔥 Rachas en peligro
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Resultados */}
       {partidos.length > 0 && (
         <div style={{ borderTop: '1px solid var(--gris-borde)', marginTop: 12, paddingTop: 12 }}>
@@ -379,22 +399,9 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
                   </div>
                 </div>
               ))}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                <button className="btn btn-primary" style={{ width: '100%' }} onClick={guardarResultados} disabled={guardando}>
-                  {guardando ? 'Calculando...' : 'Guardar resultados y calcular puntos'}
-                </button>
-                <button className="btn btn-gold" style={{ width: '100%' }} onClick={notificar}>
-                  📊 Notificar resultados (con posición personal)
-                </button>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarApertura}>
-                    🏉 Notificar apertura
-                  </button>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={notificarRacha}>
-                    🔥 Alertar rachas en peligro
-                  </button>
-                </div>
-              </div>
+              <button className="btn btn-primary" style={{ width: '100%', marginTop: 4 }} onClick={guardarResultados} disabled={guardando}>
+                {guardando ? 'Calculando...' : 'Guardar resultados y calcular puntos'}
+              </button>
             </div>
           )}
         </div>
