@@ -606,13 +606,29 @@ export default function Perfil() {
               {t.id === 'invitar' && (
                 <div style={{paddingTop:14}}>
                   <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.</p>
-                  <button className="btn btn-primary" onClick={() => {
-                    const msg = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
-                    window.open(`https://wa.me/?text=${msg}`, '_blank')
-                    registrarShare()
-                  }}>
-                    📲 Invitar por WhatsApp
-                  </button>
+                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                    <button className="btn btn-primary" onClick={() => {
+                      const msg = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
+                      window.open(`https://wa.me/?text=${msg}`, '_blank')
+                      registrarShare()
+                    }}>
+                      📲 Invitar por WhatsApp
+                    </button>
+                    <button className="btn btn-secondary" onClick={async () => {
+                      const texto = "🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app"
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({ text: texto })
+                          registrarShare()
+                        } catch(e) { /* usuario canceló */ }
+                      } else {
+                        await navigator.clipboard.writeText("https://pickandgo-prode.vercel.app")
+                        alert("Link copiado. Pegalo en Instagram.")
+                      }
+                    }}>
+                      📸 Compartir en Instagram
+                    </button>
+                  </div>
                 </div>
               )}
 
