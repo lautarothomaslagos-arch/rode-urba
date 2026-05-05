@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -158,8 +158,18 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const [movimientos, setMovimientos] = useState({})
   const [historial, setHistorial] = useState({})
   const [loadingHistorial, setLoadingHistorial] = useState(false)
+  const [menuAbierto, setMenuAbierto] = useState(false)
+  const [expulsando, setExpulsando] = useState(false)
+  const menuRef = useRef(null)
 
   const esAdmin = grupo.creador_id === userId
+
+  useEffect(() => {
+    if (!menuAbierto) return
+    const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuAbierto(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuAbierto])
 
   useEffect(() => { cargarFechas(); cargarMiembros() }, [])
   useEffect(() => { cargarRanking() }, [subVista, fechaNum, miembros])
@@ -368,7 +378,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
     <div>
       {/* Header del grupo */}
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: esAdmin ? 12 : 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, border: '2px solid var(--dorado)' }}>
               {preview ? <img src={preview} alt={grupo.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🏉'}
@@ -380,34 +390,71 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
               </label>
             )}
           </div>
-          <div style={{ flex: 1 }}>
-            {editando ? (
-              <input className="form-input" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} style={{ marginBottom: 6 }} />
-            ) : (
-              <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--azul)' }}>{displayNombre}</div>
-            )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--azul)' }}>{displayNombre}</div>
             <div style={{ fontSize: 12, color: 'var(--texto-suave)' }}>
               Código: <span style={{ fontWeight: 700, color: 'var(--dorado-oscuro)', letterSpacing: 1 }}>{grupo.codigo}</span>
               {' · '}{miembros.length} {miembros.length === 1 ? 'miembro' : 'miembros'}
             </div>
           </div>
+          {esAdmin && (
+            <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                onClick={() => setMenuAbierto(v => !v)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--texto-suave)', padding: '4px 8px', borderRadius: 6, lineHeight: 1 }}
+              >⋮</button>
+              {menuAbierto && (
+                <div style={{ position: 'absolute', right: 0, top: '100%', background: 'white', border: '1px solid var(--gris-borde)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 170, overflow: 'hidden' }}>
+                  <button onClick={() => { setEditando(true); setExpulsando(false); setMenuAbierto(false) }}
+                    style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    ✏️ Editar nombre
+                  </button>
+                  <button onClick={() => { setExpulsando(true); setEditando(false); setMenuAbierto(false) }}
+                    style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    👤 Expulsar miembro
+                  </button>
+                  <div style={{ borderTop: '1px solid var(--gris-borde)' }} />
+                  <button onClick={() => { setMenuAbierto(false); eliminarGrupo() }}
+                    style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    🗑️ Eliminar grupo
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: 8 }}>{msg}</div>}
-
-        {esAdmin && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {editando ? (
-              <>
-                <button className="btn btn-primary btn-small" onClick={guardarCambios}>Guardar</button>
-                <button className="btn btn-small btn-secondary" onClick={() => setEditando(false)}>Cancelar</button>
-              </>
-            ) : (
-              <button className="btn btn-small btn-secondary" onClick={() => setEditando(true)}>✏️ Editar nombre</button>
-            )}
-            <button className="btn btn-small btn-danger" onClick={eliminarGrupo}>🗑️ Eliminar grupo</button>
+        {editando && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+            <input className="form-input" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} style={{ flex: 1, marginBottom: 0 }} />
+            <button className="btn btn-primary btn-small" onClick={guardarCambios}>Guardar</button>
+            <button className="btn btn-small btn-secondary" onClick={() => setEditando(false)}>Cancelar</button>
           </div>
         )}
+
+        {expulsando && (
+          <div style={{ marginTop: 12, padding: 12, background: 'var(--gris)', borderRadius: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--texto)' }}>Seleccioná al miembro a expulsar:</div>
+            {miembros.filter(m => m.usuario_id !== userId).map(m => (
+              <div key={m.usuario_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div className="avatar-circle" style={{ width: 28, height: 28, fontSize: 11, flexShrink: 0 }}>
+                    {m.perfiles?.avatar_url
+                      ? <img src={m.perfiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                      : m.perfiles?.username?.[0]?.toUpperCase()}
+                  </div>
+                  <span style={{ fontSize: 13 }}>{m.perfiles?.username}</span>
+                </div>
+                <button className="btn btn-small btn-danger" onClick={() => { expulsarMiembro(m.usuario_id); setExpulsando(false) }}>
+                  Expulsar
+                </button>
+              </div>
+            ))}
+            <button className="btn btn-small btn-secondary" style={{ marginTop: 10 }} onClick={() => setExpulsando(false)}>Cancelar</button>
+          </div>
+        )}
+
+        {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`} style={{ marginTop: 10, marginBottom: 0 }}>{msg}</div>}
       </div>
 
       <button onClick={onVolver} style={{ background: 'none', border: 'none', color: 'var(--dorado-oscuro)', cursor: 'pointer', fontSize: 13, marginBottom: 12, fontWeight: 600 }}>
@@ -476,17 +523,10 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
                   </div>
                   {item.perfiles?.club && <div style={{ fontSize: 11, color: 'var(--texto-suave)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.perfiles.club}</div>}
                 </div>
-                <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div>
-                    <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>{pts}</span>
-                    <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
-                    {diff !== null && <div style={{ fontSize: 10, color: 'var(--texto-suave)', textAlign: 'right' }}>{diff} del líder</div>}
-                  </div>
-                  {esAdmin && item.usuario_id !== userId && (
-                    <button className="btn btn-small btn-danger" style={{ fontSize: 11, padding: '3px 8px' }} onClick={() => expulsarMiembro(item.usuario_id)}>
-                      Expulsar
-                    </button>
-                  )}
+                <div style={{ flexShrink: 0, textAlign: 'right', marginLeft: 8 }}>
+                  <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--azul)' }}>{pts}</span>
+                  <span style={{ fontSize: 11, color: 'var(--texto-suave)', marginLeft: 2 }}>pts</span>
+                  {diff !== null && <div style={{ fontSize: 10, color: 'var(--texto-suave)', textAlign: 'right' }}>{diff} del líder</div>}
                 </div>
               </div>
             )

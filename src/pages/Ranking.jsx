@@ -211,15 +211,18 @@ export default function Ranking() {
   async function cargarClubs() {
     setLoading(true)
     try {
-      const { data, error } = await supabase.from('puntos_totales')
-        .select('puntos_acumulados, usuario_id, perfiles(club)')
-        .eq('temporada_id', 1)
+      const [{ data, error }, { data: equiposData }] = await Promise.all([
+        supabase.from('puntos_totales').select('puntos_acumulados, usuario_id, perfiles(club)').eq('temporada_id', 1),
+        supabase.from('equipos').select('nombre, nombre_corto, escudo_url')
+      ])
       if (error) throw error
+      const escudoMap = {}
+      equiposData?.forEach(e => { escudoMap[e.nombre] = { abrev: e.nombre_corto, escudo: e.escudo_url } })
       const agrupado = {}
       data?.forEach(item => {
         const club = item.perfiles?.club
         if (!club || club.startsWith('---') || club === 'Otro club') return
-        if (!agrupado[club]) agrupado[club] = { club, puntos: 0, usuarios: new Set() }
+        if (!agrupado[club]) agrupado[club] = { club, puntos: 0, usuarios: new Set(), ...(escudoMap[club] || {}) }
         agrupado[club].puntos += (item.puntos_acumulados || 0)
         agrupado[club].usuarios.add(item.usuario_id)
       })
@@ -351,8 +354,13 @@ export default function Ranking() {
                     <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
                       {medal(idx) || (idx+1)}
                     </div>
-                    <div style={{flex:1,minWidth:0,marginLeft:12}}>
-                      <div style={{fontWeight:600,fontSize:14,color:'var(--texto)'}}>{item.club}</div>
+                    <div style={{width:36,height:36,borderRadius:6,overflow:'hidden',flexShrink:0,marginLeft:8,background:'var(--gris)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>
+                      {item.escudo
+                        ? <img src={item.escudo} alt={item.club} style={{width:'100%',height:'100%',objectFit:'contain'}} />
+                        : '🏉'}
+                    </div>
+                    <div style={{flex:1,minWidth:0,marginLeft:10}}>
+                      <div style={{fontWeight:600,fontSize:14,color:'var(--texto)'}}>{item.abrev || item.club}</div>
                       <div style={{fontSize:11,color:'var(--texto-suave)'}}>{item.miembros} {item.miembros===1?'participante':'participantes'}</div>
                     </div>
                     <div style={{flexShrink:0,textAlign:'right',marginLeft:8}}>
