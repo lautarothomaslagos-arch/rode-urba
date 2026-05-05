@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -15,7 +15,7 @@ function getTrofeo(rachaMaxima) {
   return TROFEOS.find(t => rachaMaxima >= t.minimo) || null
 }
 
-function FilaRanking({ item, idx, esYo, subVista, refProp, movimiento }) {
+function FilaRanking({ item, idx, esYo, subVista, movimiento }) {
   const av = item.perfiles?.avatar_url
   const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
   const racha = item.perfiles?.racha_actual || 0
@@ -26,11 +26,11 @@ function FilaRanking({ item, idx, esYo, subVista, refProp, movimiento }) {
 
   return (
     <div
-      ref={refProp}
       style={{
         display:'flex', alignItems:'center', padding:'10px 16px',
         borderBottom:'1px solid var(--gris-borde)', gap:0,
-        background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white'
+        background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white',
+        ...(esYo ? { position:'sticky', bottom:0, zIndex:2, borderTop:'2px solid var(--dorado)', boxShadow:'0 -2px 8px rgba(0,0,0,0.06)' } : {})
       }}
     >
       <div style={{width:44,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',gap:3}}>
@@ -80,9 +80,6 @@ export default function Ranking() {
   const [lista, setLista] = useState([])
   const [listaClubs, setListaClubs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [miFilaVisible, setMiFilaVisible] = useState(true)
-  const miFilaRef = useRef(null)
-  const scrollContainerRef = useRef(null)
 
   useEffect(() => { cargarFechas() }, [])
   useEffect(() => {
@@ -90,25 +87,6 @@ export default function Ranking() {
     if (modo === 'clubes') cargarClubs()
     else cargarPersonal()
   }, [modo, fechaNum])
-
-  useEffect(() => {
-    setMiFilaVisible(true)
-    const checkVisible = () => {
-      if (!miFilaRef.current || !scrollContainerRef.current) { setMiFilaVisible(true); return }
-      const cr = scrollContainerRef.current.getBoundingClientRect()
-      const rr = miFilaRef.current.getBoundingClientRect()
-      setMiFilaVisible(rr.top < cr.bottom && rr.bottom > cr.top)
-    }
-    const raf = requestAnimationFrame(checkVisible)
-    const container = scrollContainerRef.current
-    if (container) container.addEventListener('scroll', checkVisible)
-    window.addEventListener('scroll', checkVisible)
-    return () => {
-      cancelAnimationFrame(raf)
-      if (container) container.removeEventListener('scroll', checkVisible)
-      window.removeEventListener('scroll', checkVisible)
-    }
-  }, [lista, modo])
 
   async function cargarFechas() {
     const { data } = await supabase.from('fechas')
@@ -310,7 +288,7 @@ export default function Ranking() {
                 </span>
               </div>
 
-              <div ref={scrollContainerRef} style={{maxHeight:'60vh',overflowY:'auto'}}>
+              <div style={{maxHeight:'60vh',overflowY:'auto'}}>
                 {listaFiltrada.map((item, idx) => {
                   const esYo = item.perfiles?.username === perfil?.username
                   const idxReal = lista.indexOf(item)
@@ -321,7 +299,6 @@ export default function Ranking() {
                       idx={idxReal}
                       esYo={esYo}
                       subVista={modo}
-                      refProp={esYo ? miFilaRef : null}
                       movimiento={movimientos[item.usuario_id]}
                     />
                   )
@@ -330,18 +307,6 @@ export default function Ranking() {
                   <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)',fontSize:13}}>Sin resultados para "{busqueda}"</div>
                 )}
               </div>
-
-              {!busqueda && miItem && !miFilaVisible && (
-                <div style={{borderTop:'2px solid var(--dorado)'}}>
-                  <FilaRanking
-                    item={miItem}
-                    idx={miIdx}
-                    esYo={true}
-                    subVista={modo}
-                    refProp={null}
-                  />
-                </div>
-              )}
             </div>
       )}
 
