@@ -545,10 +545,10 @@ function AdminFechas() {
         const lista = fechas.filter(f => f.categoria_id === cat)
         const estaAbierto = catAbierta === cat
         return (
-          <div key={cat} className="card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }}>
+          <div key={cat} className="card" style={{ marginBottom: 10, padding: 0 }}>
             <button
               onClick={() => setCatAbierta(estaAbierto ? null : cat)}
-              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '14px 16px', textAlign: 'left' }}
+              style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '14px 16px', textAlign: 'left', borderRadius: estaAbierto ? '10px 10px 0 0' : 'var(--radio)', overflow: 'hidden' }}
             >
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CAT_LABELS[cat]}</span>
               <span style={{ flex: 1 }} />
