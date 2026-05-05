@@ -176,17 +176,21 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
 
   useEffect(() => {
     setMiFilaVisible(true)
-    const container = scrollContainerRef.current
-    if (!container) return
     const checkVisible = () => {
-      if (!miFilaRef.current) { setMiFilaVisible(true); return }
-      const cr = container.getBoundingClientRect()
+      if (!miFilaRef.current || !scrollContainerRef.current) { setMiFilaVisible(true); return }
+      const cr = scrollContainerRef.current.getBoundingClientRect()
       const rr = miFilaRef.current.getBoundingClientRect()
       setMiFilaVisible(rr.top < cr.bottom && rr.bottom > cr.top)
     }
-    checkVisible()
-    container.addEventListener('scroll', checkVisible)
-    return () => container.removeEventListener('scroll', checkVisible)
+    const raf = requestAnimationFrame(checkVisible)
+    const container = scrollContainerRef.current
+    if (container) container.addEventListener('scroll', checkVisible)
+    window.addEventListener('scroll', checkVisible)
+    return () => {
+      cancelAnimationFrame(raf)
+      if (container) container.removeEventListener('scroll', checkVisible)
+      window.removeEventListener('scroll', checkVisible)
+    }
   }, [ranking, subVista])
 
   useEffect(() => { cargarFechas(); cargarMiembros() }, [])
