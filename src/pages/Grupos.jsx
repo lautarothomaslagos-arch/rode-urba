@@ -483,8 +483,8 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
       {loadingHistorial && subVista === 'fecha' && <div className="loading" style={{padding:16}}><div className="spinner"></div></div>}
 
       {!loading && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: subVista === 'fecha' && Object.keys(historial).length > 0 ? 0 : 16 }}>
-          <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="card" style={{ padding: 0, marginBottom: subVista === 'fecha' && Object.keys(historial).length > 0 ? 0 : 16 }}>
+          <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '10px 10px 0 0', overflow: 'hidden' }}>
             <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--dorado)', letterSpacing: 1 }}>
               {subVista === 'anual' ? `${displayNombre} — Anual` : `${displayNombre} — Fecha ${fechaNum}`}
             </span>
