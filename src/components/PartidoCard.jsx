@@ -224,19 +224,22 @@ export function PartidoCardResultado({ partido, pred }) {
 
   const rl = partido.resultado_local
   const rv = partido.resultado_visitante
-  const bonusDefLocal    = rl != null && rv != null && rl < rv  && (rv - rl) <= 7
-  const bonusDefVisitante = rl != null && rv != null && rv < rl && (rl - rv) <= 7
-  const bonusOfLocal     = partido.bonus_of_local
-  const bonusOfVisitante = partido.bonus_of_visitante
-  const hayBonusLocal    = bonusOfLocal    || bonusDefLocal
-  const hayBonusVisitante = bonusOfVisitante || bonusDefVisitante
+  const boLocal     = partido.bonus_of_local
+  const boVisitante = partido.bonus_of_visitante
 
-  const marcador = <div className="marcador-resultado">{rl} — {rv}</div>
-
-  const chipBonus = (of, def) => (
-    <div style={{display:'flex',flexDirection:'column',gap:2,alignItems:'center'}}>
-      {of  && <span style={{fontSize:9,fontWeight:700,color:'#16a34a',background:'#dcfce7',padding:'1px 5px',borderRadius:4,border:'1px solid #bbf7d0',whiteSpace:'nowrap'}}>🏉 BO</span>}
-      {def && <span style={{fontSize:9,fontWeight:700,color:'#2563eb',background:'#dbeafe',padding:'1px 5px',borderRadius:4,border:'1px solid #bfdbfe',whiteSpace:'nowrap'}}>🛡 BD</span>}
+  const marcador = (
+    <div style={{textAlign:'center'}}>
+      <div className="marcador-resultado">{rl} — {rv}</div>
+      {(boLocal || boVisitante) && (
+        <div style={{display:'flex',justifyContent:'space-between',padding:'0 6px',marginTop:1}}>
+          <span style={{fontSize:10,color:'var(--texto-suave)',fontStyle:'italic',minWidth:16}}>
+            {boLocal ? '(B)' : ''}
+          </span>
+          <span style={{fontSize:10,color:'var(--texto-suave)',fontStyle:'italic',minWidth:16,textAlign:'right'}}>
+            {boVisitante ? '(B)' : ''}
+          </span>
+        </div>
+      )}
     </div>
   )
 
@@ -250,16 +253,7 @@ export function PartidoCardResultado({ partido, pred }) {
         </div>
       )}
       <FilaEquipos partido={partido} marcador={marcador} />
-
-      {/* Chips de bonus */}
-      {(hayBonusLocal || hayBonusVisitante) && (
-        <div style={{display:'flex',justifyContent:'space-between',padding:'3px 28px 0',marginTop:2}}>
-          <div>{hayBonusLocal    ? chipBonus(bonusOfLocal,    bonusDefLocal)    : null}</div>
-          <div>{hayBonusVisitante ? chipBonus(bonusOfVisitante, bonusDefVisitante) : null}</div>
-        </div>
-      )}
-
-      <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:6}}>
+      <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
         {pred !== undefined
           ? <><span>Tu pred: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
           : <span>Sin predicción cargada</span>
