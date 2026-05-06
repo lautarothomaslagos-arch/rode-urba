@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import LogroToast from './components/LogroToast'
@@ -9,11 +9,11 @@ import Ranking from './pages/Ranking'
 import Resultados from './pages/Resultados'
 import Admin from './pages/Admin'
 import Perfil from './pages/Perfil'
-import Grupos from './pages/Grupos'
 import Estadisticas from './pages/Estadisticas'
 import Torneos from './pages/Torneos'
 import NuevaContrasena from './pages/NuevaContrasena'
 import SwipeNavigator from './components/SwipeNavigator'
+import BottomNav from './components/BottomNav'
 import './index.css'
 
 function PrivateRoute({ children }) {
@@ -28,11 +28,18 @@ function AdminRoute({ children }) {
   return perfil?.es_admin ? children : <Navigate to="/" />
 }
 
+function GruposRedirect() {
+  const [searchParams] = useSearchParams()
+  const codigo = searchParams.get('codigo')
+  return <Navigate to={codigo ? `/perfil?codigo=${codigo}` : '/perfil'} replace />
+}
+
 function AppRoutes() {
   return (
     <>
       <Navbar />
       <LogroToast />
+      <BottomNav />
       <SwipeNavigator>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -45,7 +52,7 @@ function AppRoutes() {
         <Route path="/resultados" element={<Navigate to="/torneos" />} />
         <Route path="/estadisticas" element={<Navigate to="/torneos" />} />
         <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
-        <Route path="/grupos" element={<PrivateRoute><Grupos /></PrivateRoute>} />
+        <Route path="/grupos" element={<GruposRedirect />} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

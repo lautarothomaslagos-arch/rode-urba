@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const ROUTES_BASE  = ['/prode', '/ranking', '/torneos', '/grupos', '/perfil']
+const ROUTES_BASE  = ['/prode', '/ranking', '/torneos', '/perfil']
 const MIN_DIST     = 55    // px mínimos para considerar swipe
 const MAX_DURATION = 450   // ms máximos (descarta scrolls lentos)
 const DIR_RATIO    = 1.4   // cuánto más horizontal que vertical debe ser

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
-export default function Grupos() {
+export function GruposContenido() {
   const { user, perfil } = useAuth()
   const [searchParams] = useSearchParams()
   const [seccion, setSeccion] = useState(() => searchParams.get('codigo') ? 'unirse' : 'mis-grupos')
@@ -24,12 +24,8 @@ export default function Grupos() {
   }
 
   return (
-    <div className="container">
-      <div className="page-header">
-        <h1 className="page-title">Grupos <span className="page-title-accent">privados</span></h1>
-      </div>
-
-      <div className="tabs-box">
+    <>
+      <div className="tabs-box" style={{marginTop:14}}>
         <button className={`tab-btn ${seccion === 'mis-grupos' ? 'active' : ''}`} onClick={() => { setSeccion('mis-grupos'); setGrupoActivo(null) }}>Mis grupos</button>
         <button className={`tab-btn ${seccion === 'crear' ? 'active' : ''}`} onClick={() => setSeccion('crear')}>Crear grupo</button>
         <button className={`tab-btn ${seccion === 'unirse' ? 'active' : ''}`} onClick={() => setSeccion('unirse')}>Unirse</button>
@@ -59,6 +55,17 @@ export default function Grupos() {
       {seccion === 'unirse' && (
         <UnirseGrupo userId={user.id} codigoInicial={searchParams.get('codigo') || ''} onUnido={() => { cargarMisGrupos(); setSeccion('mis-grupos') }} />
       )}
+    </>
+  )
+}
+
+export default function Grupos() {
+  return (
+    <div className="container">
+      <div className="page-header">
+        <h1 className="page-title">Grupos <span className="page-title-accent">privados</span></h1>
+      </div>
+      <GruposContenido />
     </div>
   )
 }

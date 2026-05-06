@@ -49,7 +49,6 @@ export default function Navbar() {
               </Link>
               <Link to="/ranking" className={isActive('/ranking')}>Ranking</Link>
               <Link to="/torneos" className={isActive('/torneos')}>Torneos</Link>
-              <Link to="/grupos" className={isActive('/grupos')}>Grupos</Link>
               {perfil?.es_admin && <Link to="/admin" className={isActive('/admin')}>Admin</Link>}
               <Link to="/perfil" style={{display:'flex',alignItems:'center',gap:6,textDecoration:'none',padding:'4px 8px',borderRadius:8}}>
                 <div className="avatar-circle" title={perfil?.username}>
@@ -82,7 +81,7 @@ export default function Navbar() {
                   </div>
                 )}
               </Link>
-              <button className="hamburger" onClick={() => setMenuAbierto(!menuAbierto)}>
+              <button className="hamburger hamburger-hidden-mobile" onClick={() => setMenuAbierto(!menuAbierto)}>
                 <span className={menuAbierto ? 'bar bar-open-1' : 'bar'}></span>
                 <span className={menuAbierto ? 'bar bar-open-2' : 'bar'}></span>
                 <span className={menuAbierto ? 'bar bar-open-3' : 'bar'}></span>
@@ -115,9 +114,6 @@ export default function Navbar() {
             </Link>
             <Link to="/torneos" className={`mobile-menu-item ${isActive('/torneos')}`}>
               <span>🏆</span> Torneos
-            </Link>
-            <Link to="/grupos" className={`mobile-menu-item ${isActive('/grupos')}`}>
-              <span>👥</span> Grupos
             </Link>
             <Link to="/perfil" className={`mobile-menu-item ${isActive('/perfil')}`}>
               <span>👤</span> Mi perfil

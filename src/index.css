@@ -658,6 +658,68 @@ html, body, #root {
 @media (max-width: 700px) {
   .desktop-menu { display: none !important; }
   .mobile-nav-right { display: flex !important; }
+  .hamburger-hidden-mobile { display: none !important; }
+
+  /* Espacio para la bottom nav */
+  body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+}
+
+/* ===== BOTTOM NAV (solo móvil) ===== */
+.bottom-nav { display: none; }
+
+@media (max-width: 700px) {
+  .bottom-nav {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(58px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: linear-gradient(135deg, var(--azul) 0%, var(--azul-medio) 100%);
+    border-top: 1.5px solid rgba(201,162,39,0.35);
+    z-index: 150;
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.25);
+  }
+}
+
+.bottom-nav-item {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  flex: 1; text-decoration: none;
+  color: rgba(255,255,255,0.45);
+  gap: 3px; padding-top: 6px;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item.active { color: var(--dorado); }
+
+.bottom-nav-icon {
+  font-size: 21px; line-height: 1;
+  position: relative;
+  transition: transform 0.15s;
+}
+
+.bottom-nav-item.active .bottom-nav-icon { transform: translateY(-1px); }
+
+.bottom-nav-label {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.bottom-nav-dot {
+  position: absolute; top: -2px; right: -4px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--dorado);
+  box-shadow: 0 0 6px rgba(201,162,39,0.9);
+}
+
+/* Botón salir (solo visible en móvil) */
+.salir-mobile { display: none; }
+@media (max-width: 700px) {
+  .salir-mobile { display: block; margin-top: 4px; margin-bottom: 8px; }
 }
 
 /* ===== EL DESTACADO ===== */

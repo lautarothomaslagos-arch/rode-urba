@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { CATS, CAT_CLASS } from '../lib/constants'
+import { GruposContenido } from './Grupos'
 
 const CLUBES_URBA = [
   '--- Top 14 ---','Alumni','Atlético del Rosario','Belgrano Athletic','Buenos Aires C&RC','CASI','Champagnat','CUBA','Hindú Club','La Plata RC','Los Matreros','Newman','Regatas Bella Vista','SIC','Los Tilos',
@@ -28,15 +30,33 @@ const LOGROS_CATS = ['Exactos', 'Rendimiento', 'Ranking', 'Puntos', 'Especiales'
 const TABS = [
   { id: 'historial',      label: '📋 Historial' },
   { id: 'logros',         label: '🏅 Logros' },
+  { id: 'grupos',         label: '👥 Grupos' },
   { id: 'datos',          label: '👤 Mis datos' },
   { id: 'contrasena',     label: '🔐 Contraseña' },
   { id: 'notificaciones', label: '🔔 Notificaciones' },
   { id: 'invitar',        label: '📲 Invitar' },
 ]
 
+function SalirBtn() {
+  const { signOut } = useAuth()
+  return (
+    <div className="salir-mobile">
+      <button onClick={signOut} style={{
+        width:'100%', padding:'13px', borderRadius:10,
+        background:'rgba(178,34,34,0.07)', border:'1px solid rgba(178,34,34,0.2)',
+        color:'#B22222', fontFamily:'Rajdhani,sans-serif', fontSize:15,
+        fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8
+      }}>
+        🚪 Cerrar sesión
+      </button>
+    </div>
+  )
+}
+
 export default function Perfil() {
   const { perfil, cargarPerfil, user } = useAuth()
   const { permiso, suscrito, cargando: cargandoNotif, suscribirse, desuscribirse } = usePushNotifications()
+  const [searchParams] = useSearchParams()
 
   const [nombre, setNombre] = useState('')
   const [club, setClub] = useState('')
@@ -50,7 +70,7 @@ export default function Perfil() {
   const [pass2, setPass2] = useState('')
   const [msgPass, setMsgPass] = useState('')
   const [loadingPass, setLoadingPass] = useState(false)
-  const [pestaña, setPestaña] = useState('historial')
+  const [pestaña, setPestaña] = useState(() => searchParams.get('codigo') ? 'grupos' : 'historial')
   const [historial, setHistorial] = useState([])
   const [logros, setLogros] = useState([])
   const [loadingPestaña, setLoadingPestaña] = useState(false)
@@ -613,6 +633,11 @@ export default function Perfil() {
                     </div>
               )}
 
+              {/* GRUPOS */}
+              {t.id === 'grupos' && (
+                <GruposContenido />
+              )}
+
               {/* MIS DATOS */}
               {t.id === 'datos' && (
                 <div style={{paddingTop:14}}>
@@ -731,6 +756,9 @@ export default function Perfil() {
           )}
         </div>
       ))}
+
+      {/* Salir — visible solo en móvil (desktop usa el botón de la navbar) */}
+      <SalirBtn />
     </div>
   )
 }
