@@ -222,7 +222,23 @@ export function PartidoCardResultado({ partido, pred }) {
     else { claseCard += ' fallado'; badge = <span className="resultado-badge badge-nada">0 pts</span> }
   }
 
-  const marcador = <div className="marcador-resultado">{partido.resultado_local} — {partido.resultado_visitante}</div>
+  const rl = partido.resultado_local
+  const rv = partido.resultado_visitante
+  const bonusDefLocal    = rl != null && rv != null && rl < rv  && (rv - rl) <= 7
+  const bonusDefVisitante = rl != null && rv != null && rv < rl && (rl - rv) <= 7
+  const bonusOfLocal     = partido.bonus_of_local
+  const bonusOfVisitante = partido.bonus_of_visitante
+  const hayBonusLocal    = bonusOfLocal    || bonusDefLocal
+  const hayBonusVisitante = bonusOfVisitante || bonusDefVisitante
+
+  const marcador = <div className="marcador-resultado">{rl} — {rv}</div>
+
+  const chipBonus = (of, def) => (
+    <div style={{display:'flex',flexDirection:'column',gap:2,alignItems:'center'}}>
+      {of  && <span style={{fontSize:9,fontWeight:700,color:'#16a34a',background:'#dcfce7',padding:'1px 5px',borderRadius:4,border:'1px solid #bbf7d0',whiteSpace:'nowrap'}}>🏉 BO</span>}
+      {def && <span style={{fontSize:9,fontWeight:700,color:'#2563eb',background:'#dbeafe',padding:'1px 5px',borderRadius:4,border:'1px solid #bfdbfe',whiteSpace:'nowrap'}}>🛡 BD</span>}
+    </div>
+  )
 
   const contenido = (
     <>
@@ -234,7 +250,16 @@ export function PartidoCardResultado({ partido, pred }) {
         </div>
       )}
       <FilaEquipos partido={partido} marcador={marcador} />
-      <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
+
+      {/* Chips de bonus */}
+      {(hayBonusLocal || hayBonusVisitante) && (
+        <div style={{display:'flex',justifyContent:'space-between',padding:'3px 28px 0',marginTop:2}}>
+          <div>{hayBonusLocal    ? chipBonus(bonusOfLocal,    bonusDefLocal)    : null}</div>
+          <div>{hayBonusVisitante ? chipBonus(bonusOfVisitante, bonusDefVisitante) : null}</div>
+        </div>
+      )}
+
+      <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:6}}>
         {pred !== undefined
           ? <><span>Tu pred: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
           : <span>Sin predicción cargada</span>
