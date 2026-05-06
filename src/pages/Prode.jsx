@@ -176,27 +176,30 @@ export default function Prode() {
 
   function handleEquipoTap(equipo, partido) {
     const stats = statsEquipos[equipo?.id] ?? emptyStats(equipo)
+    const side  = equipo?.id === partido?.equipo_local?.id ? 'left' : 'right'
+    const item  = { stats, side }
     setPopupData(prev => {
-      if (!prev) return { equipos: [stats], partido }
+      if (!prev) return { items: [item], partido }
       // mismo equipo → cerrar
-      if (prev.partido?.id === partido?.id && prev.equipos[0].equipo.id === equipo.id) return null
-      // mismo partido, 1 card, equipo rival → agregar segunda card
-      if (prev.partido?.id === partido?.id && prev.equipos.length === 1) {
-        return { ...prev, equipos: [prev.equipos[0], stats] }
+      if (prev.partido?.id === partido?.id && prev.items.length === 1 && prev.items[0].stats.equipo.id === equipo.id) return null
+      // mismo partido, 1 card, rival → abrir segunda
+      if (prev.partido?.id === partido?.id && prev.items.length === 1) {
+        return { ...prev, items: [prev.items[0], item] }
       }
       // distinto partido o ya hay 2 → reemplazar
-      return { equipos: [stats], partido }
+      return { items: [item], partido }
     })
   }
 
-  // Stats del rival para el botón "vs"
-  const rivalEquipo = popupData?.equipos.length === 1 && popupData?.partido
-    ? (popupData.equipos[0].equipo.id === popupData.partido.equipo_local?.id
+  // Rival flotante (solo cuando hay 1 card abierta)
+  const rivalEquipo = popupData?.items.length === 1 && popupData?.partido
+    ? (popupData.items[0].side === 'left'
         ? popupData.partido.equipo_visitante
         : popupData.partido.equipo_local)
     : null
-  const rivalStats = rivalEquipo
-    ? (statsEquipos[rivalEquipo.id] ?? emptyStats(rivalEquipo))
+  const rivalStats = rivalEquipo ? (statsEquipos[rivalEquipo.id] ?? emptyStats(rivalEquipo)) : null
+  const rivalSide  = popupData?.items.length === 1
+    ? (popupData.items[0].side === 'left' ? 'right' : 'left')
     : null
 
   const fi = fechas.find(f => f.id === fechaId)
@@ -338,13 +341,14 @@ export default function Prode() {
       )}
 
       <EquipoPopup
-        equipos={popupData?.equipos}
+        items={popupData?.items}
         onClose={() => setPopupData(null)}
         onCloseOne={(idx) => setPopupData(prev => {
-          const equipos = prev.equipos.filter((_,i) => i !== idx)
-          return equipos.length ? { ...prev, equipos } : null
+          const items = prev.items.filter((_,i) => i !== idx)
+          return items.length ? { ...prev, items } : null
         })}
         rivalStats={rivalStats}
+        rivalSide={rivalSide}
         onAddRival={() => rivalEquipo && handleEquipoTap(rivalEquipo, popupData.partido)}
       />
     </div>
