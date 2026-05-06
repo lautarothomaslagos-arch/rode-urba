@@ -115,7 +115,7 @@ export default function Navbar() {
               <span>🏆</span> Ranking
             </Link>
             <Link to="/resultados" className={`mobile-menu-item ${isActive('/resultados')}`}>
-              <span>📊</span> Resultados
+              <span>✅</span> Resultados
             </Link>
             <Link to="/estadisticas" className={`mobile-menu-item ${isActive('/estadisticas')}`}>
               <span>📊</span> Estadísticas
