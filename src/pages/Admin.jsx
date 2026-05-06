@@ -605,6 +605,11 @@ function FilaFecha({ f, onToggle, onRefresh }) {
   const [partidosBonus, setPartidosBonus] = useState([])
   const [bonusEdit, setBonusEdit] = useState({})
   const [guardandoBonus, setGuardandoBonus] = useState(false)
+  const [editandoResultados, setEditandoResultados] = useState(false)
+  const [partidosRes, setPartidosRes] = useState([])
+  const [resultadosEdit, setResultadosEdit] = useState({})
+  const [guardandoRes, setGuardandoRes] = useState(false)
+  const [msgRes, setMsgRes] = useState('')
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -630,6 +635,35 @@ function FilaFecha({ f, onToggle, onRefresh }) {
     if (!confirm(`¿Eliminar la Fecha ${f.numero}? Esta acción no se puede deshacer.`)) return
     await supabase.from('fechas').delete().eq('id', f.id)
     onRefresh()
+  }
+
+  async function abrirEditorResultados() {
+    setMenuAbierto(false)
+    const { data } = await supabase.from('partidos')
+      .select('id, resultado_local, resultado_visitante, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre)')
+      .eq('fecha_id', f.id).order('id')
+    setPartidosRes(data || [])
+    const r = {}
+    data?.forEach(p => { r[p.id] = { local: String(p.resultado_local ?? ''), visitante: String(p.resultado_visitante ?? '') } })
+    setResultadosEdit(r)
+    setMsgRes('')
+    setEditandoResultados(true)
+  }
+
+  async function guardarResultadosEdit() {
+    setGuardandoRes(true)
+    setMsgRes('')
+    await Promise.all(
+      Object.entries(resultadosEdit).map(([pid, r]) =>
+        supabase.from('partidos').update({
+          resultado_local:     parseInt(r.local)     || 0,
+          resultado_visitante: parseInt(r.visitante) || 0,
+        }).eq('id', parseInt(pid))
+      )
+    )
+    const { error } = await supabase.rpc('calcular_puntos_fecha', { p_fecha_id: f.id })
+    setMsgRes(error ? 'Resultados guardados. Error al recalcular: ' + error.message : '✓ Resultados actualizados y puntos recalculados')
+    setGuardandoRes(false)
   }
 
   async function abrirEditorBonus() {
@@ -687,6 +721,13 @@ function FilaFecha({ f, onToggle, onRefresh }) {
               </button>
               {f.resultados_cargados && (
                 <button
+                  onClick={abrirEditorResultados}
+                  style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  📝 Editar resultados
+                </button>
+              )}
+              {f.resultados_cargados && (
+                <button
                   onClick={abrirEditorBonus}
                   style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                   🏉 Editar bonus ofensivo
@@ -702,6 +743,43 @@ function FilaFecha({ f, onToggle, onRefresh }) {
           )}
         </div>
       </div>
+      {editandoResultados && (
+        <div style={{ padding: '10px 16px 14px', background: 'rgba(59,130,246,0.04)', borderTop: '1px solid var(--gris-borde)' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+            📝 Editar resultados
+          </div>
+          {msgRes && (
+            <div className={`alert ${msgRes.startsWith('✓') ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: 10 }}>{msgRes}</div>
+          )}
+          {partidosRes.length === 0 && (
+            <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '0 0 8px' }}>Sin partidos cargados.</p>
+          )}
+          {partidosRes.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--gris-borde)', flexWrap: 'wrap' }}>
+              <span style={{ flex: 1, fontSize: 12, fontWeight: 600, minWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)', fontWeight: 400 }}>vs</span> {p.equipo_visitante?.nombre}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+                  style={{ width: 38, fontSize: 14 }}
+                  value={resultadosEdit[p.id]?.local ?? ''} placeholder="0"
+                  onChange={e => setResultadosEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], local: e.target.value.replace(/\D/g, '') } }))} />
+                <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>–</span>
+                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+                  style={{ width: 38, fontSize: 14 }}
+                  value={resultadosEdit[p.id]?.visitante ?? ''} placeholder="0"
+                  onChange={e => setResultadosEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.value.replace(/\D/g, '') } }))} />
+              </div>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button className="btn btn-primary btn-small" onClick={guardarResultadosEdit} disabled={guardandoRes}>
+              {guardandoRes ? 'Recalculando...' : '✓ Guardar y recalcular'}
+            </button>
+            <button className="btn btn-secondary btn-small" onClick={() => setEditandoResultados(false)}>Cancelar</button>
+          </div>
+        </div>
+      )}
       {editandoBonus && (
         <div style={{ padding: '10px 16px 14px', background: 'rgba(22,163,74,0.04)', borderTop: '1px solid var(--gris-borde)' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
