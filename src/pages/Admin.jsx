@@ -18,12 +18,12 @@ export default function Admin() {
         <button className={`tab-btn ${seccion === 'grupos' ? 'active' : ''}`} onClick={() => setSeccion('grupos')}>🏆 Grupos</button>
         <button className={`tab-btn ${seccion === 'stats' ? 'active' : ''}`} onClick={() => setSeccion('stats')}>📊 Stats</button>
       </div>
-      {seccion === 'semana' && <AdminSemana />}
-      {seccion === 'fechas' && <AdminFechas />}
-      {seccion === 'equipos' && <AdminEquipos />}
-      {seccion === 'usuarios' && <AdminUsuarios />}
-      {seccion === 'grupos' && <AdminGrupos />}
-      {seccion === 'stats' && <AdminStats />}
+      {seccion === 'semana'   && <div className="seccion-fade"><AdminSemana /></div>}
+      {seccion === 'fechas'   && <div className="seccion-fade"><AdminFechas /></div>}
+      {seccion === 'equipos'  && <div className="seccion-fade"><AdminEquipos /></div>}
+      {seccion === 'usuarios' && <div className="seccion-fade"><AdminUsuarios /></div>}
+      {seccion === 'grupos'   && <div className="seccion-fade"><AdminGrupos /></div>}
+      {seccion === 'stats'    && <div className="seccion-fade"><AdminStats /></div>}
     </div>
   )
 }

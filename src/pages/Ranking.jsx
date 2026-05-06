@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import TabsScrollWrapper from '../components/TabsScrollWrapper'
 
 const BASE = 'https://xmtsxdzwurxygqqccgdc.supabase.co/storage/v1/object/public/trofeos'
 
@@ -263,21 +264,21 @@ export default function Ranking() {
         <h1 className="page-title">Ranking <span className="page-title-accent">2026</span></h1>
       </div>
 
-      <div className="tabs-box">
+      <TabsScrollWrapper>
         <button className={`tab-btn ${modo==='anual'?'active':''}`} onClick={() => setModo('anual')}>Anual 2026</button>
         <button className={`tab-btn ${modo==='fecha'?'active':''}`} onClick={() => setModo('fecha')}>Por fecha</button>
         <button className={`tab-btn ${modo==='clubes'?'active':''}`} onClick={() => setModo('clubes')}>Por clubes</button>
-      </div>
+      </TabsScrollWrapper>
 
       {modo === 'fecha' && fechas.length > 0 && (
-        <div className="tabs-box" style={{marginBottom:16}}>
+        <TabsScrollWrapper style={{marginBottom:16}}>
           {fechas.map(f => (
             <button key={f.numero} className={`tab-btn ${fechaNum===f.numero?'active':''}`}
               onClick={() => setFechaNum(f.numero)}>
               Fecha {f.numero}
             </button>
           ))}
-        </div>
+        </TabsScrollWrapper>
       )}
 
       {modo !== 'clubes' && !loading && lista.length > 0 && (
@@ -294,12 +295,18 @@ export default function Ranking() {
 
       {!loading && modo !== 'clubes' && (
         lista.length === 0
-          ? <div className="empty-state">
-              <div className="empty-icon">🏆</div>
-              <div className="empty-title">{modo === 'anual' ? 'El ranking arranca pronto' : `Sin datos para Fecha ${fechaNum}`}</div>
-              <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>{modo === 'anual' ? 'Aparecerá cuando se carguen los primeros resultados' : 'Los resultados de esta fecha aún no se cargaron'}</p>
+          ? <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
+              <div style={{fontSize:52,marginBottom:10}}>{modo === 'anual' ? '🏆' : '📋'}</div>
+              <div className="empty-title">
+                {modo === 'anual' ? 'El ranking arranca pronto' : `Sin resultados para Fecha ${fechaNum}`}
+              </div>
+              <p style={{fontSize:13,color:'var(--texto-suave)',maxWidth:260,margin:'8px auto 0',lineHeight:1.5}}>
+                {modo === 'anual'
+                  ? 'Aparecerá en cuanto se carguen los primeros resultados de la temporada.'
+                  : 'Los puntos de esta fecha todavía no fueron registrados.'}
+              </p>
             </div>
-          : <div className="card" style={{padding:0}}>
+          : <div key={`rank-${modo}-${fechaNum}`} className="seccion-fade card" style={{padding:0}}>
               <div style={{padding:'12px 16px',background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',display:'flex',justifyContent:'space-between',alignItems:'center',borderRadius:'10px 10px 0 0',overflow:'hidden'}}>
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--dorado)',letterSpacing:1}}>
                   {modo==='anual' ? 'Ranking anual 2026' : `Fecha ${fechaNum} — todos los torneos`}
@@ -345,12 +352,14 @@ export default function Ranking() {
 
       {!loading && modo === 'clubes' && (
         listaClubs.length === 0
-          ? <div className="empty-state">
-              <div className="empty-icon">🏉</div>
+          ? <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
+              <div style={{fontSize:52,marginBottom:10}}>🏉</div>
               <div className="empty-title">Sin datos de clubes todavía</div>
-              <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>Los participantes deben elegir su club en la sección Perfil para aparecer acá</p>
+              <p style={{fontSize:13,color:'var(--texto-suave)',maxWidth:260,margin:'8px auto 0',lineHeight:1.5}}>
+                Cada jugador debe elegir su club en su Perfil para aparecer acá. Completá el tuyo si todavía no lo hiciste.
+              </p>
             </div>
-          : <div className="card" style={{padding:0}}>
+          : <div key="rank-clubes" className="seccion-fade card" style={{padding:0}}>
               <div style={{padding:'12px 16px',background:'linear-gradient(135deg,var(--rojo),var(--rojo-vivo))',display:'flex',justifyContent:'space-between',alignItems:'center',borderRadius:'10px 10px 0 0',overflow:'hidden'}}>
                 <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'white',letterSpacing:1}}>Ranking por clubes 2026</span>
                 <span style={{fontSize:12,color:'rgba(255,255,255,0.7)'}}>{listaClubs.length} clubes</span>

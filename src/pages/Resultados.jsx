@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PartidoCardResultado } from '../components/PartidoCard'
 import { CATS, CAT_CLASS } from '../lib/constants'
+import TabsScrollWrapper from '../components/TabsScrollWrapper'
 
 export default function Resultados() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [cat, setCat] = useState(1)
   const [fechas, setFechas] = useState([])
   const [fechaId, setFechaId] = useState(null)
@@ -56,13 +59,11 @@ export default function Resultados() {
         <h1 className="page-title">Mis <span className="page-title-accent">resultados</span></h1>
       </div>
 
-      <div className="tabs-wrap">
-        <div className="tabs-box">
-          {[1,2,3,4,5].map(c => (
-            <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
-          ))}
-        </div>
-      </div>
+      <TabsScrollWrapper>
+        {[1,2,3,4,5].map(c => (
+          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>{CATS[c]}</button>
+        ))}
+      </TabsScrollWrapper>
 
       {fechas.length > 0 && (
         <div className="tabs-box" style={{marginBottom:16}}>
@@ -77,15 +78,23 @@ export default function Resultados() {
       {loading && <div className="loading"><div className="spinner"></div></div>}
 
       {!loading && fechas.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">🏉</div>
-          <div className="empty-title">Sin resultados en {CATS[cat]}</div>
-          <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>Todavía no se cargaron resultados para este torneo</p>
+        <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
+          <div style={{fontSize:52,marginBottom:10}}>🏉</div>
+          <div className="empty-title">Aún sin resultados en {CATS[cat]}</div>
+          <p style={{fontSize:13,color:'var(--texto-suave)',maxWidth:260,margin:'8px auto 20px',lineHeight:1.5}}>
+            Los resultados se cargan el domingo después de disputarse los partidos.
+          </p>
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={() => navigate('/prode')}
+          >
+            ¿Querés predecir? →
+          </button>
         </div>
       )}
 
       {!loading && puntosFecha && (
-        <div className="card" style={{background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',border:'none',marginBottom:16,padding:'12px 14px'}}>
+        <div key={`res-${cat}-${fechaId}`} className="seccion-fade card" style={{background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',border:'none',marginBottom:16,padding:'12px 14px'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
             <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.8)'}}>
               <span className={`cat-badge ${CAT_CLASS[cat]}`} style={{marginRight:8}}>{CATS[cat]}</span>

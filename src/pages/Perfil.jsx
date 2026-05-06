@@ -514,7 +514,7 @@ export default function Perfil() {
           </button>
 
           {pestaña === t.id && (
-            <div style={{padding:'0 18px 18px',borderTop:'1px solid var(--gris-borde)'}}>
+            <div className="seccion-fade" style={{padding:'0 18px 18px',borderTop:'1px solid var(--gris-borde)'}}>
 
               {/* HISTORIAL */}
               {t.id === 'historial' && (
@@ -522,9 +522,11 @@ export default function Perfil() {
                   ? <div className="loading" style={{padding:'24px 0'}}><div className="spinner"></div></div>
                   : historial.length === 0
                     ? <div className="empty-state" style={{padding:'28px 20px'}}>
-                        <div className="empty-icon">📋</div>
+                        <div style={{fontSize:46,marginBottom:10}}>📋</div>
                         <div className="empty-title">Sin historial todavía</div>
-                        <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6}}>Aparecerá cuando se carguen los resultados de tu primera fecha</p>
+                        <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6,maxWidth:220,margin:'8px auto 0',lineHeight:1.5}}>
+                          Aparecerá después de tu primera fecha con resultados cargados.
+                        </p>
                       </div>
                     : <div style={{paddingTop:12}}>
                         {historial.map(f => (

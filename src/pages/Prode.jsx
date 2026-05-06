@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PartidoCardPrediccion, MonedaGlobal } from '../components/PartidoCard'
 import { CATS, CAT_CLASS } from '../lib/constants'
+import TabsScrollWrapper from '../components/TabsScrollWrapper'
 
 function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
@@ -39,6 +41,7 @@ function useCountdown(cierre) {
 
 export default function Prode() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [cat, setCat] = useState(1)
   const [fechas, setFechas] = useState([])
   const [fechaId, setFechaId] = useState(null)
@@ -160,15 +163,13 @@ export default function Prode() {
         <h1 className="page-title">Mis <span className="page-title-accent">predicciones</span></h1>
       </div>
 
-      <div className="tabs-wrap">
-        <div className="tabs-box">
-          {[1,2,3,4,5].map(c => (
-            <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>
-              {CATS[c]}{catsActivas.has(c) && <span style={{ display:'inline-block', width:5, height:5, borderRadius:'50%', background:'var(--dorado)', marginLeft:5, verticalAlign:'middle', boxShadow:'0 0 3px rgba(201,162,39,0.9)' }} />}
-            </button>
-          ))}
-        </div>
-      </div>
+      <TabsScrollWrapper>
+        {[1,2,3,4,5].map(c => (
+          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>
+            {CATS[c]}{catsActivas.has(c) && <span style={{ display:'inline-block', width:5, height:5, borderRadius:'50%', background:'var(--dorado)', marginLeft:5, verticalAlign:'middle', boxShadow:'0 0 3px rgba(201,162,39,0.9)' }} />}
+          </button>
+        ))}
+      </TabsScrollWrapper>
 
       {fechas.length > 1 && (
         <div className="tabs-box" style={{marginBottom:16}}>
@@ -183,15 +184,23 @@ export default function Prode() {
       {loading && <div className="loading"><div className="spinner"></div> Cargando...</div>}
 
       {!loading && fechas.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">✅</div>
-          <div className="empty-title">No hay fechas activas para predecir</div>
-          <p style={{fontSize:13,color:'var(--texto-suave)'}}>Los resultados están en la sección <strong>Resultados</strong></p>
+        <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
+          <div style={{fontSize:52,marginBottom:10}}>✅</div>
+          <div className="empty-title">Todo al día en {CATS[cat]}</div>
+          <p style={{fontSize:13,color:'var(--texto-suave)',maxWidth:260,margin:'8px auto 20px',lineHeight:1.5}}>
+            No hay partidos abiertos para predecir. Los picks se habilitan cada semana antes del viernes.
+          </p>
+          <button
+            className="btn btn-secondary btn-small"
+            onClick={() => navigate('/resultados')}
+          >
+            Ver mis resultados →
+          </button>
         </div>
       )}
 
       {fi && !loading && (
-        <div className="card" style={{padding:'12px 16px',marginBottom:8}}>
+        <div key={`${cat}-${fechaId}`} className="seccion-fade card" style={{padding:'12px 16px',marginBottom:8}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
             <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',flex:1}}>
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
@@ -226,7 +235,7 @@ export default function Prode() {
       )}
 
       {fi && !loading && abierto && totalPartidos > 0 && (
-        <div className="card" style={{padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
+        <div key={`prog-${cat}-${fechaId}`} className="seccion-fade card" style={{padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
               <span style={{fontSize:11,fontWeight:600,color:todoCompleto?'var(--dorado-oscuro)':'var(--texto-suave)',paddingLeft:2}}>

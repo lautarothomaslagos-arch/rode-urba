@@ -123,6 +123,15 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes seccionFadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.seccion-fade {
+  animation: seccionFadeIn 0.18s ease-out;
+}
+
 /* ===== LAYOUT ===== */
 .container { max-width: 920px; margin: 0 auto; padding: 24px 16px; animation: fadeIn 0.2s ease-out; }
 
