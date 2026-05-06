@@ -11,6 +11,7 @@ import Admin from './pages/Admin'
 import Perfil from './pages/Perfil'
 import Grupos from './pages/Grupos'
 import Estadisticas from './pages/Estadisticas'
+import Torneos from './pages/Torneos'
 import NuevaContrasena from './pages/NuevaContrasena'
 import './index.css'
 
@@ -38,10 +39,11 @@ function AppRoutes() {
         <Route path="/nueva-contrasena" element={<NuevaContrasena />} />
         <Route path="/prode" element={<PrivateRoute><Prode /></PrivateRoute>} />
         <Route path="/ranking" element={<PrivateRoute><Ranking /></PrivateRoute>} />
-        <Route path="/resultados" element={<PrivateRoute><Resultados /></PrivateRoute>} />
+        <Route path="/torneos" element={<PrivateRoute><Torneos /></PrivateRoute>} />
+        <Route path="/resultados" element={<Navigate to="/torneos" />} />
+        <Route path="/estadisticas" element={<Navigate to="/torneos" />} />
         <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
         <Route path="/grupos" element={<PrivateRoute><Grupos /></PrivateRoute>} />
-        <Route path="/estadisticas" element={<PrivateRoute><Estadisticas /></PrivateRoute>} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

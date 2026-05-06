@@ -205,7 +205,7 @@ export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate,
   )
 }
 
-export function PartidoCardResultado({ partido, pred }) {
+export function PartidoCardResultado({ partido, pred, soloScore = false }) {
   let badge = null
   let claseCard = partido.es_especial ? 'partido-card especial' : 'partido-card'
 
@@ -253,12 +253,14 @@ export function PartidoCardResultado({ partido, pred }) {
         </div>
       )}
       <FilaEquipos partido={partido} marcador={marcador} />
-      <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
-        {pred !== undefined
-          ? <><span>Tu pred: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
-          : <span>Sin predicción cargada</span>
-        }
-      </div>
+      {!soloScore && (
+        <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
+          {pred !== undefined
+            ? <><span>Tu pred: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
+            : <span>Sin predicción cargada</span>
+          }
+        </div>
+      )}
     </>
   )
 

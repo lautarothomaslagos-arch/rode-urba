@@ -48,8 +48,7 @@ export default function Navbar() {
                 )}
               </Link>
               <Link to="/ranking" className={isActive('/ranking')}>Ranking</Link>
-              <Link to="/resultados" className={isActive('/resultados')}>Resultados</Link>
-              <Link to="/estadisticas" className={isActive('/estadisticas')}>Stats</Link>
+              <Link to="/torneos" className={isActive('/torneos')}>Torneos</Link>
               <Link to="/grupos" className={isActive('/grupos')}>Grupos</Link>
               {perfil?.es_admin && <Link to="/admin" className={isActive('/admin')}>Admin</Link>}
               <Link to="/perfil" style={{display:'flex',alignItems:'center',gap:6,textDecoration:'none',padding:'4px 8px',borderRadius:8}}>
@@ -114,11 +113,8 @@ export default function Navbar() {
             <Link to="/ranking" className={`mobile-menu-item ${isActive('/ranking')}`}>
               <span>🏆</span> Ranking
             </Link>
-            <Link to="/resultados" className={`mobile-menu-item ${isActive('/resultados')}`}>
-              <span>✅</span> Resultados
-            </Link>
-            <Link to="/estadisticas" className={`mobile-menu-item ${isActive('/estadisticas')}`}>
-              <span>📊</span> Estadísticas
+            <Link to="/torneos" className={`mobile-menu-item ${isActive('/torneos')}`}>
+              <span>🏆</span> Torneos
             </Link>
             <Link to="/grupos" className={`mobile-menu-item ${isActive('/grupos')}`}>
               <span>👥</span> Grupos
