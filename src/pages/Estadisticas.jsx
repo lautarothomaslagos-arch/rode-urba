@@ -178,8 +178,8 @@ function FilaEquipo({ t, idx }) {
         }}>{v}</div>
       ))}
 
-      {/* PTS con badge dorado si tiene bonus */}
-      <div style={{textAlign:'center',position:'relative'}}>
+      {/* PTS */}
+      <div style={{textAlign:'center'}}>
         <span style={{
           fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:800,
           color:'var(--dorado-oscuro)',
@@ -187,13 +187,6 @@ function FilaEquipo({ t, idx }) {
           padding:'1px 5px',borderRadius:5,
           border:'1px solid rgba(201,162,39,0.3)',
         }}>{pts}</span>
-        {bd > 0 && (
-          <span title={`${bd} bonus defensivo`} style={{
-            position:'absolute',top:-4,right:-2,
-            fontSize:7,background:'#dc2626',color:'white',
-            borderRadius:10,padding:'0 3px',fontWeight:700,
-          }}>+{bd}</span>
-        )}
       </div>
 
       {/* PF PC */}
