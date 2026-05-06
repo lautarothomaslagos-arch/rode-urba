@@ -5,19 +5,19 @@
  *   Victoria        → 4 pts
  *   Empate          → 2 pts
  *   Derrota         → 0 pts
- *   Bonus ofensivo  → +1 si marcás 3+ tries MÁS que el rival (requiere tries_local/visitante)
+ *   Bonus ofensivo  → +1 si bonus_of_local / bonus_of_visitante está marcado
  *   Bonus defensivo → +1 si perdés por 7 puntos o menos
  *
  * Cada partido debe tener:
- *   equipo_local / equipo_visitante  {id, nombre, nombre_corto, escudo_url}
+ *   equipo_local / equipo_visitante        {id, nombre, nombre_corto, escudo_url}
  *   resultado_local / resultado_visitante  (puntos finales)
- *   tries_local / tries_visitante          (pueden ser 0 si no se cargaron)
+ *   bonus_of_local / bonus_of_visitante    (booleanos)
  *   fecha_id
  */
 export function computeEquipoStats(partidos) {
   const teams = {}
 
-  function addTeam(equipo, pf, pc, tries, triesRival, fechaId) {
+  function addTeam(equipo, pf, pc, bonusOf, fechaId) {
     if (!equipo?.id) return
     const id = equipo.id
     if (!teams[id]) {
@@ -32,7 +32,7 @@ export function computeEquipoStats(partidos) {
     t.pf += pf
     t.pc += pc
 
-    const bonusOfensivo  = (tries - triesRival) >= 3 ? 1 : 0
+    const bonusOfensivo  = bonusOf ? 1 : 0
     const bonusDefensivo = (pf < pc && (pc - pf) <= 7) ? 1 : 0
 
     if (pf > pc) {
@@ -53,10 +53,8 @@ export function computeEquipoStats(partidos) {
 
   partidos.forEach(p => {
     if (p.resultado_local == null || p.resultado_visitante == null) return
-    const tl = p.tries_local    ?? 0
-    const tv = p.tries_visitante ?? 0
-    addTeam(p.equipo_local,    p.resultado_local,    p.resultado_visitante, tl, tv, p.fecha_id)
-    addTeam(p.equipo_visitante, p.resultado_visitante, p.resultado_local,    tv, tl, p.fecha_id)
+    addTeam(p.equipo_local,    p.resultado_local,    p.resultado_visitante, p.bonus_of_local,    p.fecha_id)
+    addTeam(p.equipo_visitante, p.resultado_visitante, p.resultado_local,   p.bonus_of_visitante, p.fecha_id)
   })
 
   Object.values(teams).forEach(t => {

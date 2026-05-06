@@ -25,7 +25,7 @@ export default function Estadisticas() {
       if (!ids.length) { setTeams([]); setLoading(false); return }
 
       const { data: partidos } = await supabase.from('partidos')
-        .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, tries_local, tries_visitante, fecha_id, equipo_local:equipo_local_id(id,nombre,nombre_corto,escudo_url), equipo_visitante:equipo_visitante_id(id,nombre,nombre_corto,escudo_url)')
+        .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, bonus_of_local, bonus_of_visitante, fecha_id, equipo_local:equipo_local_id(id,nombre,nombre_corto,escudo_url), equipo_visitante:equipo_visitante_id(id,nombre,nombre_corto,escudo_url)')
         .in('fecha_id', ids)
         .not('resultado_local', 'is', null)
 

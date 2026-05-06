@@ -244,8 +244,8 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
       if (p.resultado_local !== null) res[p.id] = {
         local: p.resultado_local,
         visitante: p.resultado_visitante,
-        tries_local: p.tries_local ?? 0,
-        tries_visitante: p.tries_visitante ?? 0,
+        bonus_of_local:    p.bonus_of_local    ?? false,
+        bonus_of_visitante: p.bonus_of_visitante ?? false,
       }
     })
     setResultados(res)
@@ -294,10 +294,10 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
       Object.entries(resultados)
         .filter(([, res]) => res.local !== undefined && res.visitante !== undefined)
         .map(([pid, res]) => supabase.from('partidos').update({
-          resultado_local: parseInt(res.local),
+          resultado_local:     parseInt(res.local),
           resultado_visitante: parseInt(res.visitante),
-          tries_local: parseInt(res.tries_local) || 0,
-          tries_visitante: parseInt(res.tries_visitante) || 0,
+          bonus_of_local:      res.bonus_of_local    ?? false,
+          bonus_of_visitante:  res.bonus_of_visitante ?? false,
           jugado: true
         }).eq('id', pid))
     )
@@ -450,18 +450,24 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
                       value={resultados[p.id]?.visitante ?? ''} placeholder="0"
                       onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.value.replace(/\D/g, '') } }))} />
                   </div>
-                  {/* Tries */}
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginTop:4 }}>
-                    <span style={{ fontSize:10, color:'var(--texto-suave)', fontWeight:600, marginRight:2 }}>🏉 tries</span>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
-                      style={{ width:34, fontSize:13 }}
-                      value={resultados[p.id]?.tries_local ?? ''} placeholder="0"
-                      onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], tries_local: e.target.value.replace(/\D/g, '') } }))} />
-                    <span style={{ fontSize:11, color:'var(--texto-suave)' }}>–</span>
-                    <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
-                      style={{ width:34, fontSize:13 }}
-                      value={resultados[p.id]?.tries_visitante ?? ''} placeholder="0"
-                      onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], tries_visitante: e.target.value.replace(/\D/g, '') } }))} />
+                  {/* Bonus ofensivo */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, marginTop:6 }}>
+                    <label style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, color:'var(--texto-suave)', cursor:'pointer' }}>
+                      <input type="checkbox"
+                        checked={resultados[p.id]?.bonus_of_local ?? false}
+                        onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], bonus_of_local: e.target.checked } }))}
+                        style={{ width:14, height:14, cursor:'pointer' }}
+                      />
+                      🏉 BO local
+                    </label>
+                    <label style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, color:'var(--texto-suave)', cursor:'pointer' }}>
+                      <input type="checkbox"
+                        checked={resultados[p.id]?.bonus_of_visitante ?? false}
+                        onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], bonus_of_visitante: e.target.checked } }))}
+                        style={{ width:14, height:14, cursor:'pointer' }}
+                      />
+                      🏉 BO visitante
+                    </label>
                   </div>
                 </div>
               ))}
@@ -595,10 +601,10 @@ function FilaFecha({ f, onToggle, onRefresh }) {
   const [editCierre, setEditCierre] = useState(f.cierre_predicciones ? f.cierre_predicciones.slice(0, 16) : '')
   const [guardando, setGuardando] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(false)
-  const [editandoTries, setEditandoTries] = useState(false)
-  const [partidosTries, setPartidosTries] = useState([])
-  const [triesEdit, setTriesEdit] = useState({})
-  const [guardandoTries, setGuardandoTries] = useState(false)
+  const [editandoBonus, setEditandoBonus] = useState(false)
+  const [partidosBonus, setPartidosBonus] = useState([])
+  const [bonusEdit, setBonusEdit] = useState({})
+  const [guardandoBonus, setGuardandoBonus] = useState(false)
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -626,30 +632,30 @@ function FilaFecha({ f, onToggle, onRefresh }) {
     onRefresh()
   }
 
-  async function abrirEditorTries() {
+  async function abrirEditorBonus() {
     setMenuAbierto(false)
     const { data } = await supabase.from('partidos')
-      .select('id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), tries_local, tries_visitante')
+      .select('id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), bonus_of_local, bonus_of_visitante')
       .eq('fecha_id', f.id).order('id')
-    setPartidosTries(data || [])
-    const t = {}
-    data?.forEach(p => { t[p.id] = { local: String(p.tries_local ?? 0), visitante: String(p.tries_visitante ?? 0) } })
-    setTriesEdit(t)
-    setEditandoTries(true)
+    setPartidosBonus(data || [])
+    const b = {}
+    data?.forEach(p => { b[p.id] = { local: p.bonus_of_local ?? false, visitante: p.bonus_of_visitante ?? false } })
+    setBonusEdit(b)
+    setEditandoBonus(true)
   }
 
-  async function guardarTries() {
-    setGuardandoTries(true)
+  async function guardarBonus() {
+    setGuardandoBonus(true)
     await Promise.all(
-      Object.entries(triesEdit).map(([pid, t]) =>
+      Object.entries(bonusEdit).map(([pid, b]) =>
         supabase.from('partidos').update({
-          tries_local:     parseInt(t.local)     || 0,
-          tries_visitante: parseInt(t.visitante) || 0,
+          bonus_of_local:     b.local,
+          bonus_of_visitante: b.visitante,
         }).eq('id', parseInt(pid))
       )
     )
-    setGuardandoTries(false)
-    setEditandoTries(false)
+    setGuardandoBonus(false)
+    setEditandoBonus(false)
   }
 
   return (
@@ -681,9 +687,9 @@ function FilaFecha({ f, onToggle, onRefresh }) {
               </button>
               {f.resultados_cargados && (
                 <button
-                  onClick={abrirEditorTries}
+                  onClick={abrirEditorBonus}
                   style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  🏉 Editar tries
+                  🏉 Editar bonus ofensivo
                 </button>
               )}
               <div style={{ borderTop: '1px solid var(--gris-borde)' }} />
@@ -696,37 +702,44 @@ function FilaFecha({ f, onToggle, onRefresh }) {
           )}
         </div>
       </div>
-      {editandoTries && (
+      {editandoBonus && (
         <div style={{ padding: '10px 16px 14px', background: 'rgba(22,163,74,0.04)', borderTop: '1px solid var(--gris-borde)' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
-            🏉 Tries por partido
+            🏉 Bonus ofensivo por partido
           </div>
-          {partidosTries.length === 0 && (
+          {partidosBonus.length === 0 && (
             <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '0 0 8px' }}>Sin partidos cargados.</p>
           )}
-          {partidosTries.map(p => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-              <span style={{ flex: 1, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 120 }}>
-                {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)' }}>vs</span> {p.equipo_visitante?.nombre}
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
-                  style={{ width: 34, fontSize: 13 }}
-                  value={triesEdit[p.id]?.local ?? '0'} placeholder="0"
-                  onChange={e => setTriesEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], local: e.target.value.replace(/\D/g, '') } }))} />
-                <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>–</span>
-                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
-                  style={{ width: 34, fontSize: 13 }}
-                  value={triesEdit[p.id]?.visitante ?? '0'} placeholder="0"
-                  onChange={e => setTriesEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.value.replace(/\D/g, '') } }))} />
+          {partidosBonus.map(p => (
+            <div key={p.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--gris-borde)' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)', fontWeight: 400 }}>vs</span> {p.equipo_visitante?.nombre}
+              </div>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                  <input type="checkbox"
+                    checked={bonusEdit[p.id]?.local ?? false}
+                    onChange={e => setBonusEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], local: e.target.checked } }))}
+                    style={{ width: 15, height: 15, cursor: 'pointer' }}
+                  />
+                  BO local
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                  <input type="checkbox"
+                    checked={bonusEdit[p.id]?.visitante ?? false}
+                    onChange={e => setBonusEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.checked } }))}
+                    style={{ width: 15, height: 15, cursor: 'pointer' }}
+                  />
+                  BO visitante
+                </label>
               </div>
             </div>
           ))}
-          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-            <button className="btn btn-primary btn-small" onClick={guardarTries} disabled={guardandoTries}>
-              {guardandoTries ? 'Guardando...' : '✓ Guardar tries'}
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button className="btn btn-primary btn-small" onClick={guardarBonus} disabled={guardandoBonus}>
+              {guardandoBonus ? 'Guardando...' : '✓ Guardar bonus'}
             </button>
-            <button className="btn btn-secondary btn-small" onClick={() => setEditandoTries(false)}>Cancelar</button>
+            <button className="btn btn-secondary btn-small" onClick={() => setEditandoBonus(false)}>Cancelar</button>
           </div>
         </div>
       )}
