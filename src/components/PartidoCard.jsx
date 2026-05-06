@@ -232,10 +232,10 @@ export function PartidoCardResultado({ partido, pred }) {
       <div className="marcador-resultado">{rl} — {rv}</div>
       {(boLocal || boVisitante) && (
         <div style={{display:'flex',justifyContent:'space-between',padding:'0 6px',marginTop:1}}>
-          <span style={{fontSize:10,color:'var(--texto-suave)',fontStyle:'italic',minWidth:16}}>
+          <span style={{fontSize:10,color:'var(--texto)',fontWeight:700,minWidth:16}}>
             {boLocal ? '(B)' : ''}
           </span>
-          <span style={{fontSize:10,color:'var(--texto-suave)',fontStyle:'italic',minWidth:16,textAlign:'right'}}>
+          <span style={{fontSize:10,color:'var(--texto)',fontWeight:700,minWidth:16,textAlign:'right'}}>
             {boVisitante ? '(B)' : ''}
           </span>
         </div>
