@@ -13,6 +13,7 @@ import Grupos from './pages/Grupos'
 import Estadisticas from './pages/Estadisticas'
 import Torneos from './pages/Torneos'
 import NuevaContrasena from './pages/NuevaContrasena'
+import SwipeNavigator from './components/SwipeNavigator'
 import './index.css'
 
 function PrivateRoute({ children }) {
@@ -32,6 +33,7 @@ function AppRoutes() {
     <>
       <Navbar />
       <LogroToast />
+      <SwipeNavigator>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -47,6 +49,7 @@ function AppRoutes() {
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      </SwipeNavigator>
     </>
   )
 }
