@@ -57,7 +57,7 @@ export default function Prode() {
   const [catsActivas, setCatsActivas] = useState(new Set())
   const [savedPreds, setSavedPreds] = useState(new Set())
   const [statsEquipos, setStatsEquipos] = useState({})
-  const [equipoPopup, setEquipoPopup] = useState(null) // equipo seleccionado para el popup
+  const [popupData, setPopupData] = useState(null) // { equipos: [stats, stats?], partido }
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
@@ -169,6 +169,35 @@ export default function Prode() {
     }
     setGuardando(false)
   }
+
+  function emptyStats(equipo) {
+    return { equipo, pj:0, g:0, e:0, pe:0, pf:0, pc:0, pts:0, bd:0, bo:0, dif:0, resultados:[], forma:[] }
+  }
+
+  function handleEquipoTap(equipo, partido) {
+    const stats = statsEquipos[equipo?.id] ?? emptyStats(equipo)
+    setPopupData(prev => {
+      if (!prev) return { equipos: [stats], partido }
+      // mismo equipo → cerrar
+      if (prev.partido?.id === partido?.id && prev.equipos[0].equipo.id === equipo.id) return null
+      // mismo partido, 1 card, equipo rival → agregar segunda card
+      if (prev.partido?.id === partido?.id && prev.equipos.length === 1) {
+        return { ...prev, equipos: [prev.equipos[0], stats] }
+      }
+      // distinto partido o ya hay 2 → reemplazar
+      return { equipos: [stats], partido }
+    })
+  }
+
+  // Stats del rival para el botón "vs"
+  const rivalEquipo = popupData?.equipos.length === 1 && popupData?.partido
+    ? (popupData.equipos[0].equipo.id === popupData.partido.equipo_local?.id
+        ? popupData.partido.equipo_visitante
+        : popupData.partido.equipo_local)
+    : null
+  const rivalStats = rivalEquipo
+    ? (statsEquipos[rivalEquipo.id] ?? emptyStats(rivalEquipo))
+    : null
 
   const fi = fechas.find(f => f.id === fechaId)
   const abierto = estaAbierto(fi?.cierre_predicciones)
@@ -291,10 +320,7 @@ export default function Prode() {
           abierto={abierto}
           saved={savedPreds.has(partido.id)}
           onUpdate={updPred}
-          onEquipoTap={(equipo) => {
-            const stats = statsEquipos[equipo.id]
-            setEquipoPopup(stats ?? { equipo, pj: 0, g: 0, e: 0, pe: 0, pf: 0, pc: 0, dif: 0, forma: [] })
-          }}
+          onEquipoTap={(equipo) => handleEquipoTap(equipo, partido)}
         />
       ))}
 
@@ -312,8 +338,14 @@ export default function Prode() {
       )}
 
       <EquipoPopup
-        stats={equipoPopup}
-        onClose={() => setEquipoPopup(null)}
+        equipos={popupData?.equipos}
+        onClose={() => setPopupData(null)}
+        onCloseOne={(idx) => setPopupData(prev => {
+          const equipos = prev.equipos.filter((_,i) => i !== idx)
+          return equipos.length ? { ...prev, equipos } : null
+        })}
+        rivalStats={rivalStats}
+        onAddRival={() => rivalEquipo && handleEquipoTap(rivalEquipo, popupData.partido)}
       />
     </div>
   )
