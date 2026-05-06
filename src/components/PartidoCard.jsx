@@ -88,30 +88,37 @@ export function MonedaGlobal({ girando, onClick }) {
   )
 }
 
-function Escudo({ equipo }) {
+function Escudo({ equipo, onTap }) {
   if (!equipo) return null
   const ini = equipo.nombre_corto || equipo.nombre?.substring(0,3).toUpperCase()
   return (
-    <div className="equipo-escudo" title={equipo.nombre}>
+    <div
+      className="equipo-escudo"
+      title={equipo.nombre}
+      onClick={onTap ? (e) => { e.stopPropagation(); onTap(equipo) } : undefined}
+      style={onTap ? { cursor: 'pointer', transition: 'transform 0.12s', userSelect: 'none' } : undefined}
+      onMouseEnter={onTap ? (e) => { e.currentTarget.style.transform = 'scale(1.1)' } : undefined}
+      onMouseLeave={onTap ? (e) => { e.currentTarget.style.transform = 'scale(1)' } : undefined}
+    >
       {equipo.escudo_url ? <img src={equipo.escudo_url} alt={equipo.nombre} /> : ini}
     </div>
   )
 }
 
-function FilaEquipos({ partido, marcador }) {
+function FilaEquipos({ partido, marcador, onEquipoTap }) {
   const vsStyle = partido.es_especial ? 'destacado-vs' : 'vs-badge'
   return (
     <div>
       <div className="partido-fila">
         <div className="equipo-lado local">
           <span className="equipo-nombre">{partido.equipo_local?.nombre}</span>
-          <Escudo equipo={partido.equipo_local} />
+          <Escudo equipo={partido.equipo_local} onTap={onEquipoTap} />
         </div>
         <div className="marcador-central">
           {marcador || <div className={vsStyle}>VS</div>}
         </div>
         <div className="equipo-lado visitante">
-          <Escudo equipo={partido.equipo_visitante} />
+          <Escudo equipo={partido.equipo_visitante} onTap={onEquipoTap} />
           <span className="equipo-nombre">{partido.equipo_visitante?.nombre}</span>
         </div>
       </div>
@@ -119,7 +126,7 @@ function FilaEquipos({ partido, marcador }) {
   )
 }
 
-export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate }) {
+export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate, onEquipoTap }) {
   const [girando, setGirando] = useState(false)
 
   const estiloCard = partido.es_especial ? {} : saved ? {
@@ -160,7 +167,7 @@ export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate 
         <div className="destacado-subtitulo">puntaje doble · exacto 6 pts · ganador 2 pts</div>
       )}
 
-      <FilaEquipos partido={partido} />
+      <FilaEquipos partido={partido} onEquipoTap={onEquipoTap} />
 
       {abierto ? (
         <div className="prediccion-inputs">

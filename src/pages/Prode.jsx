@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext'
 import { PartidoCardPrediccion, MonedaGlobal } from '../components/PartidoCard'
 import { CATS, CAT_CLASS } from '../lib/constants'
 import TabsScrollWrapper from '../components/TabsScrollWrapper'
+import EquipoPopup from '../components/EquipoPopup'
+import { computeEquipoStats } from '../lib/equipoStats'
 
 function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
@@ -54,6 +56,8 @@ export default function Prode() {
   const [girando, setGirando] = useState(false)
   const [catsActivas, setCatsActivas] = useState(new Set())
   const [savedPreds, setSavedPreds] = useState(new Set())
+  const [statsEquipos, setStatsEquipos] = useState({})
+  const [equipoPopup, setEquipoPopup] = useState(null) // equipo seleccionado para el popup
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
@@ -77,6 +81,7 @@ export default function Prode() {
 
   useEffect(() => { cargarFechas(cat) }, [cat])
   useEffect(() => { if (fechaId) cargarPartidos(fechaId) }, [fechaId])
+  useEffect(() => { cargarStatsCategoria(cat) }, [cat])
 
   async function cargarFechas(c) {
     setLoading(true)
@@ -86,6 +91,23 @@ export default function Prode() {
     setFechas(data || [])
     if (data?.length) setFechaId(data[0].id)
     else { setFechaId(null); setPartidos([]); setLoading(false) }
+  }
+
+  async function cargarStatsCategoria(c) {
+    try {
+      // Todas las fechas con resultados de esta categoría
+      const { data: fechasCat } = await supabase.from('fechas')
+        .select('id').eq('categoria_id', c).eq('resultados_cargados', true)
+      const ids = (fechasCat || []).map(f => f.id)
+      if (!ids.length) { setStatsEquipos({}); return }
+      const { data: partidosCat } = await supabase.from('partidos')
+        .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, fecha_id, equipo_local:equipo_local_id(id,nombre,nombre_corto,escudo_url), equipo_visitante:equipo_visitante_id(id,nombre,nombre_corto,escudo_url)')
+        .in('fecha_id', ids)
+        .not('resultado_local', 'is', null)
+      setStatsEquipos(computeEquipoStats(partidosCat || []))
+    } catch(e) {
+      setStatsEquipos({})
+    }
   }
 
   async function cargarPartidos(fid) {
@@ -269,6 +291,10 @@ export default function Prode() {
           abierto={abierto}
           saved={savedPreds.has(partido.id)}
           onUpdate={updPred}
+          onEquipoTap={(equipo) => {
+            const stats = statsEquipos[equipo.id]
+            setEquipoPopup(stats ?? { equipo, pj: 0, g: 0, e: 0, pe: 0, pf: 0, pc: 0, dif: 0, forma: [] })
+          }}
         />
       ))}
 
@@ -284,6 +310,11 @@ export default function Prode() {
           </button>
         </div>
       )}
+
+      <EquipoPopup
+        stats={equipoPopup}
+        onClose={() => setEquipoPopup(null)}
+      />
     </div>
   )
 }
