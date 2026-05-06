@@ -241,7 +241,12 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
     setPartidos(data || [])
     const res = {}
     data?.forEach(p => {
-      if (p.resultado_local !== null) res[p.id] = { local: p.resultado_local, visitante: p.resultado_visitante }
+      if (p.resultado_local !== null) res[p.id] = {
+        local: p.resultado_local,
+        visitante: p.resultado_visitante,
+        tries_local: p.tries_local ?? 0,
+        tries_visitante: p.tries_visitante ?? 0,
+      }
     })
     setResultados(res)
   }
@@ -291,6 +296,8 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
         .map(([pid, res]) => supabase.from('partidos').update({
           resultado_local: parseInt(res.local),
           resultado_visitante: parseInt(res.visitante),
+          tries_local: parseInt(res.tries_local) || 0,
+          tries_visitante: parseInt(res.tries_visitante) || 0,
           jugado: true
         }).eq('id', pid))
     )
@@ -443,6 +450,19 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
                       value={resultados[p.id]?.visitante ?? ''} placeholder="0"
                       onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.value.replace(/\D/g, '') } }))} />
                   </div>
+                  {/* Tries */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginTop:4 }}>
+                    <span style={{ fontSize:10, color:'var(--texto-suave)', fontWeight:600, marginRight:2 }}>🏉 tries</span>
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+                      style={{ width:34, fontSize:13 }}
+                      value={resultados[p.id]?.tries_local ?? ''} placeholder="0"
+                      onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], tries_local: e.target.value.replace(/\D/g, '') } }))} />
+                    <span style={{ fontSize:11, color:'var(--texto-suave)' }}>–</span>
+                    <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+                      style={{ width:34, fontSize:13 }}
+                      value={resultados[p.id]?.tries_visitante ?? ''} placeholder="0"
+                      onChange={e => setResultados(prev => ({ ...prev, [p.id]: { ...prev[p.id], tries_visitante: e.target.value.replace(/\D/g, '') } }))} />
+                  </div>
                 </div>
               ))}
               <button className="btn btn-primary" style={{ width: '100%', marginTop: 4 }} onClick={guardarResultados} disabled={guardando}>
@@ -575,6 +595,10 @@ function FilaFecha({ f, onToggle, onRefresh }) {
   const [editCierre, setEditCierre] = useState(f.cierre_predicciones ? f.cierre_predicciones.slice(0, 16) : '')
   const [guardando, setGuardando] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(false)
+  const [editandoTries, setEditandoTries] = useState(false)
+  const [partidosTries, setPartidosTries] = useState([])
+  const [triesEdit, setTriesEdit] = useState({})
+  const [guardandoTries, setGuardandoTries] = useState(false)
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -600,6 +624,32 @@ function FilaFecha({ f, onToggle, onRefresh }) {
     if (!confirm(`¿Eliminar la Fecha ${f.numero}? Esta acción no se puede deshacer.`)) return
     await supabase.from('fechas').delete().eq('id', f.id)
     onRefresh()
+  }
+
+  async function abrirEditorTries() {
+    setMenuAbierto(false)
+    const { data } = await supabase.from('partidos')
+      .select('id, equipo_local:equipo_local_id(nombre), equipo_visitante:equipo_visitante_id(nombre), tries_local, tries_visitante')
+      .eq('fecha_id', f.id).order('id')
+    setPartidosTries(data || [])
+    const t = {}
+    data?.forEach(p => { t[p.id] = { local: String(p.tries_local ?? 0), visitante: String(p.tries_visitante ?? 0) } })
+    setTriesEdit(t)
+    setEditandoTries(true)
+  }
+
+  async function guardarTries() {
+    setGuardandoTries(true)
+    await Promise.all(
+      Object.entries(triesEdit).map(([pid, t]) =>
+        supabase.from('partidos').update({
+          tries_local:     parseInt(t.local)     || 0,
+          tries_visitante: parseInt(t.visitante) || 0,
+        }).eq('id', parseInt(pid))
+      )
+    )
+    setGuardandoTries(false)
+    setEditandoTries(false)
   }
 
   return (
@@ -629,6 +679,13 @@ function FilaFecha({ f, onToggle, onRefresh }) {
                 style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {f.activa ? '🔴 Desactivar' : '🟢 Activar'}
               </button>
+              {f.resultados_cargados && (
+                <button
+                  onClick={abrirEditorTries}
+                  style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  🏉 Editar tries
+                </button>
+              )}
               <div style={{ borderTop: '1px solid var(--gris-borde)' }} />
               <button
                 onClick={() => { setMenuAbierto(false); eliminarFecha() }}
@@ -639,6 +696,40 @@ function FilaFecha({ f, onToggle, onRefresh }) {
           )}
         </div>
       </div>
+      {editandoTries && (
+        <div style={{ padding: '10px 16px 14px', background: 'rgba(22,163,74,0.04)', borderTop: '1px solid var(--gris-borde)' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+            🏉 Tries por partido
+          </div>
+          {partidosTries.length === 0 && (
+            <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '0 0 8px' }}>Sin partidos cargados.</p>
+          )}
+          {partidosTries.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+              <span style={{ flex: 1, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 120 }}>
+                {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)' }}>vs</span> {p.equipo_visitante?.nombre}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+                  style={{ width: 34, fontSize: 13 }}
+                  value={triesEdit[p.id]?.local ?? '0'} placeholder="0"
+                  onChange={e => setTriesEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], local: e.target.value.replace(/\D/g, '') } }))} />
+                <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>–</span>
+                <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
+                  style={{ width: 34, fontSize: 13 }}
+                  value={triesEdit[p.id]?.visitante ?? '0'} placeholder="0"
+                  onChange={e => setTriesEdit(prev => ({ ...prev, [p.id]: { ...prev[p.id], visitante: e.target.value.replace(/\D/g, '') } }))} />
+              </div>
+            </div>
+          ))}
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button className="btn btn-primary btn-small" onClick={guardarTries} disabled={guardandoTries}>
+              {guardandoTries ? 'Guardando...' : '✓ Guardar tries'}
+            </button>
+            <button className="btn btn-secondary btn-small" onClick={() => setEditandoTries(false)}>Cancelar</button>
+          </div>
+        </div>
+      )}
       {editando && (
         <div style={{ padding: '0 16px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'end', background: 'rgba(201,162,39,0.04)' }}>
           <div className="form-group" style={{ margin: 0 }}>

@@ -25,7 +25,7 @@ export default function Estadisticas() {
       if (!ids.length) { setTeams([]); setLoading(false); return }
 
       const { data: partidos } = await supabase.from('partidos')
-        .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, fecha_id, equipo_local:equipo_local_id(id,nombre,nombre_corto,escudo_url), equipo_visitante:equipo_visitante_id(id,nombre,nombre_corto,escudo_url)')
+        .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, tries_local, tries_visitante, fecha_id, equipo_local:equipo_local_id(id,nombre,nombre_corto,escudo_url), equipo_visitante:equipo_visitante_id(id,nombre,nombre_corto,escudo_url)')
         .in('fecha_id', ids)
         .not('resultado_local', 'is', null)
 
@@ -70,16 +70,6 @@ export default function Estadisticas() {
             <span style={{fontSize:12,color:'var(--texto-suave)'}}>
               {totalFechas} fecha{totalFechas !== 1 ? 's' : ''} · {teams.length} equipos
             </span>
-          </div>
-
-          {/* Nota sobre bonus ofensivo */}
-          <div style={{
-            fontSize:11,color:'var(--texto-suave)',background:'var(--dorado-claro)',
-            border:'1px solid rgba(201,162,39,0.3)',borderRadius:8,
-            padding:'6px 10px',marginBottom:10,lineHeight:1.4,
-          }}>
-            ⚠️ <strong>Puntos URBA:</strong> V=4 · E=2 · D=0 · Bonus defensivo (+1 si perdés por ≤7 pts).
-            El bonus ofensivo (+1 por 3 tries de diferencia) no está disponible sin datos de tries.
           </div>
 
           <div className="card" style={{padding:0,overflow:'hidden'}}>
