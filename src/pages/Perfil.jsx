@@ -275,6 +275,99 @@ export default function Perfil() {
       { id:'promotor',        icon:'📣', nombre:'Promotor',           desc:'Compartiste la app 15 veces',                      cat:'Comunidad',   desbloqueado: invitaciones >= 15, progreso: invitaciones < 15 ? `${invitaciones}/15` : null },
       { id:'leyenda_viral',   icon:'🎙️', nombre:'Leyenda viral',      desc:'Compartiste la app 30 veces',                      cat:'Comunidad',   desbloqueado: invitaciones >= 30, progreso: invitaciones < 30 ? `${invitaciones}/30` : null },
     ])
+
+    // ─── Detección de logros nuevos ───────────────────────────────────
+    const listaFinal = [
+      { id:'primer_exacto',   desbloqueado: totalExactos >= 1 },
+      { id:'hat_trick',       desbloqueado: hatTrick },
+      { id:'francotirador',   desbloqueado: francotirador },
+      { id:'diez_exactos',    desbloqueado: totalExactos >= 10 },
+      { id:'quince_exactos',  desbloqueado: totalExactos >= 15 },
+      { id:'veinticinco',     desbloqueado: totalExactos >= 25 },
+      { id:'pleno',           desbloqueado: pleno },
+      { id:'invicto',         desbloqueado: invicto },
+      { id:'ojo_clinico',     desbloqueado: ojoClinico },
+      { id:'constante',       desbloqueado: constante },
+      { id:'gran_semana',     desbloqueado: granSemana },
+      { id:'semana_increible',desbloqueado: semanaIncreible },
+      { id:'podio',           desbloqueado: podio },
+      { id:'lider',           desbloqueado: lider },
+      { id:'rey',             desbloqueado: contLider >= 3 },
+      { id:'podio_habitual',  desbloqueado: contPodio >= 5 },
+      { id:'podio_elite',     desbloqueado: contPodio >= 10 },
+      { id:'rey_absoluto',    desbloqueado: contLider >= 5 },
+      { id:'cincuenton',      desbloqueado: totalPuntos >= 50 },
+      { id:'centenario',      desbloqueado: totalPuntos >= 100 },
+      { id:'bicentenario',    desbloqueado: totalPuntos >= 200 },
+      { id:'tricentenario',   desbloqueado: totalPuntos >= 350 },
+      { id:'quinientos',      desbloqueado: totalPuntos >= 500 },
+      { id:'ochocientos',     desbloqueado: totalPuntos >= 800 },
+      { id:'rey_destacado',   desbloqueado: reyDestacado },
+      { id:'empate_preciso',  desbloqueado: empatePreciso },
+      { id:'omnipresente',    desbloqueado: omnipresente },
+      { id:'perfecta',        desbloqueado: perfecta },
+      { id:'doble_pleno',     desbloqueado: doblePleno },
+      { id:'coleccionista',   desbloqueado: coleccionista },
+      { id:'embajador',       desbloqueado: invitaciones >= 5 },
+      { id:'promotor',        desbloqueado: invitaciones >= 15 },
+      { id:'leyenda_viral',   desbloqueado: invitaciones >= 30 },
+    ]
+    const storageKey = `logros_vistos_${user.id}`
+    const visitadosRaw = localStorage.getItem(storageKey)
+    const desbloqueadosIds = listaFinal.filter(l => l.desbloqueado).map(l => l.id)
+    if (visitadosRaw === null) {
+      // Primera vez: marcar todos como ya vistos (sin mostrar toast)
+      localStorage.setItem(storageKey, JSON.stringify(desbloqueadosIds))
+    } else {
+      const vistos = JSON.parse(visitadosRaw)
+      const nuevos = listaFinal.filter(l => l.desbloqueado && !vistos.includes(l.id))
+      if (nuevos.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify([...vistos, ...nuevos.map(l => l.id)]))
+        // Buscar info completa (icon, nombre, desc) del array que ya construimos arriba
+        // Re-usamos los datos que ya están en setLogros usando un mapa inline
+        const infoMap = {
+          primer_exacto:   { icon:'🎯', nombre:'Primer exacto',    desc:'Tu primer resultado exacto' },
+          hat_trick:       { icon:'⚽', nombre:'Hat-trick',         desc:'3 exactos en la misma fecha' },
+          francotirador:   { icon:'⚡', nombre:'Francotirador',     desc:'5 exactos en la misma fecha' },
+          diez_exactos:    { icon:'🏹', nombre:'10 exactos',        desc:'10 exactos acumulados' },
+          quince_exactos:  { icon:'🔥', nombre:'15 exactos',        desc:'15 exactos acumulados' },
+          veinticinco:     { icon:'💎', nombre:'25 exactos',        desc:'25 exactos acumulados' },
+          pleno:           { icon:'💥', nombre:'Pleno',             desc:'Bonus pleno en una fecha' },
+          invicto:         { icon:'🛡️', nombre:'Invicto',           desc:'Fecha sin ningún partido fallado' },
+          ojo_clinico:     { icon:'👁️', nombre:'Ojo clínico',       desc:'70%+ de acierto en una fecha' },
+          constante:       { icon:'🔄', nombre:'Constante',         desc:'3 fechas seguidas con 60%+ de acierto' },
+          gran_semana:     { icon:'📊', nombre:'Gran semana',       desc:'25+ pts en una semana' },
+          semana_increible:{ icon:'🌟', nombre:'Semana increíble',  desc:'50+ pts en una semana' },
+          podio:           { icon:'🥇', nombre:'Podio',             desc:'Top 3 en una fecha' },
+          lider:           { icon:'👑', nombre:'Líder',             desc:'#1 en una fecha' },
+          rey:             { icon:'🏆', nombre:'Rey',               desc:'#1 en 3 fechas distintas' },
+          podio_habitual:  { icon:'🥈', nombre:'Podio habitual',    desc:'Top 3 en 5 fechas distintas' },
+          podio_elite:     { icon:'🎖️', nombre:'Podio élite',       desc:'Top 3 en 10 fechas distintas' },
+          rey_absoluto:    { icon:'👸', nombre:'Rey absoluto',      desc:'#1 en 5 fechas distintas' },
+          cincuenton:      { icon:'🔢', nombre:'Cincuentón',        desc:'50 pts acumulados' },
+          centenario:      { icon:'💯', nombre:'Centenario',        desc:'100 pts acumulados' },
+          bicentenario:    { icon:'🚀', nombre:'Bicentenario',      desc:'200 pts acumulados' },
+          tricentenario:   { icon:'⚡', nombre:'350 pts',           desc:'350 pts acumulados' },
+          quinientos:      { icon:'🔱', nombre:'500 pts',           desc:'500 pts acumulados' },
+          ochocientos:     { icon:'🌠', nombre:'800 pts',           desc:'800 pts acumulados' },
+          rey_destacado:   { icon:'⭐', nombre:'Rey del destacado', desc:'Exacto en el partido especial' },
+          empate_preciso:  { icon:'🤝', nombre:'Empate preciso',    desc:'Exacto en un partido empatado' },
+          omnipresente:    { icon:'🌍', nombre:'Omnipresente',      desc:'Predijiste en los 5 torneos' },
+          perfecta:        { icon:'💫', nombre:'Perfecta',          desc:'Todos los picks correctos en una fecha' },
+          doble_pleno:     { icon:'🎆', nombre:'Doble pleno',       desc:'Bonus pleno en 2 torneos' },
+          coleccionista:   { icon:'🗂️', nombre:'Coleccionista',     desc:'Al menos 1 exacto en cada torneo' },
+          embajador:       { icon:'📢', nombre:'Embajador',         desc:'Compartiste la app 5 veces' },
+          promotor:        { icon:'📣', nombre:'Promotor',          desc:'Compartiste la app 15 veces' },
+          leyenda_viral:   { icon:'🎙️', nombre:'Leyenda viral',     desc:'Compartiste la app 30 veces' },
+        }
+        nuevos.forEach(l => {
+          const info = infoMap[l.id]
+          if (info) window.dispatchEvent(new CustomEvent('logro-desbloqueado', { detail: { id: l.id, ...info } }))
+        })
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────
+
     setLoadingPestaña(false)
   }
 

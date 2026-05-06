@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
+import LogroToast from './components/LogroToast'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Prode from './pages/Prode'
@@ -28,6 +29,7 @@ function AppRoutes() {
   return (
     <>
       <Navbar />
+      <LogroToast />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
