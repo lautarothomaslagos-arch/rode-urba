@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -14,13 +14,13 @@ function mensajeError(msg) {
 }
 
 export default function Login({ modoInicial = 'login' }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [modo, setModo] = useState(modoInicial)
-  const [username, setUsername] = useState('')
-  const [nombre, setNombre] = useState('')
+  const [email, setEmail]           = useState('')
+  const [password, setPassword]     = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState('')
+  const [modo, setModo]             = useState(modoInicial)
+  const [username, setUsername]     = useState('')
+  const [nombre, setNombre]         = useState('')
   const [msgRecupero, setMsgRecupero] = useState('')
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
@@ -55,86 +55,187 @@ export default function Login({ modoInicial = 'login' }) {
     setLoading(false)
   }
 
+  // ── Confirmación ──────────────────────────────────────────────
   if (modo === 'confirmacion') {
     return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-logo">
-            <img src="/logo.png" alt="Pick&Go" style={{width:100,height:100,borderRadius:20}} />
-            <h1>¡Listo!</h1>
-            <p className="sub">Revisá tu email para confirmar la cuenta</p>
+      <div className="login-screen">
+        <div className="login-backdrop" aria-hidden="true">
+          <div className="login-glow" />
+          <div className="login-grid" />
+        </div>
+        <div className="login-body" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', gap: 16 }}>
+          <div style={{ fontSize: 56 }}>🏉</div>
+          <div className="login-mark-logo">
+            <span className="login-mark-01">01</span>
+            <span className="login-mark-dot">·</span>
+            <span className="login-mark-cur">CURRENT</span>
           </div>
-          <button className="btn btn-primary" style={{width:'100%'}} onClick={() => setModo('login')}>
-            Ir a ingresar
+          <div style={{ fontFamily: 'var(--pg-display)', fontSize: 24, fontWeight: 800, color: 'var(--pg-text)', marginTop: 8 }}>
+            ¡Listo!
+          </div>
+          <div className="login-tag" style={{ letterSpacing: '0.14em' }}>
+            Revisá tu email para confirmar la cuenta
+          </div>
+          <button
+            className="login-cta"
+            style={{ marginTop: 16, width: '100%' }}
+            onClick={() => setModo('login')}
+          >
+            <span>Ir a ingresar</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </div>
       </div>
     )
   }
 
+  const ctaLabel = loading
+    ? 'Cargando...'
+    : modo === 'login'    ? 'Entrar al campo'
+    : modo === 'registro' ? 'Sumarme al prode'
+    : 'Enviar email de recuperación'
+
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <img src="/logo.png" alt="Pick&Go" style={{width:110,height:110,borderRadius:22,border:'3px solid var(--dorado)',boxShadow:'0 4px 20px rgba(201,162,39,0.4)'}} />
-          <h1>Pick&amp;Go</h1>
-          <p className="sub">
-            {modo === 'login' ? 'INGRESÁ A TU CUENTA' : modo === 'registro' ? 'CREÁ TU CUENTA GRATIS' : 'RECUPERAR CONTRASEÑA'}
-          </p>
+    <div className="login-screen">
+
+      {/* ── Backdrop ── */}
+      <div className="login-backdrop" aria-hidden="true">
+        <div className="login-glow" />
+        <div className="login-grid" />
+      </div>
+
+      <div className="login-body">
+
+        {/* ── Mark ── */}
+        <div className="login-mark">
+          <div className="login-mark-rays" />
+          <div className="login-mark-logo">
+            <span className="login-mark-01">01</span>
+            <span className="login-mark-dot">·</span>
+            <span className="login-mark-cur">CURRENT</span>
+          </div>
+          <div className="login-tag">Prode URBA · Temporada 2026</div>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {msgRecupero && <div className="alert alert-success">{msgRecupero}</div>}
+        {/* ── Tickers ── */}
+        <div className="login-tickers">
+          <div className="login-ticker">
+            <span className="login-ticker-dot" />
+            Top 14 · En curso
+          </div>
+          <div className="login-ticker">
+            <span className="login-ticker-num">5</span>
+            torneos URBA
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit}>
+        {/* ── Tabs (login / registro) ── */}
+        {modo !== 'recuperar' && (
+          <div className="login-tabs">
+            <button
+              type="button"
+              className={`login-tab-btn${modo === 'login' ? ' login-tab-btn-active' : ''}`}
+              onClick={() => { setModo('login'); setError('') }}
+            >
+              Ingresar
+            </button>
+            <button
+              type="button"
+              className={`login-tab-btn${modo === 'registro' ? ' login-tab-btn-active' : ''}`}
+              onClick={() => { setModo('registro'); setError('') }}
+            >
+              Crear cuenta
+            </button>
+          </div>
+        )}
+
+        {/* ── Form ── */}
+        <form className="login-form" onSubmit={handleSubmit}>
+
+          {error      && <div className="alert alert-error">{error}</div>}
+          {msgRecupero && <div className="alert alert-success">{msgRecupero}</div>}
+
           {modo === 'registro' && (
             <>
-              <div className="form-group">
-                <label className="form-label">Nombre de usuario</label>
-                <input className="form-input" type="text" placeholder="ej: juanrugby" value={username}
-                  onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g,''))} required />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Nombre completo (opcional)</label>
-                <input className="form-input" type="text" placeholder="Tu nombre" value={nombre}
-                  onChange={e => setNombre(e.target.value)} />
-              </div>
+              <label className="login-field">
+                <span className="login-field-lbl">Usuario</span>
+                <input
+                  className="login-field-input"
+                  type="text"
+                  placeholder="ej: juanrugby"
+                  value={username}
+                  onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                  required
+                />
+              </label>
+              <label className="login-field">
+                <span className="login-field-lbl">Nombre completo (opcional)</span>
+                <input
+                  className="login-field-input"
+                  type="text"
+                  placeholder="Tu nombre"
+                  value={nombre}
+                  onChange={e => setNombre(e.target.value)}
+                />
+              </label>
             </>
           )}
 
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input className="form-input" type="email" placeholder="tu@email.com" value={email}
-              onChange={e => setEmail(e.target.value)} required />
-          </div>
+          <label className="login-field">
+            <span className="login-field-lbl">Email</span>
+            <input
+              className="login-field-input"
+              type="email"
+              placeholder="tu@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
+          </label>
 
           {modo !== 'recuperar' && (
-            <div className="form-group">
-              <label className="form-label">Contraseña</label>
-              <input className="form-input" type="password"
+            <label className="login-field">
+              <span className="login-field-lbl">Contraseña</span>
+              <input
+                className="login-field-input"
+                type="password"
                 placeholder={modo === 'registro' ? 'Mínimo 6 caracteres' : '••••••••'}
-                value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-            </div>
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </label>
           )}
 
-          <button type="submit" className="btn btn-primary" style={{width:'100%',padding:'13px',marginBottom:8}} disabled={loading}>
-            {loading
-              ? <><span className="spinner"></span> Cargando...</>
-              : modo === 'login' ? 'Ingresar'
-              : modo === 'registro' ? 'Crear cuenta'
-              : 'Enviar email de recuperación'
-            }
+          <button type="submit" className="login-cta" disabled={loading}>
+            <span>{ctaLabel}</span>
+            {!loading && (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </button>
 
           {modo === 'login' && (
-            <button type="button" className="btn btn-secondary" style={{width:'100%',padding:'11px'}}
-              onClick={() => { setModo('recuperar'); setError(''); setMsgRecupero('') }}>
-              Olvidé mi contraseña
-            </button>
+            <>
+              <div className="login-divider"><span>o</span></div>
+              <button
+                type="button"
+                className="login-cta-ghost"
+                onClick={() => { setModo('recuperar'); setError(''); setMsgRecupero('') }}
+              >
+                Olvidé mi contraseña
+              </button>
+            </>
           )}
+
         </form>
 
-        <div className="auth-switch" style={{marginTop:16}}>
+        {/* ── Switch ── */}
+        <div className="login-switch">
           {modo === 'login' && (
             <span>¿No tenés cuenta? <a onClick={() => { setModo('registro'); setError('') }}>Registrate</a></span>
           )}
@@ -142,9 +243,15 @@ export default function Login({ modoInicial = 'login' }) {
             <span>¿Ya tenés cuenta? <a onClick={() => { setModo('login'); setError('') }}>Ingresá</a></span>
           )}
           {modo === 'recuperar' && (
-            <span><a onClick={() => { setModo('login'); setError(''); setMsgRecupero('') }}>← Volver a ingresar</a></span>
+            <a onClick={() => { setModo('login'); setError(''); setMsgRecupero('') }}>← Volver a ingresar</a>
           )}
         </div>
+
+        {/* ── Footer ── */}
+        <div className="login-foot">
+          Al continuar aceptás las reglas del juego. Ningún try queda sin contar.
+        </div>
+
       </div>
     </div>
   )
