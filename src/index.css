@@ -679,8 +679,8 @@ html, body, #root {
     background: rgba(8, 14, 38, 0.87);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    border: 1px solid rgba(201,162,39,0.22);
-    border-radius: 20px;
+    border: 1px solid rgba(201,162,39,0.45);
+    border-radius: 14px;
     z-index: 150;
     box-shadow: 0 4px 28px rgba(0,0,0,0.35);
   }
