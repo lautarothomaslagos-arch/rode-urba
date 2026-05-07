@@ -1,4 +1,4 @@
-const CACHE = 'pickandgo-v3'
+const CACHE = 'pickandgo-v4'
 const STATIC = ['/', '/manifest.json', '/logo.png']
 
 self.addEventListener('install', e => {
@@ -16,14 +16,21 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
   if (e.request.url.includes('supabase')) return
+
   e.respondWith(
-    fetch(e.request)
-      .then(r => {
-        const clone = r.clone()
-        caches.open(CACHE).then(c => c.put(e.request, clone))
-        return r
+    caches.open(CACHE).then(cache =>
+      cache.match(e.request).then(cached => {
+        // Stale-while-revalidate: servir caché inmediatamente, actualizar en background
+        const fetchPromise = fetch(e.request)
+          .then(response => {
+            cache.put(e.request, response.clone())
+            return response
+          })
+          .catch(() => null)
+
+        return cached || fetchPromise
       })
-      .catch(() => caches.match(e.request))
+    )
   )
 })
 
