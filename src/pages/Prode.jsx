@@ -235,6 +235,9 @@ export default function Prode() {
   const predsCompletas = partidos.filter(p => preds[p.id]?.local !== undefined && preds[p.id]?.visitante !== undefined).length
   const porcentaje = totalPartidos > 0 ? Math.round((predsCompletas / totalPartidos) * 100) : 0
   const todoCompleto = predsCompletas === totalPartidos && totalPartidos > 0
+  const todosGuardados = !hayCAmbios && predsCompletas > 0 &&
+    partidos.filter(p => preds[p.id]?.local !== undefined && preds[p.id]?.visitante !== undefined)
+            .every(p => savedPreds.has(p.id))
 
   return (
     <div className="dashboard">
@@ -377,9 +380,15 @@ export default function Prode() {
               ● Tenés cambios sin guardar
             </div>
           )}
-          <button className="prode-save-btn" onClick={guardar} disabled={guardando}>
+          <button className="prode-save-btn" onClick={guardar} disabled={guardando || todosGuardados} style={todosGuardados ? {opacity:0.6} : undefined}>
             <span>
-              {guardando ? '⏳ Guardando...' : guardado ? '✓ ¡Picks guardados!' : `Guardar ${predsCompletas} picks`}
+              {guardando
+                ? '⏳ Guardando...'
+                : guardado
+                ? '✓ ¡Picks guardados!'
+                : todosGuardados
+                ? '✓ Al día — sin cambios'
+                : `Guardar ${predsCompletas} picks`}
             </span>
           </button>
         </div>
