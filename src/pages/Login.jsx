@@ -65,10 +65,10 @@ export default function Login({ modoInicial = 'login' }) {
         </div>
         <div className="login-body" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', gap: 16 }}>
           <div style={{ fontSize: 56 }}>🏉</div>
-          <div className="login-mark-logo">
-            <span className="login-mark-01">01</span>
-            <span className="login-mark-dot">·</span>
-            <span className="login-mark-cur">CURRENT</span>
+          <div className="login-pg-logo">
+            <span className="login-pg-pick">pick</span>
+            <span className="login-pg-amp">&amp;</span>
+            <span className="login-pg-go">go</span>
           </div>
           <div style={{ fontFamily: 'var(--pg-display)', fontSize: 24, fontWeight: 800, color: 'var(--pg-text)', marginTop: 8 }}>
             ¡Listo!
@@ -111,10 +111,10 @@ export default function Login({ modoInicial = 'login' }) {
         {/* ── Mark ── */}
         <div className="login-mark">
           <div className="login-mark-rays" />
-          <div className="login-mark-logo">
-            <span className="login-mark-01">01</span>
-            <span className="login-mark-dot">·</span>
-            <span className="login-mark-cur">CURRENT</span>
+          <div className="login-pg-logo">
+            <span className="login-pg-pick">pick</span>
+            <span className="login-pg-amp">&amp;</span>
+            <span className="login-pg-go">go</span>
           </div>
           <div className="login-tag">Prode URBA · Temporada 2026</div>
         </div>

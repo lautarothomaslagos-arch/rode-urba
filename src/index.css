@@ -473,26 +473,19 @@ body {
 }
 @keyframes lm-spin { to { transform: rotate(360deg); } }
 
-.login-mark-logo {
-  display: inline-flex; align-items: baseline; gap: 7px; line-height: 1;
+/* Italic Triad logo — pick&go */
+.login-pg-logo {
+  display: inline-flex; align-items: baseline; gap: 0; line-height: 1;
+  font-family: 'Bricolage Grotesque', var(--pg-display);
+  font-size: 64px; font-weight: 800; letter-spacing: -0.03em;
 }
-.login-mark-01 {
-  font-family: var(--pg-mono);
-  font-size: 54px; font-weight: 700;
-  color: var(--pg-gold); letter-spacing: -0.03em;
+.login-pg-pick { color: #FFFFFF; }
+.login-pg-amp  {
+  color: var(--pg-red); font-style: italic;
+  display: inline-block; transform: skewX(-8deg);
+  margin: 0 1px;
 }
-.login-mark-dot {
-  font-family: var(--pg-display);
-  font-size: 40px; font-weight: 700;
-  color: var(--pg-red);
-}
-.login-mark-cur {
-  font-family: var(--pg-display);
-  font-size: 40px; font-weight: 800;
-  letter-spacing: -0.02em;
-}
-[data-theme="dark"]  .login-mark-cur { color: #FFFFFF; }
-[data-theme="light"] .login-mark-cur { color: #0F1E36; }
+.login-pg-go   { color: var(--pg-gold); }
 
 .login-tag {
   margin-top: 10px; font-size: 10px; font-weight: 700;
@@ -535,7 +528,7 @@ body {
 .login-tab-btn {
   padding: 11px; border-radius: 9px;
   font-family: var(--pg-display); font-size: 14px; font-weight: 700;
-  transition: all 0.18s;
+  transition: all 0.18s; background: transparent;
 }
 [data-theme="dark"]  .login-tab-btn         { color: rgba(255,255,255,0.45); }
 [data-theme="light"] .login-tab-btn         { color: rgba(15,30,54,0.50); }

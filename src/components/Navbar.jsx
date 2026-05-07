@@ -7,6 +7,9 @@ export default function Navbar() {
   const { user, perfil, signOut, hayFechaAbierta } = useAuth()
   const location = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
+
+  const AUTH_ROUTES = ['/login', '/registro', '/nueva-contrasena']
+  if (AUTH_ROUTES.includes(location.pathname)) return null
   const [escudoClub, setEscudoClub] = useState(null)
   const isActive = (path) => location.pathname === path ? 'active' : ''
 
