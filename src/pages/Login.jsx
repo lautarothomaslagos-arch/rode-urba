@@ -33,7 +33,7 @@ export default function Login({ modoInicial = 'login' }) {
     if (modo === 'login') {
       const { error } = await signIn({ email, password })
       if (error) setError('Email o contraseña incorrectos')
-      else navigate('/prode')
+      else navigate('/home')
     } else if (modo === 'registro') {
       if (!username || username.length < 3) {
         setError('El usuario debe tener al menos 3 caracteres')

@@ -72,7 +72,7 @@ export default function Perfil() {
   const [pass2, setPass2] = useState('')
   const [msgPass, setMsgPass] = useState('')
   const [loadingPass, setLoadingPass] = useState(false)
-  const [pestaña, setPestaña] = useState(() => searchParams.get('codigo') ? 'grupos' : 'historial')
+  const [pestaña, setPestaña] = useState(() => searchParams.get('codigo') ? 'grupos' : null)
   const [historial, setHistorial] = useState([])
   const [logros, setLogros] = useState([])
   const [loadingPestaña, setLoadingPestaña] = useState(false)
