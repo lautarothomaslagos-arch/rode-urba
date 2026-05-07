@@ -4,7 +4,7 @@ const ThemeContext = createContext({})
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('pg-theme-v2') || 'light' } catch { return 'light' }
+    try { return localStorage.getItem('pg-theme-v2') || 'dark' } catch { return 'dark' }
   })
 
   useEffect(() => {

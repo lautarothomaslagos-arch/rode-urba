@@ -92,18 +92,42 @@ export default function Dashboard() {
 
   async function cargarEquipoStats(clubNombre) {
     try {
+      // 1. Buscar el equipo por nombre
       const { data: eq } = await supabase.from('equipos')
         .select('id, nombre_corto, escudo_url')
         .eq('nombre', clubNombre).maybeSingle()
       if (!eq?.id) { setEquipoStats(false); return }
 
-      const { data: jugados } = await supabase.from('partidos')
-        .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, bonus_of_local, bonus_of_visitante, fechas(categoria_id)')
-        .or(`equipo_local_id.eq.${eq.id},equipo_visitante_id.eq.${eq.id}`)
+      // 2. Traer todas las fechas con resultados cargados (resultados_cargados vive en fechas, no en partidos)
+      const { data: fechasConRes } = await supabase.from('fechas')
+        .select('id, categoria_id')
         .eq('resultados_cargados', true)
+      const fechasConResIds = (fechasConRes || []).map(f => f.id)
 
-      let pts = 0, categoriaId = null
-      ;(jugados || []).forEach(p => {
+      // 3. Partidos jugados por este equipo en esas fechas
+      let jugados = []
+      if (fechasConResIds.length) {
+        const { data } = await supabase.from('partidos')
+          .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, bonus_of_local, bonus_of_visitante, fecha_id')
+          .or(`equipo_local_id.eq.${eq.id},equipo_visitante_id.eq.${eq.id}`)
+          .in('fecha_id', fechasConResIds)
+        jugados = data || []
+      }
+
+      // 4. Determinar categoría del equipo desde sus partidos
+      const fechaIdSet = new Set(jugados.map(p => p.fecha_id))
+      const fechaRef = (fechasConRes || []).find(f => fechaIdSet.has(f.id))
+      const categoriaId = fechaRef?.categoria_id || null
+
+      // 5. Filtrar solo los partidos de la categoría del equipo
+      const fechasDeCat = categoriaId
+        ? (fechasConRes || []).filter(f => f.categoria_id === categoriaId).map(f => f.id)
+        : []
+      const jugadosDeCat = jugados.filter(p => fechasDeCat.includes(p.fecha_id))
+
+      // 6. Calcular puntos propios (W=4, E=2, L=0 + bonus)
+      let pts = 0
+      jugadosDeCat.forEach(p => {
         const esLocal = p.equipo_local_id === eq.id
         const gF = esLocal ? p.resultado_local : p.resultado_visitante
         const gC = esLocal ? p.resultado_visitante : p.resultado_local
@@ -111,44 +135,40 @@ export default function Dashboard() {
         if (gF > gC) pts += 4 + bon
         else if (gF === gC) pts += 2 + bon
         else pts += bon
-        if (!categoriaId && p.fechas?.categoria_id) categoriaId = p.fechas.categoria_id
       })
 
+      // 7. Standings completos de la categoría para encontrar la posición
       let posicion = null, totalEquipos = null
-      if (categoriaId) {
-        const { data: fechasCat } = await supabase.from('fechas')
-          .select('id').eq('categoria_id', categoriaId).eq('resultados_cargados', true)
-        const fechaIds = (fechasCat || []).map(f => f.id)
-        if (fechaIds.length) {
-          const { data: todosP } = await supabase.from('partidos')
-            .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, bonus_of_local, bonus_of_visitante')
-            .in('fecha_id', fechaIds).eq('resultados_cargados', true)
-          const standings = {}
-          ;(todosP || []).forEach(p => {
-            const L = p.equipo_local_id, V = p.equipo_visitante_id
-            if (!standings[L]) standings[L] = 0
-            if (!standings[V]) standings[V] = 0
-            if (p.resultado_local > p.resultado_visitante) {
-              standings[L] += 4 + (p.bonus_of_local || 0)
-              standings[V] += (p.bonus_of_visitante || 0)
-            } else if (p.resultado_local === p.resultado_visitante) {
-              standings[L] += 2 + (p.bonus_of_local || 0)
-              standings[V] += 2 + (p.bonus_of_visitante || 0)
-            } else {
-              standings[L] += (p.bonus_of_local || 0)
-              standings[V] += 4 + (p.bonus_of_visitante || 0)
-            }
-          })
-          const sorted = Object.entries(standings).sort(([, a], [, b]) => b - a)
-          const pos = sorted.findIndex(([id]) => String(id) === String(eq.id))
-          if (pos >= 0) { posicion = pos + 1; totalEquipos = sorted.length }
-        }
+      if (categoriaId && fechasDeCat.length) {
+        const { data: todosP } = await supabase.from('partidos')
+          .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, bonus_of_local, bonus_of_visitante')
+          .in('fecha_id', fechasDeCat)
+        const standings = {}
+        ;(todosP || []).forEach(p => {
+          const L = p.equipo_local_id, V = p.equipo_visitante_id
+          if (!standings[L]) standings[L] = 0
+          if (!standings[V]) standings[V] = 0
+          if (p.resultado_local > p.resultado_visitante) {
+            standings[L] += 4 + (p.bonus_of_local || 0)
+            standings[V] += (p.bonus_of_visitante || 0)
+          } else if (p.resultado_local === p.resultado_visitante) {
+            standings[L] += 2 + (p.bonus_of_local || 0)
+            standings[V] += 2 + (p.bonus_of_visitante || 0)
+          } else {
+            standings[L] += (p.bonus_of_local || 0)
+            standings[V] += 4 + (p.bonus_of_visitante || 0)
+          }
+        })
+        const sorted = Object.entries(standings).sort(([, a], [, b]) => b - a)
+        const pos = sorted.findIndex(([id]) => String(id) === String(eq.id))
+        if (pos >= 0) { posicion = pos + 1; totalEquipos = sorted.length }
       }
 
+      // 8. Próximo partido (en fechas SIN resultados cargados aún)
       const { data: proximo } = await supabase.from('partidos')
         .select('equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre_corto, escudo_url), equipo_visitante:equipo_visitante_id(nombre_corto, escudo_url)')
         .or(`equipo_local_id.eq.${eq.id},equipo_visitante_id.eq.${eq.id}`)
-        .eq('resultados_cargados', false)
+        .not('fecha_id', 'in', `(${fechasConResIds.length ? fechasConResIds.join(',') : '0'})`)
         .order('fecha_id', { ascending: true })
         .limit(1).maybeSingle()
 
