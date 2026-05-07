@@ -191,7 +191,7 @@ export default function Dashboard() {
             setFeaturedMatch(match)
             // ¿El usuario ya lo predijo?
             const { data: pick } = await supabase
-              .from('predicciones').select('local, visitante')
+              .from('predicciones').select('goles_local, goles_visitante')
               .eq('usuario_id', user.id).eq('partido_id', match.id).maybeSingle()
             setFeaturedPick(pick || null)
           }
@@ -306,9 +306,9 @@ export default function Dashboard() {
                 <div className="dash-pick-score">
                   <span className="dash-pick-label">Tu pick</span>
                   <span className="dash-pick-result">
-                    <strong>{featuredPick.local}</strong>
+                    <strong>{featuredPick.goles_local}</strong>
                     <span className="dash-pick-dash"> — </span>
-                    <strong>{featuredPick.visitante}</strong>
+                    <strong>{featuredPick.goles_visitante}</strong>
                   </span>
                 </div>
               ) : (

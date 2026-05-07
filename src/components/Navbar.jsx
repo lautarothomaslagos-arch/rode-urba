@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabase'
 
 export default function Navbar() {
   const { user, perfil, signOut, hayFechaAbierta } = useAuth()
-  const { theme, toggleTheme } = useTheme()
   const location = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [escudoClub, setEscudoClub] = useState(null)
@@ -24,7 +22,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="navbar">
+      <nav className="navbar" data-user={user ? 'true' : 'false'}>
         <Link to="/" className="navbar-logo">
           <img src="/logo.png" alt="Pick&Go" />
           <div className="navbar-logo-text">
@@ -59,23 +57,11 @@ export default function Navbar() {
                   </div>
                 )}
               </Link>
-              <button onClick={toggleTheme} title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'} style={{fontSize:18,padding:'4px 8px',borderRadius:8,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)'}}>
-                {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
               <button onClick={signOut} style={{color:'rgba(255,255,255,0.6)',fontSize:12}}>Salir</button>
             </div>
 
-            {/* Mobile: solo toggle de tema */}
-            <div className="mobile-nav-right">
-              <button onClick={toggleTheme} className="navbar-theme-btn">
-                {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
-              <button className="hamburger hamburger-hidden-mobile" onClick={() => setMenuAbierto(!menuAbierto)}>
-                <span className={menuAbierto ? 'bar bar-open-1' : 'bar'}></span>
-                <span className={menuAbierto ? 'bar bar-open-2' : 'bar'}></span>
-                <span className={menuAbierto ? 'bar bar-open-3' : 'bar'}></span>
-              </button>
-            </div>
+            {/* Mobile: vacío (la navbar se oculta en mobile para usuarios logueados) */}
+            <div className="mobile-nav-right" />
           </>
         )}
 
@@ -112,11 +98,6 @@ export default function Navbar() {
                 <span>⚙️</span> Admin
               </Link>
             )}
-            <div style={{height:1,background:'rgba(255,255,255,0.1)',margin:'8px 0'}} />
-            <button onClick={toggleTheme} className="mobile-menu-item">
-              <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
-              {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-            </button>
             <div style={{height:1,background:'rgba(255,255,255,0.1)',margin:'8px 0'}} />
             <button onClick={() => { signOut(); setMenuAbierto(false) }} className="mobile-menu-item mobile-salir">
               <span>🚪</span> Salir

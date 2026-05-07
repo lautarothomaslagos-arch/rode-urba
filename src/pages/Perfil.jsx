@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { CATS, CAT_CLASS } from '../lib/constants'
 import { GruposContenido } from './Grupos'
@@ -55,6 +56,7 @@ function SalirBtn() {
 
 export default function Perfil() {
   const { perfil, cargarPerfil, user } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const { permiso, suscrito, cargando: cargandoNotif, suscribirse, desuscribirse } = usePushNotifications()
   const [searchParams] = useSearchParams()
 
@@ -516,6 +518,35 @@ export default function Perfil() {
             <div style={{fontSize:11,color:'var(--texto-suave)'}}>Próximo: <strong style={{color:'var(--texto)'}}>{proximoTrofeo.nombre}</strong> — {proximoTrofeo.minimo} fechas consecutivas</div>
           </div>
         )}
+      </div>
+
+      {/* ===== APARIENCIA ===== */}
+      <div className="card" style={{marginBottom:8,padding:'14px 18px'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+          <div>
+            <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--azul)',marginBottom:2}}>
+              🎨 Apariencia
+            </div>
+            <div style={{fontSize:12,color:'var(--texto-suave)'}}>
+              {theme === 'dark' ? 'Modo oscuro · Stadium Broadcast' : 'Modo claro · Match Day Magazine'}
+            </div>
+          </div>
+          <button
+            onClick={toggleTheme}
+            style={{
+              display:'flex',alignItems:'center',gap:7,
+              padding:'9px 16px',borderRadius:10,
+              fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,
+              cursor:'pointer',border:'1.5px solid',whiteSpace:'nowrap',flexShrink:0,
+              ...(theme === 'dark'
+                ? {background:'rgba(242,197,65,0.10)',borderColor:'rgba(242,197,65,0.35)',color:'#F2C541'}
+                : {background:'rgba(15,30,54,0.06)',borderColor:'rgba(15,30,54,0.18)',color:'var(--azul)'}
+              )
+            }}
+          >
+            {theme === 'dark' ? '☀️ Modo claro' : '🌙 Modo oscuro'}
+          </button>
+        </div>
       </div>
 
       {/* ===== ACORDEÓN ===== */}

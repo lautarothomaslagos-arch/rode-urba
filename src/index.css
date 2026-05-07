@@ -743,6 +743,8 @@ html, body, #root {
   .hamburger-hidden-mobile { display: none !important; }
   /* Padding global para que el contenido no quede tapado por el bottom nav */
   #root { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+  /* Ocultar navbar completa en mobile para usuarios logueados (tienen BottomNav) */
+  .navbar[data-user="true"] { display: none !important; }
 }
 
 /* ===== BOTTOM NAV (solo móvil) ===== */

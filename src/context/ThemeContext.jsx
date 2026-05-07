@@ -10,6 +10,9 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     try { localStorage.setItem('pg-theme-v2', theme) } catch {}
+    // Status bar Android / Safari
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#07101F' : '#F4EFE6')
   }, [theme])
 
   function toggleTheme() {
