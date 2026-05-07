@@ -7,10 +7,9 @@ export default function Navbar() {
   const { user, perfil, signOut, hayFechaAbierta } = useAuth()
   const location = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
+  const [escudoClub, setEscudoClub] = useState(null)
 
   const AUTH_ROUTES = ['/login', '/registro', '/nueva-contrasena']
-  if (AUTH_ROUTES.includes(location.pathname)) return null
-  const [escudoClub, setEscudoClub] = useState(null)
   const isActive = (path) => location.pathname === path ? 'active' : ''
 
   useEffect(() => { setMenuAbierto(false) }, [location.pathname])
@@ -22,6 +21,8 @@ export default function Navbar() {
       .then(({ data }) => { if (mounted && data?.escudo_url) setEscudoClub(data.escudo_url) })
     return () => { mounted = false }
   }, [perfil?.club])
+
+  if (AUTH_ROUTES.includes(location.pathname)) return null
 
   return (
     <>
