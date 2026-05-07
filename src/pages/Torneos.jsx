@@ -3,10 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { CATS } from '../lib/constants'
 import { computeEquipoStats, sortedTeams, formaIcon } from '../lib/equipoStats'
-import TabsScrollWrapper from '../components/TabsScrollWrapper'
 import { PartidoCardResultado } from '../components/PartidoCard'
-
-const COL = '36px 1fr 30px 30px 30px 30px 38px 42px 42px 44px 80px'
 
 function formatFecha(str) {
   if (!str) return null
@@ -49,10 +46,8 @@ export default function Torneos() {
       setTotalFechas(fechasCat.length)
       const ids = fechasCat.map(f => f.id)
 
-      // Carga en paralelo: partidos + predicciones del user + puntos del user
       const [
         { data: partidos },
-        { data: predsData },
         { data: puntosData },
       ] = await Promise.all([
         supabase
@@ -63,11 +58,6 @@ export default function Torneos() {
           .order('es_especial', { ascending: false })
           .order('id'),
         user
-          ? supabase.from('predicciones').select('partido_id, goles_local, goles_visitante')
-              .eq('usuario_id', user.id)
-              .in('partido_id', []) // se actualiza abajo con IDs reales
-          : Promise.resolve({ data: [] }),
-        user
           ? supabase.from('puntos_fecha')
               .select('fecha_id, total_puntos, puntos_exactos, puntos_signo, bonus_pleno, bonus_mitad, partidos_acertados, partidos_totales')
               .eq('usuario_id', user.id)
@@ -77,7 +67,6 @@ export default function Torneos() {
 
       const allPartidos = partidos || []
 
-      // Predicciones: necesitamos los IDs reales de partidos
       let predsMap = {}
       if (user && allPartidos.length) {
         const { data: preds } = await supabase
@@ -90,11 +79,9 @@ export default function Torneos() {
         })
       }
 
-      // Puntos por fecha
       const puntosMap = {}
       puntosData?.forEach(p => { puntosMap[p.fecha_id] = p })
 
-      // Agrupar partidos por fecha
       const grouped = {}
       fechasCat.forEach(f => { grouped[f.id] = [] })
       allPartidos.forEach(p => { if (grouped[p.fecha_id]) grouped[p.fecha_id].push(p) })
@@ -120,7 +107,6 @@ export default function Torneos() {
     if (compartiendo) return
     setCompartiendo(f.id)
     try {
-      // Buscar todas las fechas con el mismo número (todos los torneos esa semana)
       const { data: todasFechas } = await supabase
         .from('fechas').select('id').eq('numero', f.numero).eq('resultados_cargados', true)
       const fids = (todasFechas || []).map(x => x.id)
@@ -155,7 +141,6 @@ export default function Torneos() {
       )
       window.open(`https://wa.me/?text=${msg}`, '_blank')
 
-      // Sumar invitación
       supabase.from('perfiles').select('invitaciones').eq('id', user.id).single()
         .then(({ data }) => supabase.from('perfiles')
           .update({ invitaciones: (data?.invitaciones || 0) + 1 }).eq('id', user.id))
@@ -167,22 +152,32 @@ export default function Torneos() {
 
   return (
     <div className="container">
-      <div className="page-header">
-        <h1 className="page-title">Torneos <span className="page-title-accent">URBA 2026</span></h1>
+
+      {/* ── Header ── */}
+      <div className="torneos-header">
+        <div className="torneos-eyebrow">URBA · TEMPORADA 2026</div>
+        <h1 className="torneos-title">
+          Torneos<span className="torneos-dot">•</span>
+        </h1>
       </div>
 
-      <TabsScrollWrapper>
+      {/* ── Category pills ── */}
+      <div className="torneos-cats">
         {[1, 2, 3, 4, 5].map(c => (
-          <button key={c} className={`tab-btn ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}>
+          <button
+            key={c}
+            className={`torneos-cat${cat === c ? ' active' : ''}`}
+            onClick={() => setCat(c)}
+          >
             {CATS[c]}
           </button>
         ))}
-      </TabsScrollWrapper>
+      </div>
 
       {loading && <div className="loading"><div className="spinner" /></div>}
 
       {errorCarga && !loading && (
-        <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
           <span>Error al cargar los datos</span>
           <button className="btn btn-small btn-secondary" onClick={() => cargar(cat)}>Reintentar</button>
         </div>
@@ -192,7 +187,7 @@ export default function Torneos() {
         <div className="empty-state seccion-fade" style={{ padding: '40px 20px' }}>
           <div style={{ fontSize: 52, marginBottom: 10 }}>🏉</div>
           <div className="empty-title">Sin datos para {CATS[cat]}</div>
-          <p style={{ fontSize: 13, color: 'var(--texto-suave)', maxWidth: 260, margin: '8px auto 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', maxWidth: 260, margin: '8px auto 0', lineHeight: 1.5 }}>
             Los resultados aparecerán una vez disputada la primera fecha.
           </p>
         </div>
@@ -201,148 +196,98 @@ export default function Torneos() {
       {!loading && fechas.length > 0 && (
         <div className="seccion-fade">
 
-          {/* ══ POSICIONES ══════════════════════════════════════════════ */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--texto-suave)', letterSpacing: 1, textTransform: 'uppercase' }}>
-              Posiciones
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>
-              {totalFechas} fecha{totalFechas !== 1 ? 's' : ''} · {teams.length} equipos
-            </span>
+          {/* ── Posiciones ── */}
+          <div className="torneos-section-label">
+            <span>Posiciones · Fecha {totalFechas}</span>
+            <span>{teams.length} equipos</span>
           </div>
 
-          <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
-            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-              <div style={{ minWidth: 520 }}>
-                <div style={{
-                  display: 'grid', gridTemplateColumns: COL, gap: 2, padding: '8px 10px',
-                  background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))',
-                  fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.7)',
-                  letterSpacing: 0.5, position: 'sticky', top: 0,
-                }}>
-                  <div style={{ textAlign: 'center' }}>#</div><div>Equipo</div>
-                  <div style={{ textAlign: 'center' }}>PJ</div>
-                  <div style={{ textAlign: 'center', color: '#86efac' }}>G</div>
-                  <div style={{ textAlign: 'center', color: '#fde68a' }}>E</div>
-                  <div style={{ textAlign: 'center', color: '#fca5a5' }}>P</div>
-                  <div style={{ textAlign: 'center', color: '#fde68a' }}>PTS</div>
-                  <div style={{ textAlign: 'center' }}>PF</div>
-                  <div style={{ textAlign: 'center' }}>PC</div>
-                  <div style={{ textAlign: 'center' }}>DIF</div>
-                  <div style={{ textAlign: 'center' }}>FORMA</div>
-                </div>
-                {teams.map((t, idx) => <FilaEquipo key={t.equipo.id} t={t} idx={idx} />)}
-              </div>
+          <div className="torneos-table-wrap">
+            {/* Cabecera */}
+            <div className="torneos-tgrid torneos-table-head">
+              <div className="torneos-th">#</div>
+              <div className="torneos-th-eq">Equipo</div>
+              <div className="torneos-th">PJ</div>
+              <div className="torneos-th" style={{ color: '#86efac' }}>G</div>
+              <div className="torneos-th" style={{ color: '#fde68a' }}>E</div>
+              <div className="torneos-th" style={{ color: '#fca5a5' }}>P</div>
+              <div className="torneos-th">DIF</div>
+              <div className="torneos-th">FORMA</div>
+              <div className="torneos-th-pts" style={{ textAlign: 'right' }}>PTS</div>
             </div>
+            {teams.map((t, idx) => <FilaEquipo key={t.equipo.id} t={t} idx={idx} />)}
           </div>
 
           {/* Leyenda FORMA */}
-          <div style={{
-            marginBottom: 20, padding: '7px 12px', background: 'var(--gris)', borderRadius: 8,
-            display: 'flex', gap: 10, flexWrap: 'wrap',
-            fontSize: 11, color: 'var(--texto-suave)', alignItems: 'center',
-          }}>
-            {[{ l: 'W', c: '#16a34a', b: '#dcfce7', t: 'Ganó' }, { l: 'E', c: '#ca8a04', b: '#fef9c3', t: 'Empató' }, { l: 'D', c: '#dc2626', b: '#fee2e2', t: 'Perdió' }]
-              .map(f => (
-                <div key={f.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 4, background: f.b, border: `1px solid ${f.c}60`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 800, color: f.c }}>{f.l}</div>
-                  <span>{f.t}</span>
-                </div>
-              ))}
-            <span style={{ marginLeft: 'auto', opacity: 0.6, fontSize: 10 }}>← últimos 5 →</span>
+          <div className="torneos-forma-legend">
+            {[
+              { cls: 'forma-pill-w', l: 'W', t: 'Ganó' },
+              { cls: 'forma-pill-e', l: 'E', t: 'Empató' },
+              { cls: 'forma-pill-d', l: 'D', t: 'Perdió' },
+            ].map(f => (
+              <div key={f.l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div className={`forma-pill ${f.cls}`}>{f.l}</div>
+                <span>{f.t}</span>
+              </div>
+            ))}
+            <span style={{ marginLeft: 'auto', opacity: 0.5, fontSize: 10 }}>← últimos 5</span>
           </div>
 
-          {/* ══ RESULTADOS POR FECHA ════════════════════════════════════ */}
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--texto-suave)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
-            Resultados por fecha
+          {/* ── Resultados por fecha ── */}
+          <div className="torneos-section-label torneos-fechas-label">
+            <span>Resultados por fecha</span>
           </div>
 
           {fechas.map(f => {
             const abierta = fechaAbierta === f.id
-            const pts = partidosPorFecha[f.id] || []
-            const puntosF = puntosPorFecha[f.id]
-            const fecha = formatFecha(f.fecha_partido)
+            const partidos = partidosPorFecha[f.id] || []
+            const puntosF  = puntosPorFecha[f.id]
+            const fecha    = formatFecha(f.fecha_partido)
 
             return (
-              <div key={f.id} className="card" style={{ padding: 0, marginBottom: 8, overflow: 'hidden' }}>
+              <div key={f.id} className={`torneos-fecha-card${abierta ? ' open' : ''}`}>
 
                 {/* Cabecera acordeón */}
-                <div
-                  onClick={() => toggleFecha(f.id)}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '13px 16px', cursor: 'pointer', userSelect: 'none',
-                    background: abierta ? 'linear-gradient(135deg,var(--azul),var(--azul-medio))' : 'transparent',
-                    transition: 'background 0.2s',
-                  }}
-                >
+                <div className="torneos-fecha-hd" onClick={() => toggleFecha(f.id)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700, color: abierta ? 'white' : 'var(--texto)' }}>
-                      Fecha {f.numero}
-                    </span>
-                    {fecha && (
-                      <span style={{ fontSize: 11, color: abierta ? 'rgba(255,255,255,0.55)' : 'var(--texto-suave)' }}>
-                        {fecha}
-                      </span>
-                    )}
-                    <span style={{ fontSize: 11, color: abierta ? 'rgba(255,255,255,0.45)' : 'var(--texto-suave)' }}>
-                      · {pts.length} partido{pts.length !== 1 ? 's' : ''}
-                    </span>
-                    {/* Mini resumen de puntos si el user jugó */}
+                    <span className="torneos-fecha-num">Fecha {f.numero}</span>
+                    {fecha && <span className="torneos-fecha-date">{fecha}</span>}
+                    <span className="torneos-fecha-cnt">· {partidos.length} partidos</span>
                     {puntosF && !abierta && (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--dorado)' }}>
-                        · {puntosF.total_puntos} pts
-                      </span>
+                      <span className="torneos-fecha-pts-badge">· {puntosF.total_puntos} pts</span>
                     )}
                   </div>
-                  <span style={{
-                    fontSize: 11, color: abierta ? 'var(--dorado)' : 'var(--texto-suave)',
-                    display: 'inline-block', transition: 'transform 0.25s',
-                    transform: abierta ? 'rotate(180deg)' : 'rotate(0deg)',
-                  }}>▼</span>
+                  <span className="torneos-fecha-arrow">▼</span>
                 </div>
 
-                {/* Contenido acordeón */}
+                {/* Contenido */}
                 {abierta && (
-                  <div style={{ padding: '10px 12px 12px' }}>
+                  <div className="torneos-fecha-body">
 
-                    {/* Resumen de puntos del user para esta fecha */}
+                    {/* Banner puntos user */}
                     {puntosF && (
-                      <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        background: 'linear-gradient(135deg,var(--azul),var(--azul-medio))',
-                        borderRadius: 8, padding: '10px 14px', marginBottom: 12,
-                      }}>
-                        <div style={{ display: 'flex', gap: 16 }}>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 800, color: 'var(--dorado)', lineHeight: 1 }}>
-                              {puntosF.total_puntos}
-                            </div>
-                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 0.5 }}>pts</div>
+                      <div className="torneos-pts-banner">
+                        <div className="torneos-pts-cells">
+                          <div className="torneos-pts-cell">
+                            <div className="torneos-pts-main">{puntosF.total_puntos}</div>
+                            <div className="torneos-pts-lbl">pts</div>
                           </div>
-                          <div style={{ width: 1, background: 'rgba(255,255,255,0.1)' }} />
+                          <div className="torneos-pts-div" />
                           {[
                             { v: puntosF.puntos_exactos, l: 'Exactos' },
                             { v: puntosF.puntos_signo,   l: 'Signo' },
                             { v: (puntosF.bonus_pleno || 0) + (puntosF.bonus_mitad || 0), l: 'Bonus' },
                           ].map((item, i) => (
-                            <div key={i} style={{ textAlign: 'center' }}>
-                              <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 18, fontWeight: 700, color: i === 2 ? 'var(--dorado)' : 'white', lineHeight: 1 }}>
-                                {item.v}
-                              </div>
-                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.l}</div>
+                            <div key={i} className="torneos-pts-cell">
+                              <div className={`torneos-pts-sub${i === 2 ? ' gold' : ''}`}>{item.v}</div>
+                              <div className="torneos-pts-lbl">{item.l}</div>
                             </div>
                           ))}
                         </div>
                         <button
+                          className="torneos-compartir"
                           onClick={e => { e.stopPropagation(); compartir(f) }}
                           disabled={compartiendo === f.id}
-                          style={{
-                            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: 8, padding: '8px 12px', color: 'white',
-                            fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                            opacity: compartiendo === f.id ? 0.6 : 1, whiteSpace: 'nowrap',
-                          }}
                         >
                           {compartiendo === f.id ? '⏳' : '📲 Compartir'}
                         </button>
@@ -350,22 +295,19 @@ export default function Torneos() {
                     )}
 
                     {/* Partidos */}
-                    {pts.length === 0 ? (
-                      <p style={{ fontSize: 13, color: 'var(--texto-suave)', textAlign: 'center', padding: '12px 0' }}>
+                    {partidos.length === 0 ? (
+                      <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', textAlign: 'center', padding: '12px 0' }}>
                         Sin partidos cargados
                       </p>
                     ) : (
-                      pts.map(p => {
-                        const pred = predsByPartido[p.id]
-                        return (
-                          <PartidoCardResultado
-                            key={p.id}
-                            partido={p}
-                            pred={pred}
-                            soloScore={!pred}
-                          />
-                        )
-                      })
+                      partidos.map(p => (
+                        <PartidoCardResultado
+                          key={p.id}
+                          partido={p}
+                          pred={predsByPartido[p.id]}
+                          soloScore={!predsByPartido[p.id]}
+                        />
+                      ))
                     )}
 
                   </div>
@@ -380,70 +322,60 @@ export default function Torneos() {
   )
 }
 
-// ── Fila tabla posiciones ─────────────────────────────────────────────────────
+// ── Fila tabla posiciones ────────────────────────────────────────────────────
 function FilaEquipo({ t, idx }) {
-  const { equipo, pj, g, e, pe, pf, pc, dif, pts, forma } = t
-  const difColor = dif > 0 ? '#16a34a' : dif < 0 ? '#dc2626' : 'var(--texto-suave)'
+  const { equipo, pj, g, e, pe, dif, pts, forma } = t
+  const difColor = dif > 0 ? '#16a34a' : dif < 0 ? '#dc2626' : 'var(--pg-text-soft)'
   const ini = equipo.nombre_corto || equipo.nombre?.slice(0, 3).toUpperCase() || '?'
+  const posColor =
+    idx === 0 ? 'var(--pg-gold)' :
+    idx === 1 ? '#9ca3af' :
+    idx === 2 ? '#cd7c3e' : 'var(--pg-text-soft)'
 
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: COL, gap: 2, padding: '9px 10px',
-      borderBottom: '1px solid var(--gris-borde)', alignItems: 'center',
-      background: idx % 2 === 0 ? 'white' : '#fafafa',
-    }}>
-      <div style={{
-        textAlign: 'center', fontFamily: 'Rajdhani,sans-serif', fontSize: 15, fontWeight: 700,
-        color: idx === 0 ? 'var(--dorado)' : idx === 1 ? '#9ca3af' : idx === 2 ? '#cd7c3e' : 'var(--texto-suave)',
-      }}>
+    <div className="torneos-tgrid torneos-row">
+      {/* # */}
+      <div className="torneos-pos" style={{ color: posColor }}>
         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-        <div style={{
-          width: 26, height: 26, borderRadius: 5, overflow: 'hidden', flexShrink: 0,
-          background: 'white', border: '1px solid var(--gris-borde)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
+
+      {/* EQUIPO */}
+      <div className="torneos-eq-cell">
+        <div className="torneos-badge">
           {equipo.escudo_url
-            ? <img src={equipo.escudo_url} alt={equipo.nombre} style={{ width: '85%', height: '85%', objectFit: 'contain' }} />
-            : <span style={{ fontSize: 7, fontWeight: 700, color: 'var(--azul)' }}>{ini}</span>}
+            ? <img src={equipo.escudo_url} alt={ini} />
+            : <span className="torneos-badge-ini">{ini}</span>}
         </div>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--texto)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {equipo.nombre_corto || equipo.nombre}
-        </span>
+        <span className="torneos-eq-name">{equipo.nombre_corto || equipo.nombre}</span>
       </div>
-      {[pj, g, e, pe].map((v, i) => (
-        <div key={i} style={{
-          textAlign: 'center', fontFamily: 'Rajdhani,sans-serif', fontSize: 13, fontWeight: 700,
-          color: i === 1 ? '#16a34a' : i === 2 ? '#ca8a04' : i === 3 ? '#dc2626' : 'var(--texto)',
-        }}>{v}</div>
-      ))}
-      <div style={{ textAlign: 'center' }}>
-        <span style={{
-          fontFamily: 'Rajdhani,sans-serif', fontSize: 14, fontWeight: 800,
-          color: 'var(--dorado-oscuro)', background: 'var(--dorado-claro)',
-          padding: '1px 5px', borderRadius: 5, border: '1px solid rgba(201,162,39,0.3)',
-        }}>{pts}</span>
-      </div>
-      <div style={{ textAlign: 'center', fontFamily: 'Rajdhani,sans-serif', fontSize: 12, color: 'var(--texto)' }}>{pf}</div>
-      <div style={{ textAlign: 'center', fontFamily: 'Rajdhani,sans-serif', fontSize: 12, color: 'var(--texto)' }}>{pc}</div>
-      <div style={{ textAlign: 'center', fontFamily: 'Rajdhani,sans-serif', fontSize: 13, fontWeight: 700, color: difColor }}>
+
+      {/* Stats */}
+      <div className="torneos-stat">{pj}</div>
+      <div className="torneos-stat g">{g}</div>
+      <div className="torneos-stat e">{e}</div>
+      <div className="torneos-stat p">{pe}</div>
+
+      {/* DIF */}
+      <div className="torneos-dif" style={{ color: difColor }}>
         {dif > 0 ? '+' : ''}{dif}
       </div>
-      <div style={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+
+      {/* FORMA */}
+      <div className="torneos-forma">
         {Array.from({ length: 5 }).map((_, i) => {
           const res = forma[i]
-          if (!res) return <div key={i} style={{ width: 13, height: 13, borderRadius: 3, background: '#f3f4f6', border: '1px solid #e5e7eb' }} />
+          if (!res) return <div key={i} className="forma-pill forma-pill-empty" />
           const f = formaIcon(res)
           return (
-            <div key={i} style={{
-              width: 13, height: 13, borderRadius: 3, background: f.bg,
-              border: `1px solid ${f.color}50`, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 6, fontWeight: 800, color: f.color,
-            }}>{f.icon}</div>
+            <div key={i} className={`forma-pill forma-pill-${f.icon.toLowerCase()}`}>
+              {f.icon}
+            </div>
           )
         })}
       </div>
+
+      {/* PTS */}
+      <div className="torneos-pts-num">{pts}</div>
     </div>
   )
 }

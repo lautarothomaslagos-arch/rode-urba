@@ -2462,3 +2462,217 @@ html, body, #root {
   padding: 7px 18px; border-radius: 10px;
   text-decoration: none; margin-top: 4px;
 }
+
+/* ══════════════════════════════════════════════════════════
+   TORNEOS V2 — rediseño V1 Stadium / V2 Magazine
+   ══════════════════════════════════════════════════════════ */
+
+/* Header */
+.torneos-header { padding: 20px 16px 4px; }
+.torneos-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+[data-theme="dark"]  .torneos-eyebrow { color: var(--pg-gold); }
+[data-theme="light"] .torneos-eyebrow { color: var(--pg-red); }
+.torneos-title {
+  font-family: var(--pg-display); font-size: 30px; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1; color: var(--pg-text);
+  margin: 0; display: inline-flex; align-items: center; gap: 3px;
+}
+.torneos-dot { color: var(--pg-gold); font-size: 22px; line-height: 1; }
+
+/* Category pills */
+.torneos-cats {
+  display: flex; gap: 8px; padding: 14px 16px 16px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.torneos-cats::-webkit-scrollbar { display: none; }
+.torneos-cat {
+  flex-shrink: 0; padding: 7px 16px; border-radius: 999px;
+  font-family: var(--pg-display); font-size: 13px; font-weight: 700;
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: all 0.18s; white-space: nowrap;
+}
+[data-theme="dark"] .torneos-cat {
+  background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.55);
+}
+[data-theme="light"] .torneos-cat {
+  background: rgba(15,30,54,0.05); border-color: rgba(15,30,54,0.10);
+  color: rgba(15,30,54,0.55);
+}
+.torneos-cat.active { background: var(--pg-gold); border-color: var(--pg-gold); color: #07101F; }
+
+/* Section labels */
+.torneos-section-label {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 16px; margin-bottom: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--pg-text-soft);
+}
+
+/* Positions table */
+.torneos-table-wrap {
+  margin: 0 0 10px; border-radius: var(--pg-radius); overflow: hidden;
+}
+[data-theme="dark"] .torneos-table-wrap {
+  background: var(--pg-bg-card); border: 1px solid var(--pg-border-soft);
+}
+[data-theme="light"] .torneos-table-wrap {
+  background: #fff; box-shadow: var(--sombra-card);
+  border: 1px solid rgba(15,30,54,0.06);
+}
+
+/* # | EQUIPO | PJ | G | E | P | DIF | FORMA | PTS */
+.torneos-tgrid {
+  display: grid;
+  grid-template-columns: 24px 1fr 20px 20px 20px 20px 38px 68px 32px;
+  gap: 2px; align-items: center;
+}
+.torneos-table-head {
+  padding: 8px 10px;
+  background: linear-gradient(135deg, var(--azul), var(--azul-medio));
+  font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,0.65); letter-spacing: 0.5px; text-transform: uppercase;
+}
+.torneos-th { text-align: center; }
+.torneos-th-eq { text-align: left; }
+.torneos-th-pts { text-align: right; }
+
+.torneos-row {
+  padding: 8px 10px; border-bottom: 1px solid var(--pg-border-soft);
+  transition: background 0.12s;
+}
+.torneos-row:last-child { border-bottom: none; }
+[data-theme="dark"]  .torneos-row:nth-child(even) { background: rgba(255,255,255,0.025); }
+[data-theme="light"] .torneos-row:nth-child(even) { background: #f9fafb; }
+
+.torneos-td { text-align: center; }
+.torneos-pos {
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; text-align: center;
+}
+.torneos-eq-cell { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.torneos-badge {
+  width: 24px; height: 20px; border-radius: 4px; flex-shrink: 0;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+}
+[data-theme="dark"]  .torneos-badge { background: rgba(255,255,255,0.10); }
+[data-theme="light"] .torneos-badge { background: var(--azul-claro); }
+.torneos-badge img { width: 100%; height: 100%; object-fit: contain; padding: 1px; }
+.torneos-badge-ini { font-size: 6px; font-weight: 800; color: var(--azul); letter-spacing: -0.5px; }
+[data-theme="dark"] .torneos-badge-ini { color: rgba(255,255,255,0.85); }
+.torneos-eq-name {
+  font-size: 11px; font-weight: 600; color: var(--pg-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.torneos-stat {
+  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+  text-align: center; color: var(--pg-text-soft);
+}
+.torneos-stat.g { color: #16a34a; }
+.torneos-stat.e { color: #ca8a04; }
+.torneos-stat.p { color: #dc2626; }
+[data-theme="dark"] .torneos-stat.g { color: #4ade80; }
+[data-theme="dark"] .torneos-stat.e { color: #fde047; }
+[data-theme="dark"] .torneos-stat.p { color: #f87171; }
+.torneos-dif {
+  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; text-align: center;
+}
+.torneos-forma { display: flex; gap: 2px; justify-content: center; }
+.torneos-pts-num {
+  font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 800;
+  text-align: right; color: var(--pg-text);
+}
+
+/* FORMA pills */
+.forma-pill {
+  width: 13px; height: 14px; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; font-weight: 800; flex-shrink: 0;
+}
+.forma-pill-empty { background: rgba(150,150,150,0.15); }
+[data-theme="dark"] .forma-pill-empty { background: rgba(255,255,255,0.08); }
+.forma-pill-w { background: #dcfce7; color: #16a34a; }
+.forma-pill-e { background: #fef9c3; color: #ca8a04; }
+.forma-pill-d { background: #fee2e2; color: #dc2626; }
+[data-theme="dark"] .forma-pill-w { background: rgba(22,163,74,0.25);  color: #4ade80; }
+[data-theme="dark"] .forma-pill-e { background: rgba(202,138,4,0.25);  color: #fde047; }
+[data-theme="dark"] .forma-pill-d { background: rgba(220,38,38,0.25);  color: #f87171; }
+
+/* Leyenda forma */
+.torneos-forma-legend {
+  margin: 0 0 16px; padding: 7px 12px; border-radius: 8px;
+  display: flex; gap: 12px; flex-wrap: wrap;
+  align-items: center; font-size: 11px;
+}
+[data-theme="dark"]  .torneos-forma-legend { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.45); }
+[data-theme="light"] .torneos-forma-legend { background: #f5f5f5; color: var(--texto-suave); }
+
+/* Results accordion */
+.torneos-fechas-label { margin: 4px 0 8px; }
+.torneos-fecha-card {
+  margin-bottom: 8px; border-radius: var(--pg-radius); overflow: hidden;
+}
+[data-theme="dark"] .torneos-fecha-card {
+  background: var(--pg-bg-card); border: 1px solid var(--pg-border-soft);
+}
+[data-theme="light"] .torneos-fecha-card {
+  background: #fff; border: 1px solid rgba(15,30,54,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.torneos-fecha-hd {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; cursor: pointer; user-select: none; transition: background 0.15s;
+}
+.torneos-fecha-card.open .torneos-fecha-hd {
+  background: linear-gradient(135deg, var(--azul), var(--azul-medio));
+}
+.torneos-fecha-num {
+  font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700;
+  color: var(--pg-text);
+}
+.torneos-fecha-card.open .torneos-fecha-num { color: white; }
+.torneos-fecha-date { font-size: 11px; color: var(--pg-text-soft); }
+.torneos-fecha-card.open .torneos-fecha-date { color: rgba(255,255,255,0.55); }
+.torneos-fecha-cnt  { font-size: 11px; color: var(--pg-text-mute); }
+.torneos-fecha-card.open .torneos-fecha-cnt { color: rgba(255,255,255,0.4); }
+.torneos-fecha-pts-badge {
+  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: var(--pg-gold);
+}
+.torneos-fecha-arrow {
+  font-size: 11px; color: var(--pg-text-soft);
+  display: inline-block; transition: transform 0.25s;
+}
+.torneos-fecha-card.open .torneos-fecha-arrow { transform: rotate(180deg); color: var(--pg-gold); }
+.torneos-fecha-body { padding: 10px 12px 12px; }
+
+/* Puntos banner */
+.torneos-pts-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  border-radius: 9px; padding: 10px 14px; margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--azul), var(--azul-medio));
+}
+.torneos-pts-cells { display: flex; align-items: center; gap: 14px; }
+.torneos-pts-cell  { text-align: center; }
+.torneos-pts-main  {
+  font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 800;
+  color: var(--pg-gold); line-height: 1;
+}
+.torneos-pts-sub   {
+  font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700;
+  color: white; line-height: 1;
+}
+.torneos-pts-sub.gold { color: var(--pg-gold); }
+.torneos-pts-lbl   {
+  font-size: 9px; color: rgba(255,255,255,0.5);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.torneos-pts-div   { width: 1px; align-self: stretch; background: rgba(255,255,255,0.12); }
+.torneos-compartir {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px; padding: 8px 12px; color: white;
+  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.torneos-compartir:disabled { opacity: 0.6; cursor: not-allowed; }
+}
