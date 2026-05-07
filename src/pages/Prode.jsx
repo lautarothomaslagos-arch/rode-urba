@@ -89,8 +89,18 @@ export default function Prode() {
       .select('*').eq('categoria_id', c).eq('activa', true)
       .eq('resultados_cargados', false).order('numero')
     setFechas(data || [])
-    if (data?.length) setFechaId(data[0].id)
-    else { setFechaId(null); setPartidos([]); setLoading(false) }
+    if (data?.length) {
+      // Si el fechaId ya era el mismo, el effect no re-dispara → limpiamos loading acá
+      if (fechaId === data[0].id) {
+        cargarPartidos(data[0].id)
+      } else {
+        setFechaId(data[0].id)
+      }
+    } else {
+      setFechaId(null)
+      setPartidos([])
+      setLoading(false)
+    }
   }
 
   async function cargarStatsCategoria(c) {
@@ -246,7 +256,7 @@ export default function Prode() {
           </p>
           <button
             className="btn btn-secondary btn-small"
-            onClick={() => navigate('/resultados')}
+            onClick={() => navigate('/torneos')}
           >
             Ver mis resultados →
           </button>

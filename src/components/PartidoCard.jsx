@@ -181,7 +181,7 @@ export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate,
         </div>
       ) : (
         <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
-          {tienePred
+          {pred?.local !== undefined && pred?.visitante !== undefined
             ? <>Tu predicción: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></>
             : 'Sin predicción cargada'
           }
