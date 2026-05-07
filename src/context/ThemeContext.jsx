@@ -4,12 +4,12 @@ const ThemeContext = createContext({})
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('pg-theme') || 'light' } catch { return 'light' }
+    try { return localStorage.getItem('pg-theme-v2') || 'light' } catch { return 'light' }
   })
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    try { localStorage.setItem('pg-theme', theme) } catch {}
+    try { localStorage.setItem('pg-theme-v2', theme) } catch {}
   }, [theme])
 
   function toggleTheme() {
