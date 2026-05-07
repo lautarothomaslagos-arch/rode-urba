@@ -11,8 +11,24 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!user) { setHayFechaAbierta(false); return }
-    supabase.from('fechas').select('id', { count: 'exact', head: true }).eq('activa', true)
-      .then(({ count }) => setHayFechaAbierta((count || 0) > 0))
+    async function chequearPendientes() {
+      const ahora = new Date().toISOString()
+      const { data: fechasAbiertas } = await supabase
+        .from('fechas').select('id').eq('activa', true)
+        .or(`cierre_predicciones.is.null,cierre_predicciones.gt.${ahora}`)
+      if (!fechasAbiertas?.length) { setHayFechaAbierta(false); return }
+      const fechaIds = fechasAbiertas.map(f => f.id)
+      const { data: partidos } = await supabase
+        .from('partidos').select('id').in('fecha_id', fechaIds)
+      if (!partidos?.length) { setHayFechaAbierta(false); return }
+      const partidoIds = partidos.map(p => p.id)
+      const { data: preds } = await supabase
+        .from('predicciones').select('partido_id')
+        .eq('usuario_id', user.id).in('partido_id', partidoIds)
+      const predIds = new Set((preds || []).map(p => p.partido_id))
+      setHayFechaAbierta(partidoIds.some(id => !predIds.has(id)))
+    }
+    chequearPendientes()
   }, [user])
 
   useEffect(() => {
