@@ -13,9 +13,9 @@ function CardContent({ stats, side, onClose }) {
       zIndex: 1002,
       width: 'calc(50vw - 12px)',
       maxWidth: 260,
-      background: 'white',
+      background: 'var(--pg-bg-card)',
       borderRadius: 14,
-      boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
       overflow: 'hidden',
       animation: `${side === 'left' ? 'slideFromLeft' : 'slideFromRight'} 0.22s cubic-bezier(0.34,1.4,0.64,1)`,
     }}>
@@ -36,7 +36,7 @@ function CardContent({ stats, side, onClose }) {
         }}>
           {equipo.escudo_url
             ? <img src={equipo.escudo_url} alt={equipo.nombre} style={{width:'85%',height:'85%',objectFit:'contain'}} onError={e => e.target.style.display='none'} />
-            : <span style={{fontSize:8,fontWeight:700,color:'var(--azul)'}}>{ini}</span>
+            : <span style={{fontSize:8,fontWeight:700,color:'var(--pg-text)'}}>{ini}</span>
           }
         </div>
 
@@ -61,7 +61,7 @@ function CardContent({ stats, side, onClose }) {
       </div>
 
       {pj === 0 ? (
-        <div style={{padding:'14px 10px',textAlign:'center',color:'var(--texto-suave)',fontSize:11}}>
+        <div style={{padding:'14px 10px',textAlign:'center',color:'var(--pg-text-soft)',fontSize:11}}>
           Sin partidos registrados todavía.
         </div>
       ) : (
@@ -74,9 +74,9 @@ function CardContent({ stats, side, onClose }) {
               {v:e,  l:'E', c:'#ca8a04'},
               {v:pe, l:'P', c:'#dc2626'},
             ].map(s => (
-              <div key={s.l} style={{textAlign:'center',padding:'5px 2px',background:'var(--gris)',borderRadius:6}}>
+              <div key={s.l} style={{textAlign:'center',padding:'5px 2px',background:'var(--pg-bg-mid)',borderRadius:6}}>
                 <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:17,fontWeight:700,color:s.c,lineHeight:1}}>{s.v}</div>
-                <div style={{fontSize:8,color:'var(--texto-suave)',marginTop:2,fontWeight:600}}>{s.l}</div>
+                <div style={{fontSize:8,color:'var(--pg-text-soft)',marginTop:2,fontWeight:600}}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -87,9 +87,9 @@ function CardContent({ stats, side, onClose }) {
               {v:pf, l:'A favor',   c:'#16a34a'},
               {v:pc, l:'En contra', c:'#dc2626'},
             ].map(s => (
-              <div key={s.l} style={{textAlign:'center',padding:'5px 2px',background:'var(--gris)',borderRadius:6}}>
+              <div key={s.l} style={{textAlign:'center',padding:'5px 2px',background:'var(--pg-bg-mid)',borderRadius:6}}>
                 <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:s.c,lineHeight:1}}>{s.v}</div>
-                <div style={{fontSize:8,color:'var(--texto-suave)',marginTop:2,fontWeight:600,lineHeight:1.2}}>{s.l}</div>
+                <div style={{fontSize:8,color:'var(--pg-text-soft)',marginTop:2,fontWeight:600,lineHeight:1.2}}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -97,13 +97,13 @@ function CardContent({ stats, side, onClose }) {
           {/* Forma */}
           {forma?.length > 0 && (
             <div>
-              <div style={{fontSize:8,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:0.5,marginBottom:3}}>
+              <div style={{fontSize:8,fontWeight:700,color:'var(--pg-text-soft)',textTransform:'uppercase',letterSpacing:0.5,marginBottom:3}}>
                 Forma
               </div>
               <div style={{display:'flex',gap:2,justifyContent:'center'}}>
                 {Array.from({length:5}).map((_,i) => {
                   const res = forma[i]
-                  if (!res) return <div key={i} style={{width:22,height:22,borderRadius:5,background:'#f3f4f6',border:'1px solid #e5e7eb'}} />
+                  if (!res) return <div key={i} style={{width:22,height:22,borderRadius:5,background:'var(--pg-bg-mid)',border:'1px solid rgba(255,255,255,0.08)'}} />
                   const f = formaIcon(res)
                   return (
                     <div key={i} style={{
@@ -181,7 +181,7 @@ export default function EquipoPopup({ items, onClose, onCloseOne, rivalStats, ri
             zIndex:1003,
             width:56, height:56,
             borderRadius:'50%',
-            background:'white',
+            background:'var(--pg-bg-card)',
             border:'2.5px solid rgba(201,162,39,0.75)',
             display:'flex', alignItems:'center', justifyContent:'center',
             cursor:'pointer',
@@ -191,7 +191,7 @@ export default function EquipoPopup({ items, onClose, onCloseOne, rivalStats, ri
         >
           {rivalStats.equipo.escudo_url
             ? <img src={rivalStats.equipo.escudo_url} alt={rivalStats.equipo.nombre} style={{width:'78%',height:'78%',objectFit:'contain'}} onError={e => e.target.style.display='none'} />
-            : <span style={{fontSize:10,fontWeight:700,color:'var(--azul)'}}>
+            : <span style={{fontSize:10,fontWeight:700,color:'var(--pg-text)'}}>
                 {(rivalStats.equipo.nombre_corto||rivalStats.equipo.nombre?.slice(0,3)||'?').toUpperCase()}
               </span>
           }

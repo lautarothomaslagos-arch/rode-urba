@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { PartidoCardPrediccion, MonedaGlobal } from '../components/PartidoCard'
-import { CATS, CAT_CLASS } from '../lib/constants'
-import TabsScrollWrapper from '../components/TabsScrollWrapper'
+import { PartidoCardPrediccion } from '../components/PartidoCard'
+import { CATS } from '../lib/constants'
 import EquipoPopup from '../components/EquipoPopup'
 import { computeEquipoStats } from '../lib/equipoStats'
 
@@ -238,140 +237,158 @@ export default function Prode() {
   const todoCompleto = predsCompletas === totalPartidos && totalPartidos > 0
 
   return (
-    <div className="container">
-      <div className="page-header">
-        <h1 className="page-title">Mis <span className="page-title-accent">predicciones</span></h1>
-      </div>
+    <div className="dashboard">
+      <div className="dash-backdrop" aria-hidden="true" />
 
-      <TabsScrollWrapper>
+      {/* ── Header ── */}
+      <header style={{padding:'20px 20px 6px',position:'relative',zIndex:2}}>
+        <div className="prode-eyebrow">Mis predicciones</div>
+        <h1 className="prode-h1">
+          {fi
+            ? <>{`Fecha ${fi.numero}`}<span style={{color:'var(--pg-text-mute)',margin:'0 6px'}}>·</span><em>{CATS[cat]}</em></>
+            : CATS[cat]
+          }
+        </h1>
+      </header>
+
+      {/* ── Chips de categoría ── */}
+      <div className="prode-chip-row" style={{position:'relative',zIndex:2}}>
         {[1,2,3,4,5].map(c => (
-          <button key={c} className={`tab-btn ${cat===c?'active':''}`} onClick={() => setCat(c)}>
-            {CATS[c]}{catsActivas.has(c) && <span style={{ display:'inline-block', width:5, height:5, borderRadius:'50%', background:'var(--dorado)', marginLeft:5, verticalAlign:'middle', boxShadow:'0 0 3px rgba(201,162,39,0.9)' }} />}
+          <button
+            key={c}
+            className={`prode-chip${cat===c?' prode-chip-active':''}`}
+            onClick={() => setCat(c)}
+          >
+            {CATS[c]}
+            {catsActivas.has(c) && <span className="prode-chip-dot" />}
           </button>
         ))}
-      </TabsScrollWrapper>
+      </div>
 
+      {/* ── Selector de fecha múltiple ── */}
       {fechas.length > 1 && (
-        <div className="tabs-box" style={{marginBottom:16}}>
+        <div className="prode-chip-row" style={{position:'relative',zIndex:2,paddingTop:0}}>
           {fechas.map(f => (
-            <button key={f.id} className={`tab-btn ${fechaId===f.id?'active':''}`} onClick={() => setFechaId(f.id)}>
+            <button
+              key={f.id}
+              className={`prode-chip${fechaId===f.id?' prode-chip-active':''}`}
+              onClick={() => setFechaId(f.id)}
+            >
               Fecha {f.numero}
             </button>
           ))}
         </div>
       )}
 
-      {loading && <div className="loading"><div className="spinner"></div> Cargando...</div>}
+      {loading && <div className="loading"><div className="spinner" /> Cargando...</div>}
 
       {errorCarga && !loading && (
-        <div className="alert alert-error" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-          <span>Error al cargar los partidos</span>
-          <button className="btn btn-small btn-secondary" onClick={() => cargarFechas(cat)}>Reintentar</button>
+        <div style={{margin:'0 16px 12px',position:'relative',zIndex:2}}>
+          <div className="alert alert-error" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+            <span>Error al cargar los partidos</span>
+            <button className="btn btn-small btn-secondary" onClick={() => cargarFechas(cat)}>Reintentar</button>
+          </div>
         </div>
       )}
 
       {!loading && fechas.length === 0 && (
-        <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
+        <div className="seccion-fade empty-state" style={{padding:'40px 20px',position:'relative',zIndex:2}}>
           <div style={{fontSize:52,marginBottom:10}}>✅</div>
           <div className="empty-title">Todo al día en {CATS[cat]}</div>
-          <p style={{fontSize:13,color:'var(--texto-suave)',maxWidth:260,margin:'8px auto 20px',lineHeight:1.5}}>
-            No hay partidos abiertos para predecir. Los picks se habilitan cada semana antes del viernes.
+          <p style={{fontSize:13,color:'var(--pg-text-soft)',maxWidth:260,margin:'8px auto 20px',lineHeight:1.5}}>
+            No hay partidos abiertos para predecir.
           </p>
-          <button
-            className="btn btn-secondary btn-small"
-            onClick={() => navigate('/torneos')}
-          >
+          <button className="btn btn-secondary btn-small" onClick={() => navigate('/torneos')}>
             Ver mis resultados →
           </button>
         </div>
       )}
 
       {fi && !loading && (
-        <div key={`${cat}-${fechaId}`} className="seccion-fade card" style={{padding:'12px 16px',marginBottom:8}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',flex:1}}>
-              <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
-              <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
-              {fi.fecha_partido && (
-                <span style={{fontSize:13,color:'var(--pg-text-soft)'}}>
-                  {new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}
+        <>
+          {/* ── Status banner ── */}
+          <div className="prode-banner seccion-fade" style={{position:'relative',zIndex:2}}>
+            <div className="prode-banner-l">
+              <span className={`prode-pulse ${abierto ? 'prode-pulse-open' : 'prode-pulse-closed'}`} />
+              <div>
+                <div className="prode-banner-strong">{abierto ? 'Abiertas' : 'Cerradas'}</div>
+                <div className="prode-banner-sub">
+                  {fi.fecha_partido
+                    ? new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'short'})
+                    : abierto ? 'Cargá tus picks' : 'Esperá la próxima fecha'
+                  }
+                </div>
+              </div>
+              {abierto && countdownTexto && (
+                <span className={`prode-banner-cd${countdownUrgente?' prode-banner-cd-urgent':''}`}>
+                  {countdownTexto}
                 </span>
               )}
             </div>
-            <span className={`cierre-badge ${abierto?'cierre-abierto':'cierre-cerrado'}`} style={{flexShrink:0}}>
-              {abierto ? '● Abiertas' : '✕ Cerradas'}
-            </span>
+            <div
+              className="prode-ring"
+              style={{'--p': pct}}
+              title={`${predsCompletas} de ${totalPartidos} picks`}
+            >
+              <span>{predsCompletas}/{totalPartidos}</span>
+            </div>
           </div>
-          {fi.cierre_predicciones && abierto && (
-            <div style={{fontSize:12,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
-              <span style={{color:'var(--pg-text-soft)'}}>Cierra en</span>
-              <span style={{
-                fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:14,
-                color: countdownUrgente ? 'var(--pg-red)' : 'var(--pg-gold-dim)',
-                background: countdownUrgente ? 'rgba(230,57,70,0.12)' : 'rgba(242,197,65,0.12)',
-                padding:'2px 8px',borderRadius:6,letterSpacing:0.5
-              }}>{countdownTexto}</span>
-            </div>
+
+          {/* ── Coin row ── */}
+          {abierto && totalPartidos > 0 && (
+            <button
+              className={`prode-coin-row${girando?' prode-coin-spin':''}`}
+              style={{position:'relative',zIndex:2}}
+              onClick={tirarMonedaTodos}
+              disabled={girando}
+            >
+              <span className="prode-coin-emoji">🎲</span>
+              <span className="prode-coin-text">
+                {girando ? 'Sorteando picks...' : 'Tirar la moneda — autocompletar fecha'}
+              </span>
+              <span className="prode-coin-arrow">↻</span>
+            </button>
           )}
-          {fi.cierre_predicciones && !abierto && (
-            <div style={{fontSize:11,color:'var(--texto-suave)',marginTop:5}}>
-              Cerró: {new Date(fi.cierre_predicciones).toLocaleString('es-AR')}
-            </div>
-          )}
+        </>
+      )}
+
+      {/* ── Lista de partidos ── */}
+      {!loading && partidos.length > 0 && (
+        <div className="prode-match-list" style={{position:'relative',zIndex:2}}>
+          {partidos.map(partido => (
+            <PartidoCardPrediccion
+              key={partido.id}
+              partido={partido}
+              pred={preds[partido.id]}
+              abierto={abierto}
+              saved={savedPreds.has(partido.id)}
+              onUpdate={updPred}
+              onEquipoTap={(equipo) => handleEquipoTap(equipo, partido)}
+            />
+          ))}
         </div>
       )}
 
-      {fi && !loading && abierto && totalPartidos > 0 && (
-        <div key={`prog-${cat}-${fechaId}`} className="seccion-fade card" style={{padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-              <span style={{fontSize:11,fontWeight:600,color:todoCompleto?'var(--pg-gold-dim)':'var(--pg-text-soft)',paddingLeft:2}}>
-                {todoCompleto ? '🏉 ¡Todos cargados!' : `${predsCompletas} / ${totalPartidos} cargados`}
-              </span>
-              <span style={{fontSize:11,fontWeight:700,color:todoCompleto?'var(--pg-gold-dim)':'var(--pg-text)'}}>
-                {porcentaje}%
-              </span>
-            </div>
-            <div style={{height:7,borderRadius:10,background:'var(--pg-border-soft)',overflow:'hidden'}}>
-              <div style={{
-                height:'100%',borderRadius:10,width:`${porcentaje}%`,
-                background:todoCompleto
-                  ?'linear-gradient(90deg,var(--pg-gold),var(--pg-gold-dim))'
-                  :'linear-gradient(90deg,var(--pg-red),var(--pg-gold))',
-                transition:'width 0.4s ease'
-              }} />
-            </div>
-          </div>
-          <div style={{flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',width:64}}>
-            <MonedaGlobal girando={girando} onClick={tirarMonedaTodos} />
-          </div>
-        </div>
-      )}
-
-      {!loading && partidos.map(partido => (
-        <PartidoCardPrediccion
-          key={partido.id}
-          partido={partido}
-          pred={preds[partido.id]}
-          abierto={abierto}
-          saved={savedPreds.has(partido.id)}
-          onUpdate={updPred}
-          onEquipoTap={(equipo) => handleEquipoTap(equipo, partido)}
-        />
-      ))}
-
+      {/* ── Sticky save ── */}
       {!loading && partidos.length > 0 && abierto && (
-        <div className="sticky-save">
+        <div className="prode-sticky" style={{position:'relative',zIndex:2}}>
           {hayCAmbios && !guardando && (
             <div style={{textAlign:'center',fontSize:12,color:'var(--pg-gold)',fontWeight:600,marginBottom:6}}>
               ● Tenés cambios sin guardar
             </div>
           )}
-          <button className="btn btn-primary" onClick={guardar} disabled={guardando}>
-            {guardando ? <><span className="spinner"></span> Guardando...</> : guardado ? '✓ Guardado' : 'Guardar predicciones'}
+          <button className="prode-save-btn" onClick={guardar} disabled={guardando}>
+            <span>
+              {guardando ? '⏳ Guardando...' : guardado ? '✓ ¡Picks guardados!' : `Guardar ${predsCompletas} picks`}
+            </span>
+            {!guardando && !guardado && predsCompletas > 0 && (
+              <span className="prode-save-pts">+{predsCompletas * 3} máx</span>
+            )}
           </button>
         </div>
       )}
+
+      <div style={{height:20}} />
 
       <EquipoPopup
         items={popupData?.items}

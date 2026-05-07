@@ -126,81 +126,135 @@ function FilaEquipos({ partido, marcador, onEquipoTap }) {
   )
 }
 
+// ── Stepper (− input +) ──────────────────────────────────────
+function Stepper({ pid, side, value, onUpdate, filled }) {
+  const num = parseInt(value) || 0
+  return (
+    <div className={`prode-stepper${filled ? ' prode-stepper-filled' : ''}`}>
+      <button
+        className="prode-stepper-btn"
+        onClick={() => onUpdate(pid, side, Math.max(0, num - 1))}
+      >−</button>
+      <input
+        type="text" inputMode="numeric" pattern="[0-9]*"
+        className="prode-stepper-input"
+        value={value ?? ''}
+        placeholder="0"
+        onChange={e => onUpdate(pid, side, e.target.value.replace(/\D/g, ''))}
+      />
+      <button
+        className="prode-stepper-btn"
+        onClick={() => onUpdate(pid, side, Math.min(99, num + 1))}
+      >+</button>
+    </div>
+  )
+}
+
 export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate, onEquipoTap }) {
   const [girando, setGirando] = useState(false)
 
-  const estiloCard = partido.es_especial ? {} : saved ? {
-    borderColor: 'var(--pg-gold)',
-    background: 'linear-gradient(135deg, rgba(242,197,65,0.08), transparent)'
-  } : {}
-
-  const claseCard = partido.es_especial ? 'partido-card especial' : 'partido-card'
+  const filled = pred?.local !== undefined && pred?.visitante !== undefined
+  const winner = filled
+    ? pred.local > pred.visitante  ? 'local'
+    : pred.visitante > pred.local  ? 'visitante'
+    : 'empate'
+    : null
 
   function tirarMoneda() {
     if (girando) return
     setGirando(true)
     setTimeout(() => {
-      onUpdate(partido.id, 'local', scoreRandom())
+      onUpdate(partido.id, 'local',    scoreRandom())
       onUpdate(partido.id, 'visitante', scoreRandom())
       setGirando(false)
     }, 1500)
   }
 
-  const contenido = (
-    <>
-      <style>{estilosMoneda}</style>
+  const local     = partido.equipo_local
+  const visitante = partido.equipo_visitante
 
-      {abierto && (
-        <div style={{position:'absolute', top:6, right:6}}>
-          <MonedaBoton girando={girando} onClick={tirarMoneda} size={22} />
-        </div>
-      )}
-
-      {partido.es_especial && (
-        <div className="destacado-header">
-          <div className="destacado-linea destacado-linea-izq"></div>
-          <div className="destacado-badge">EL DESTACADO ★</div>
-          <div className="destacado-linea destacado-linea-der"></div>
-        </div>
-      )}
-      {partido.es_especial && (
-        <div className="destacado-subtitulo">puntaje doble · exacto 6 pts · ganador 2 pts</div>
-      )}
-
-      <FilaEquipos partido={partido} onEquipoTap={onEquipoTap} />
-
-      {abierto ? (
-        <div className="prediccion-inputs">
-          <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
-            value={pred?.local ?? ''} placeholder="0"
-            onChange={e => onUpdate(partido.id, 'local', e.target.value.replace(/\D/g, ''))} />
-          <span className="score-separator">—</span>
-          <input type="text" inputMode="numeric" pattern="[0-9]*" className="score-input"
-            value={pred?.visitante ?? ''} placeholder="0"
-            onChange={e => onUpdate(partido.id, 'visitante', e.target.value.replace(/\D/g, ''))} />
-        </div>
-      ) : (
-        <div style={{textAlign:'center',fontSize:13,color:'var(--pg-text-soft)',marginTop:8}}>
-          {pred?.local !== undefined && pred?.visitante !== undefined
-            ? <>Tu predicción: <strong style={{color:'var(--pg-text)'}}>{pred.local} — {pred.visitante}</strong></>
-            : 'Sin predicción cargada'
-          }
-        </div>
-      )}
-    </>
-  )
-
-  if (partido.es_especial) {
-    return (
-      <div className="destacado-wrapper">
-        <div className="destacado-inner" style={{position:'relative'}}>{contenido}</div>
-      </div>
-    )
-  }
+  const cardClass = [
+    'prode-match-card',
+    saved                 && 'prode-match-card-filled',
+    partido.es_especial   && 'prode-match-card-hot',
+  ].filter(Boolean).join(' ')
 
   return (
-    <div className={claseCard} style={{...estiloCard, position:'relative'}}>
-      {contenido}
+    <div className={cardClass} style={{position:'relative'}}>
+      <style>{estilosMoneda}</style>
+
+      {/* Flame badge (destacado) */}
+      {partido.es_especial && (
+        <div className="prode-match-flame">★ DESTACADO 2× · exacto 6 pts</div>
+      )}
+
+      {/* Per-card coin */}
+      {abierto && (
+        <div style={{position:'absolute', top:8, right:8}}>
+          <MonedaBoton girando={girando} onClick={tirarMoneda} size={20} />
+        </div>
+      )}
+
+      {/* Main row: escudo/nombre — stepper — escudo/nombre */}
+      <div className="prode-match-row">
+
+        {/* Local */}
+        <div className={`prode-match-side${winner === 'local' ? ' prode-match-side-win' : ''}`}>
+          <div
+            className="prode-match-crest"
+            onClick={onEquipoTap ? () => onEquipoTap(local) : undefined}
+            title={local?.nombre}
+          >
+            {local?.escudo_url
+              ? <img src={local.escudo_url} alt={local.nombre}
+                  onError={e => e.target.style.display = 'none'} />
+              : <span>{local?.nombre_corto?.slice(0,3) || '?'}</span>
+            }
+          </div>
+          <div className="prode-match-team">{local?.nombre_corto || local?.nombre}</div>
+        </div>
+
+        {/* Centro: steppers o score cerrado */}
+        <div className="prode-match-center">
+          {abierto ? (
+            <>
+              <Stepper pid={partido.id} side="local"     value={pred?.local}     onUpdate={onUpdate} filled={filled} />
+              <span className="prode-match-dash">—</span>
+              <Stepper pid={partido.id} side="visitante" value={pred?.visitante} onUpdate={onUpdate} filled={filled} />
+            </>
+          ) : (
+            filled
+              ? <span className="prode-closed-score">{pred.local} — {pred.visitante}</span>
+              : <span style={{fontSize:13,color:'var(--pg-text-mute)',padding:'4px 8px'}}>—</span>
+          )}
+        </div>
+
+        {/* Visitante */}
+        <div className={`prode-match-side${winner === 'visitante' ? ' prode-match-side-win' : ''}`}>
+          <div
+            className="prode-match-crest"
+            onClick={onEquipoTap ? () => onEquipoTap(visitante) : undefined}
+            title={visitante?.nombre}
+          >
+            {visitante?.escudo_url
+              ? <img src={visitante.escudo_url} alt={visitante.nombre}
+                  onError={e => e.target.style.display = 'none'} />
+              : <span>{visitante?.nombre_corto?.slice(0,3) || '?'}</span>
+            }
+          </div>
+          <div className="prode-match-team">{visitante?.nombre_corto || visitante?.nombre}</div>
+        </div>
+      </div>
+
+      {/* Footer: resumen del pick */}
+      {filled && (
+        <div className="prode-match-foot">
+          Tu pick: <strong>{pred.local} — {pred.visitante}</strong>
+          {winner === 'local'     && ` · gana ${local?.nombre_corto     || 'Local'}`}
+          {winner === 'visitante' && ` · gana ${visitante?.nombre_corto || 'Visita'}`}
+          {winner === 'empate'    && ' · empate'}
+        </div>
+      )}
     </div>
   )
 }
