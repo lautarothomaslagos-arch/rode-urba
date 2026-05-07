@@ -267,7 +267,7 @@ export default function Ranking() {
       )
     : lista
 
-  const mostrarPodio = !busqueda.trim() && lista.length >= 3 && modo !== 'clubes' && !loading
+  const mostrarPodio = !busqueda.trim() && lista.length >= 1 && modo !== 'clubes' && !loading
   const medals = ['🥇', '🥈', '🥉']
 
   return (
@@ -344,10 +344,12 @@ export default function Ranking() {
           {[lista[1], lista[0], lista[2]].map((item, i) => {
             const place   = [2, 1, 3][i]
             const idxReal = place - 1
-            const pts     = modo === 'anual' ? item.puntos_acumulados : item.total_puntos
-            const av      = item.perfiles?.avatar_url
-            const ini     = item.perfiles?.username?.[0]?.toUpperCase() || '?'
-            const esYo    = item.perfiles?.username === perfil?.username
+            // slot vacío cuando no hay suficientes participantes
+            if (!item) return <div key={i} className={`rk-podium-step rk-podium-${place}`} />
+            const pts  = modo === 'anual' ? item.puntos_acumulados : item.total_puntos
+            const av   = item.perfiles?.avatar_url
+            const ini  = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+            const esYo = item.perfiles?.username === perfil?.username
             return (
               <div
                 key={item.usuario_id}
