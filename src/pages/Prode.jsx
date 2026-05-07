@@ -327,7 +327,7 @@ export default function Prode() {
             </div>
             <div
               className="prode-ring"
-              style={{'--p': pct}}
+              style={{'--p': porcentaje}}
               title={`${predsCompletas} de ${totalPartidos} picks`}
             >
               <span>{predsCompletas}/{totalPartidos}</span>
