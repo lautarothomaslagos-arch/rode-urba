@@ -1,4 +1,4 @@
-const CACHE = 'pickandgo-v2'
+const CACHE = 'pickandgo-v3'
 const STATIC = ['/', '/manifest.json', '/logo.png']
 
 self.addEventListener('install', e => {

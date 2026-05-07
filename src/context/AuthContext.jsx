@@ -32,15 +32,21 @@ export function AuthProvider({ children }) {
   }, [user])
 
   useEffect(() => {
+    // Timeout de seguridad: si en 6s no resolvió, liberar loading igual
+    const timeout = setTimeout(() => setLoading(false), 6000)
+
     // Inicializar sesión
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        cargarPerfil(session.user.id).finally(() => setLoading(false))
-      } else {
-        setLoading(false)
-      }
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout)
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          cargarPerfil(session.user.id).finally(() => setLoading(false))
+        } else {
+          setLoading(false)
+        }
+      })
+      .catch(() => { clearTimeout(timeout); setLoading(false) })
 
     // Escuchar cambios — NO setLoading aquí para no bloquear navegación
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
