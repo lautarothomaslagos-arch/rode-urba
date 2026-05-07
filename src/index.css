@@ -1249,6 +1249,190 @@ html, body, #root {
   letter-spacing: 1px;
 }
 
+/* ===================================================
+   DARK THEME · SHARED COMPONENT OVERRIDES
+   =================================================== */
+
+/* ── Page titles ── */
+[data-theme="dark"] .page-title  { color: var(--pg-text); font-family: var(--pg-display); }
+[data-theme="dark"] .page-title-accent { color: var(--pg-gold); }
+[data-theme="light"] .page-title  { font-family: var(--pg-display); color: var(--pg-text); }
+[data-theme="light"] .page-title-accent { color: var(--pg-red); }
+
+/* ── Cards ── */
+[data-theme="dark"] .card {
+  background: var(--pg-bg-card);
+  border-color: var(--pg-border-soft);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.20);
+}
+[data-theme="dark"] .card-header { border-bottom-color: var(--pg-border-soft); }
+[data-theme="dark"] .card-title  { color: var(--pg-text); }
+[data-theme="light"] .card { background: var(--pg-bg-card); }
+
+/* ── Tabs ── */
+[data-theme="dark"] .tabs-box {
+  background: var(--pg-bg-mid);
+  box-shadow: none;
+}
+[data-theme="dark"] .tabs-wrap::after { background: linear-gradient(to right, transparent, var(--pg-bg-mid)); }
+[data-theme="dark"] .tab-btn { background: rgba(255,255,255,0.05); color: var(--pg-text-soft); }
+[data-theme="dark"] .tab-btn:hover { background: rgba(255,255,255,0.09); color: var(--pg-text); }
+[data-theme="dark"] .tab-btn.active {
+  background: var(--pg-gold);
+  color: var(--pg-bg-deep);
+  box-shadow: 0 2px 8px rgba(242,197,65,0.30);
+}
+[data-theme="light"] .tabs-box { background: rgba(15,30,54,0.07); }
+[data-theme="light"] .tab-btn { background: transparent; color: var(--pg-text-soft); }
+[data-theme="light"] .tab-btn.active { background: var(--pg-text); color: white; box-shadow: none; }
+
+/* ── Partido card ── */
+[data-theme="dark"] .partido-card {
+  background: var(--pg-bg-card);
+  border-color: var(--pg-border-soft);
+  border-top-color: var(--pg-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+[data-theme="dark"] .partido-card:hover {
+  border-color: var(--pg-border);
+  box-shadow: 0 2px 16px rgba(242,197,65,0.08);
+}
+[data-theme="dark"] .partido-card.acertado-exacto { border-color: #22c55e; background: rgba(34,197,94,0.07); }
+[data-theme="dark"] .partido-card.acertado-signo  { border-color: var(--pg-gold); background: rgba(242,197,65,0.07); }
+[data-theme="dark"] .partido-card.fallado         { border-color: var(--pg-red);  background: rgba(230,57,70,0.07); }
+
+/* ── Equipos ── */
+[data-theme="dark"] .equipo-nombre { color: var(--pg-text); }
+[data-theme="dark"] .equipo-escudo {
+  background: rgba(255,255,255,0.07);
+  border-color: var(--pg-border);
+  color: var(--pg-text-soft);
+  box-shadow: none;
+}
+
+/* ── Marcador / VS ── */
+[data-theme="dark"] .vs-badge         { background: rgba(255,255,255,0.07); color: var(--pg-text-soft); }
+[data-theme="dark"] .marcador-resultado { background: var(--pg-bg-deep); color: var(--pg-gold); }
+[data-theme="light"] .marcador-resultado { background: var(--pg-text); color: white; }
+
+/* ── Score inputs ── */
+[data-theme="dark"] .score-input {
+  background: var(--pg-bg-deep);
+  border-color: var(--pg-border);
+  color: var(--pg-gold);
+}
+[data-theme="dark"] .score-input:focus {
+  border-color: var(--pg-gold);
+  box-shadow: 0 0 0 3px rgba(242,197,65,0.15);
+}
+[data-theme="dark"] .score-separator { color: var(--pg-text-soft); }
+
+/* ── Result badges ── */
+[data-theme="dark"] .badge-exacto { background: rgba(34,197,94,0.14);  color: #4ade80; }
+[data-theme="dark"] .badge-signo  { background: rgba(242,197,65,0.14); color: var(--pg-gold); }
+[data-theme="dark"] .badge-nada   { background: rgba(230,57,70,0.14);  color: #f87171; }
+
+/* ── Cierre badge ── */
+[data-theme="dark"] .cierre-abierto { background: rgba(34,197,94,0.12);  color: #4ade80; }
+[data-theme="dark"] .cierre-cerrado { background: rgba(230,57,70,0.12);  color: #f87171; }
+
+/* ── Buttons ── */
+[data-theme="dark"] .btn-primary {
+  background: linear-gradient(135deg, var(--pg-gold-glow), var(--pg-gold) 50%, var(--pg-gold-dim));
+  color: #07101F;
+  box-shadow: 0 4px 14px rgba(242,197,65,0.25);
+}
+[data-theme="dark"] .btn-primary:hover { opacity: 0.92; }
+[data-theme="dark"] .btn-secondary {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--pg-border-soft);
+  color: var(--pg-text-soft);
+}
+[data-theme="dark"] .btn-secondary:hover { background: rgba(255,255,255,0.10); color: var(--pg-text); }
+[data-theme="dark"] .btn-danger   { background: var(--pg-red); }
+[data-theme="dark"] .btn-gold     { background: linear-gradient(135deg, var(--pg-gold), var(--pg-gold-dim)); color: #07101F; }
+
+/* ── Alerts ── */
+[data-theme="dark"] .alert-error   { background: rgba(230,57,70,0.12);  color: #f87171; border-left-color: var(--pg-red); }
+[data-theme="dark"] .alert-success { background: rgba(34,197,94,0.10);  color: #4ade80; border-left-color: #22c55e; }
+[data-theme="dark"] .alert-info    { background: rgba(255,255,255,0.06); color: var(--pg-text); border-left-color: var(--pg-border); }
+[data-theme="dark"] .alert-gold    { background: rgba(242,197,65,0.10); color: var(--pg-gold); border-left-color: var(--pg-gold-dim); }
+
+/* ── Form inputs ── */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select {
+  background: var(--pg-bg-deep);
+  border-color: var(--pg-border);
+  color: var(--pg-text);
+}
+[data-theme="dark"] .form-input:focus {
+  border-color: var(--pg-gold);
+  box-shadow: 0 0 0 3px rgba(242,197,65,0.12);
+}
+[data-theme="dark"] .form-label { color: var(--pg-text-soft); }
+[data-theme="dark"] .form-input::placeholder { color: var(--pg-text-mute); }
+
+/* ── Loading / Spinner ── */
+[data-theme="dark"] .loading  { color: var(--pg-text-soft); }
+[data-theme="dark"] .spinner  { border-color: rgba(255,255,255,0.12); border-top-color: var(--pg-gold); }
+
+/* ── Empty state ── */
+[data-theme="dark"] .empty-title { color: var(--pg-text); }
+
+/* ── Destacado ── */
+[data-theme="dark"] .destacado-inner      { background: var(--pg-bg-card); }
+[data-theme="dark"] .destacado-subtitulo  { color: var(--pg-text-soft); }
+
+/* ── Ranking ── */
+[data-theme="dark"] .ranking-row          { border-bottom-color: var(--pg-border-soft); }
+[data-theme="dark"] .ranking-row:hover    { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .ranking-row.yo       { background: rgba(242,197,65,0.07); }
+[data-theme="dark"] .ranking-username     { color: var(--pg-text); }
+[data-theme="dark"] .ranking-club         { color: var(--pg-text-soft); }
+[data-theme="dark"] .ranking-pts          { color: var(--pg-gold); }
+[data-theme="dark"] .ranking-pts span     { color: var(--pg-text-mute); }
+[data-theme="dark"] .ranking-pos          { color: var(--pg-text-soft); }
+[data-theme="dark"] .ranking-pos.pos-1    { color: var(--pg-gold); }
+[data-theme="dark"] .ranking-pos.pos-2    { color: rgba(255,255,255,0.5); }
+[data-theme="dark"] .ranking-pos.pos-3    { color: #cd7c3e; }
+[data-theme="dark"] .ranking-fechas       { color: var(--pg-text-soft); }
+
+/* ── Puntos resumen ── */
+[data-theme="dark"] .puntos-resumen .punt-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--pg-border-soft);
+}
+[data-theme="dark"] .punt-valor { color: var(--pg-text); }
+[data-theme="dark"] .punt-label { color: var(--pg-text-soft); }
+
+/* ── Stat cards (Home landing) ── */
+[data-theme="dark"] .stat-card        { background: var(--pg-bg-card); border-top-color: var(--pg-red); }
+[data-theme="dark"] .stat-card.gold   { border-top-color: var(--pg-gold); }
+[data-theme="dark"] .stat-card.blue   { border-top-color: var(--pg-gold-dim); }
+[data-theme="dark"] .stat-numero      { color: var(--pg-text); }
+[data-theme="dark"] .stat-label       { color: var(--pg-text-soft); }
+
+/* ── Cat badges ── */
+[data-theme="dark"] .cat-top14    { background: var(--pg-gold-dim); color: #07101F; }
+[data-theme="dark"] .cat-primera-a { background: #15803d; }
+[data-theme="dark"] .cat-primera-b { background: #c2410c; }
+
+/* ── Avatar ── */
+[data-theme="dark"] .avatar-circle {
+  background: linear-gradient(135deg, var(--pg-gold), var(--pg-gold-dim));
+  color: #07101F;
+  border: none;
+}
+
+/* ── Mobile menu ── */
+[data-theme="light"] .mobile-menu {
+  background: white;
+  border-color: rgba(15,30,54,0.12);
+}
+[data-theme="light"] .mobile-menu-item { color: var(--pg-text); }
+[data-theme="light"] .mobile-menu-item:hover { background: rgba(15,30,54,0.05); }
+[data-theme="light"] .mobile-salir { color: var(--pg-red); }
+
 /* ===== DASHBOARD: HEADER DERECHO (avatar + escudo) ===== */
 .dash-header-right {
   display: flex;

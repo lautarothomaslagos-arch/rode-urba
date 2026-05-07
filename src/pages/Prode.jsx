@@ -293,7 +293,7 @@ export default function Prode() {
               <span className={`cat-badge ${CAT_CLASS[cat]}`}>{CATS[cat]}</span>
               <span style={{fontWeight:600,fontSize:15}}>Fecha {fi.numero}</span>
               {fi.fecha_partido && (
-                <span style={{fontSize:13,color:'var(--texto-suave)'}}>
+                <span style={{fontSize:13,color:'var(--pg-text-soft)'}}>
                   {new Date(fi.fecha_partido+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}
                 </span>
               )}
@@ -304,11 +304,11 @@ export default function Prode() {
           </div>
           {fi.cierre_predicciones && abierto && (
             <div style={{fontSize:12,marginTop:6,display:'flex',alignItems:'center',gap:6}}>
-              <span style={{color:'var(--texto-suave)'}}>Cierra en</span>
+              <span style={{color:'var(--pg-text-soft)'}}>Cierra en</span>
               <span style={{
                 fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:14,
-                color: countdownUrgente ? '#dc2626' : 'var(--dorado-oscuro)',
-                background: countdownUrgente ? '#fef2f2' : 'var(--dorado-claro)',
+                color: countdownUrgente ? 'var(--pg-red)' : 'var(--pg-gold-dim)',
+                background: countdownUrgente ? 'rgba(230,57,70,0.12)' : 'rgba(242,197,65,0.12)',
                 padding:'2px 8px',borderRadius:6,letterSpacing:0.5
               }}>{countdownTexto}</span>
             </div>
@@ -325,19 +325,19 @@ export default function Prode() {
         <div key={`prog-${cat}-${fechaId}`} className="seccion-fade card" style={{padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-              <span style={{fontSize:11,fontWeight:600,color:todoCompleto?'var(--dorado-oscuro)':'var(--texto-suave)',paddingLeft:2}}>
+              <span style={{fontSize:11,fontWeight:600,color:todoCompleto?'var(--pg-gold-dim)':'var(--pg-text-soft)',paddingLeft:2}}>
                 {todoCompleto ? '🏉 ¡Todos cargados!' : `${predsCompletas} / ${totalPartidos} cargados`}
               </span>
-              <span style={{fontSize:11,fontWeight:700,color:todoCompleto?'var(--dorado-oscuro)':'var(--azul)'}}>
+              <span style={{fontSize:11,fontWeight:700,color:todoCompleto?'var(--pg-gold-dim)':'var(--pg-text)'}}>
                 {porcentaje}%
               </span>
             </div>
-            <div style={{height:7,borderRadius:10,background:'var(--gris-borde)',overflow:'hidden',border:'1px solid rgba(0,0,0,0.06)'}}>
+            <div style={{height:7,borderRadius:10,background:'var(--pg-border-soft)',overflow:'hidden'}}>
               <div style={{
                 height:'100%',borderRadius:10,width:`${porcentaje}%`,
                 background:todoCompleto
-                  ?'linear-gradient(90deg,var(--dorado),var(--dorado-oscuro))'
-                  :'linear-gradient(90deg,var(--rojo-vivo),var(--dorado))',
+                  ?'linear-gradient(90deg,var(--pg-gold),var(--pg-gold-dim))'
+                  :'linear-gradient(90deg,var(--pg-red),var(--pg-gold))',
                 transition:'width 0.4s ease'
               }} />
             </div>
@@ -363,7 +363,7 @@ export default function Prode() {
       {!loading && partidos.length > 0 && abierto && (
         <div className="sticky-save">
           {hayCAmbios && !guardando && (
-            <div style={{textAlign:'center',fontSize:12,color:'var(--dorado)',fontWeight:600,marginBottom:6}}>
+            <div style={{textAlign:'center',fontSize:12,color:'var(--pg-gold)',fontWeight:600,marginBottom:6}}>
               ● Tenés cambios sin guardar
             </div>
           )}

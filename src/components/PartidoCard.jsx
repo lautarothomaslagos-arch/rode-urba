@@ -81,7 +81,7 @@ export function MonedaGlobal({ girando, onClick }) {
       <div className={girando ? 'moneda-flip-global' : ''} style={{ width: 42, height: 42, transformStyle: 'preserve-3d' }}>
         <SvgMoneda size={42} />
       </div>
-      <span style={{fontSize:9,color:'var(--dorado-oscuro)',fontWeight:700,letterSpacing:0.5,marginTop:3,whiteSpace:'nowrap'}}>
+      <span style={{fontSize:9,color:'var(--pg-gold-dim)',fontWeight:700,letterSpacing:0.5,marginTop:3,whiteSpace:'nowrap'}}>
         {girando ? 'SORTEANDO...' : 'SORTEAR'}
       </span>
     </button>
@@ -130,8 +130,8 @@ export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate,
   const [girando, setGirando] = useState(false)
 
   const estiloCard = partido.es_especial ? {} : saved ? {
-    borderColor: 'var(--dorado)',
-    background: 'linear-gradient(135deg, var(--dorado-claro), #ffffff)'
+    borderColor: 'var(--pg-gold)',
+    background: 'linear-gradient(135deg, rgba(242,197,65,0.08), transparent)'
   } : {}
 
   const claseCard = partido.es_especial ? 'partido-card especial' : 'partido-card'
@@ -180,9 +180,9 @@ export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate,
             onChange={e => onUpdate(partido.id, 'visitante', e.target.value.replace(/\D/g, ''))} />
         </div>
       ) : (
-        <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
+        <div style={{textAlign:'center',fontSize:13,color:'var(--pg-text-soft)',marginTop:8}}>
           {pred?.local !== undefined && pred?.visitante !== undefined
-            ? <>Tu predicción: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></>
+            ? <>Tu predicción: <strong style={{color:'var(--pg-text)'}}>{pred.local} — {pred.visitante}</strong></>
             : 'Sin predicción cargada'
           }
         </div>
@@ -256,7 +256,7 @@ export function PartidoCardResultado({ partido, pred, soloScore = false }) {
       {!soloScore && (
         <div style={{textAlign:'center',fontSize:13,color:'var(--texto-suave)',marginTop:8}}>
           {pred !== undefined
-            ? <><span>Tu pred: <strong style={{color:'var(--azul)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
+            ? <><span>Tu pred: <strong style={{color:'var(--pg-text)'}}>{pred.local} — {pred.visitante}</strong></span> {badge}</>
             : <span>Sin predicción cargada</span>
           }
         </div>
