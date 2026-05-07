@@ -1,6 +1,14 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+function IconHome() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V11z"/>
+    </svg>
+  )
+}
+
 function IconPredecir() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -49,6 +57,7 @@ export default function BottomNav() {
   if (!user || nomostrar.includes(location.pathname)) return null
 
   const items = [
+    { path: '/home',    Icon: IconHome,     label: 'Inicio' },
     { path: '/prode',   Icon: IconPredecir, label: 'Predecir', dot: hayFechaAbierta },
     { path: '/ranking', Icon: IconRanking,  label: 'Ranking' },
     { path: '/torneos', Icon: IconTorneos,  label: 'Torneos' },

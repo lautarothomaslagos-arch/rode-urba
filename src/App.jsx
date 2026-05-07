@@ -10,6 +10,7 @@ import Ranking from './pages/Ranking'
 import Admin from './pages/Admin'
 import Perfil from './pages/Perfil'
 import Torneos from './pages/Torneos'
+import Dashboard from './pages/Dashboard'
 import NuevaContrasena from './pages/NuevaContrasena'
 import SwipeNavigator from './components/SwipeNavigator'
 import BottomNav from './components/BottomNav'
@@ -27,6 +28,13 @@ function AdminRoute({ children }) {
   return perfil?.es_admin ? children : <Navigate to="/" />
 }
 
+function HomeRoute() {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="loading"><div className="spinner"></div></div>
+  if (user) return <Navigate to="/home" replace />
+  return <Home />
+}
+
 function GruposRedirect() {
   const [searchParams] = useSearchParams()
   const codigo = searchParams.get('codigo')
@@ -41,7 +49,8 @@ function AppRoutes() {
       <BottomNav />
       <SwipeNavigator>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomeRoute />} />
+        <Route path="/home" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Login modoInicial="registro" />} />
         <Route path="/nueva-contrasena" element={<NuevaContrasena />} />
