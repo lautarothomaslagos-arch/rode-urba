@@ -20,6 +20,16 @@ export default function SwipeNavigator({ children }) {
   if (currentIdx < 0) return <>{children}</>
 
   function onTouchStart(e) {
+    // Si el toque empieza dentro de un elemento con scroll horizontal activo, no capturamos
+    let el = e.target
+    while (el && el !== document.body) {
+      const ovX = window.getComputedStyle(el).overflowX
+      if ((ovX === 'auto' || ovX === 'scroll') && el.scrollWidth > el.clientWidth + 4) {
+        touch.current = null
+        return
+      }
+      el = el.parentElement
+    }
     touch.current = {
       x:    e.touches[0].clientX,
       y:    e.touches[0].clientY,
