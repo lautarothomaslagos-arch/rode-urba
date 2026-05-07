@@ -1668,13 +1668,15 @@ html, body, #root {
 
 /* Sticky save */
 .prode-sticky {
-  position: sticky; bottom: calc(90px + env(safe-area-inset-bottom));
-  z-index: 8; margin: 6px 16px 0;
+  position: fixed; bottom: calc(72px + env(safe-area-inset-bottom));
+  left: 0; right: 0;
+  z-index: 8; padding: 0 16px;
 }
+.prode-match-list { padding-bottom: 110px; }
 .prode-save-btn {
   width: 100%; padding: 15px 20px; border-radius: 14px; border: none; cursor: pointer;
   font-family: var(--pg-display); font-size: 16px; font-weight: 700; letter-spacing: -0.01em;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, var(--pg-gold-glow), var(--pg-gold) 50%, var(--pg-gold-dim));
   color: #07101F;
   box-shadow: 0 8px 24px rgba(242,197,65,0.35), inset 0 1px 0 rgba(255,255,255,0.4);

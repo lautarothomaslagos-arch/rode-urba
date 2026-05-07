@@ -188,13 +188,6 @@ export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate,
         <div className="prode-match-flame">★ DESTACADO 2× · exacto 6 pts</div>
       )}
 
-      {/* Per-card coin */}
-      {abierto && (
-        <div style={{position:'absolute', top:8, right:8}}>
-          <MonedaBoton girando={girando} onClick={tirarMoneda} size={20} />
-        </div>
-      )}
-
       {/* Main row: escudo/nombre — stepper — escudo/nombre */}
       <div className="prode-match-row">
 

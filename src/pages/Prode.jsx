@@ -344,7 +344,7 @@ export default function Prode() {
             >
               <span className="prode-coin-emoji">🎲</span>
               <span className="prode-coin-text">
-                {girando ? 'Sorteando picks...' : 'Tirar la moneda — autocompletar fecha'}
+                {girando ? 'Sorteando picks...' : 'Tirar el dado — autocompletar fecha'}
               </span>
               <span className="prode-coin-arrow">↻</span>
             </button>
@@ -381,9 +381,6 @@ export default function Prode() {
             <span>
               {guardando ? '⏳ Guardando...' : guardado ? '✓ ¡Picks guardados!' : `Guardar ${predsCompletas} picks`}
             </span>
-            {!guardando && !guardado && predsCompletas > 0 && (
-              <span className="prode-save-pts">+{predsCompletas * 3} máx</span>
-            )}
           </button>
         </div>
       )}
