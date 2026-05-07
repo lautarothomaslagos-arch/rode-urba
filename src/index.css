@@ -1,5 +1,51 @@
 *{box-sizing:border-box;margin:0;padding:0}
 
+/* ===== TEMA OSCURO (V1 · Stadium Broadcast) ===== */
+[data-theme="dark"] {
+  --pg-bg-deep:      #07101F;
+  --pg-bg-base:      #0F1E36;
+  --pg-bg-mid:       #1A2C4D;
+  --pg-bg-card:      #1A2C4D;
+  --pg-bg-card-alt:  #233A66;
+  --pg-gold:         #F2C541;
+  --pg-gold-dim:     #C9A227;
+  --pg-gold-glow:    #FFE38A;
+  --pg-red:          #E63946;
+  --pg-red-dark:     #B82834;
+  --pg-text:         #FFFFFF;
+  --pg-text-soft:    rgba(255,255,255,0.55);
+  --pg-text-mute:    rgba(255,255,255,0.32);
+  --pg-border:       rgba(242,197,65,0.18);
+  --pg-border-soft:  rgba(255,255,255,0.07);
+  --pg-display:      'Bricolage Grotesque', system-ui, sans-serif;
+  --pg-mono:         'JetBrains Mono', ui-monospace, monospace;
+  --pg-radius:       14px;
+  --pg-radius-lg:    22px;
+}
+
+/* ===== TEMA CLARO (V2 · Match Day Magazine) ===== */
+[data-theme="light"] {
+  --pg-bg-deep:      #F4EFE6;
+  --pg-bg-base:      #ECE5D5;
+  --pg-bg-mid:       #FFFFFF;
+  --pg-bg-card:      #FFFFFF;
+  --pg-bg-card-alt:  #F4EFE6;
+  --pg-gold:         #F2C541;
+  --pg-gold-dim:     #C9A227;
+  --pg-gold-glow:    #FFE38A;
+  --pg-red:          #E63946;
+  --pg-red-dark:     #B82834;
+  --pg-text:         #0F1E36;
+  --pg-text-soft:    rgba(15,30,54,0.60);
+  --pg-text-mute:    rgba(15,30,54,0.32);
+  --pg-border:       rgba(15,30,54,0.10);
+  --pg-border-soft:  rgba(15,30,54,0.06);
+  --pg-display:      'Bricolage Grotesque', system-ui, sans-serif;
+  --pg-mono:         'JetBrains Mono', ui-monospace, monospace;
+  --pg-radius:       14px;
+  --pg-radius-lg:    22px;
+}
+
 :root {
   --rojo: #8B0000;
   --rojo-vivo: #B22222;
