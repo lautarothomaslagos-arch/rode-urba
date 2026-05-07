@@ -1687,6 +1687,161 @@ html, body, #root {
 .prode-save-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
 .prode-save-pts { font-family: var(--pg-mono); font-size: 12px; font-weight: 700; opacity: 0.65; }
 
+/* ══════════════════════════════════════════════════════════
+   RANKING V2 — inspirado en prototipo V1/V2
+   ══════════════════════════════════════════════════════════ */
+
+/* Segment control */
+.rk-seg {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: repeat(3,1fr);
+  margin: 0 16px 14px; padding: 4px; gap: 4px;
+  background: var(--pg-bg-mid);
+  border: 1px solid var(--pg-border-soft);
+  border-radius: 13px;
+}
+.rk-seg-btn {
+  padding: 9px 6px; border: none; border-radius: 9px; cursor: pointer;
+  font-size: 12px; font-weight: 600; color: var(--pg-text-soft);
+  background: transparent; transition: all 0.18s; font-family: inherit;
+}
+.rk-seg-btn-active {
+  background: linear-gradient(135deg, var(--pg-gold-glow), var(--pg-gold) 60%, var(--pg-gold-dim));
+  color: #07101F; font-weight: 700;
+}
+
+/* Podium */
+.rk-podium {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr 1.15fr 1fr;
+  align-items: end; gap: 8px;
+  padding: 16px 20px 0; margin-bottom: 14px;
+}
+.rk-podium-step { text-align: center; }
+.rk-podium-medal { font-size: 22px; margin-bottom: 5px; }
+.rk-podium-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  margin: 0 auto 5px; overflow: hidden;
+  background: var(--pg-bg-card-alt); border: 2px solid var(--pg-gold-dim);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--pg-display); font-size: 14px; font-weight: 700; color: var(--pg-text);
+}
+.rk-podium-1 .rk-podium-avatar {
+  width: 56px; height: 56px; font-size: 18px;
+  border-color: var(--pg-gold); box-shadow: 0 0 16px rgba(242,197,65,0.5);
+}
+.rk-podium-name {
+  font-family: var(--pg-display); font-size: 12px; font-weight: 700;
+  color: var(--pg-text); margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rk-podium-pts {
+  font-family: var(--pg-mono); font-size: 12px; font-weight: 700;
+  color: var(--pg-gold); margin-bottom: 6px;
+}
+.rk-podium-block {
+  background: var(--pg-bg-mid); border: 1px solid var(--pg-border-soft);
+  border-bottom: none; border-radius: 8px 8px 0 0;
+  height: 55px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--pg-display); font-size: 28px; font-weight: 800;
+  color: var(--pg-text-mute);
+}
+.rk-podium-1 .rk-podium-block {
+  height: 84px; font-size: 38px; color: var(--pg-gold);
+  background: linear-gradient(180deg, rgba(242,197,65,0.22), rgba(242,197,65,0.04));
+  border-color: var(--pg-gold);
+}
+.rk-podium-2 .rk-podium-block { height: 65px; }
+.rk-podium-3 .rk-podium-block { height: 45px; }
+
+/* Search */
+.rk-search {
+  display: block; position: relative; z-index: 2;
+  width: calc(100% - 32px); margin: 0 16px 12px;
+  padding: 10px 14px; border-radius: 11px;
+  border: 1px solid var(--pg-border-soft);
+  background: var(--pg-bg-mid); color: var(--pg-text);
+  font-size: 13px; font-family: inherit; outline: none;
+  transition: border-color 0.15s;
+}
+.rk-search::placeholder { color: var(--pg-text-mute); }
+.rk-search:focus { border-color: var(--pg-gold); }
+
+/* Rank list */
+.rk-list {
+  position: relative; z-index: 2;
+  margin: 0 16px 16px; border-radius: var(--pg-radius); overflow: hidden;
+  background: var(--pg-bg-card); border: 1px solid var(--pg-border-soft);
+}
+.rk-row {
+  display: grid; grid-template-columns: 38px 36px 1fr auto;
+  align-items: center; gap: 10px; padding: 10px 14px;
+  border-bottom: 1px solid var(--pg-border-soft);
+}
+.rk-row:last-child { border-bottom: none; }
+.rk-row-you {
+  background: linear-gradient(90deg, rgba(242,197,65,0.14), rgba(242,197,65,0.03));
+  border-left: 3px solid var(--pg-gold);
+}
+.rk-pos { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.rk-pos-num {
+  font-family: var(--pg-display); font-size: 15px; font-weight: 700;
+  color: var(--pg-text-mute);
+}
+.rk-row-you .rk-pos-num { color: var(--pg-gold); }
+.rk-delta { font-size: 8px; font-weight: 700; letter-spacing: 0.04em; }
+.rk-delta-up   { color: #4ade80; }
+.rk-delta-down { color: var(--pg-red); }
+.rk-avatar {
+  width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  background: var(--pg-bg-mid); border: 1px solid var(--pg-border-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--pg-display); font-size: 12px; font-weight: 700; color: var(--pg-text);
+}
+.rk-info { min-width: 0; }
+.rk-name {
+  font-size: 13px; font-weight: 600; color: var(--pg-text);
+  display: flex; align-items: center; gap: 5px;
+}
+.rk-name > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-you-pill {
+  background: var(--pg-gold); color: #07101F; flex-shrink: 0;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+  padding: 1px 6px; border-radius: 999px;
+}
+.rk-meta {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--pg-text-mute); margin-top: 2px; flex-wrap: wrap;
+}
+.rk-streak { color: var(--pg-red); font-weight: 700; }
+.rk-pts-block { text-align: right; flex-shrink: 0; }
+.rk-pts {
+  font-family: var(--pg-mono); font-size: 18px; font-weight: 700;
+  color: var(--pg-gold); line-height: 1;
+}
+.rk-pts-lbl {
+  font-size: 9px; color: var(--pg-text-mute);
+  text-transform: uppercase; letter-spacing: 0.16em; margin-top: 2px;
+}
+
+/* Sticky "Tu posición" */
+.rk-you-sticky {
+  position: fixed; bottom: calc(72px + env(safe-area-inset-bottom));
+  left: 16px; right: 16px; z-index: 8;
+  padding: 8px 12px 6px;
+  background: var(--pg-bg-deep);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--pg-gold); border-radius: var(--pg-radius);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+.rk-you-sticky .rk-row {
+  border-bottom: none; padding: 4px 0; background: transparent;
+}
+.rk-you-label {
+  font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--pg-gold); font-weight: 700; margin-bottom: 2px; padding-left: 2px;
+}
+
 /* ===== DASHBOARD: HEADER DERECHO (avatar + escudo) ===== */
 .dash-header-right {
   display: flex;

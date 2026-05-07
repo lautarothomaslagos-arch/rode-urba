@@ -1,72 +1,79 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import TabsScrollWrapper from '../components/TabsScrollWrapper'
 
 const BASE = 'https://xmtsxdzwurxygqqccgdc.supabase.co/storage/v1/object/public/trofeos'
 
 const TROFEOS = [
-  { nombre: 'Puma',     minimo: 15, img: `${BASE}/trofeo_puma_v2.png`,     color: '#C9A227' },
-  { nombre: 'Capitán',  minimo: 10, img: `${BASE}/trofeo_capitan_v2.png`,  color: '#C9A227' },
-  { nombre: 'Titular',  minimo: 6,  img: `${BASE}/trofeo_titular_v2.png`,  color: '#9ca3af' },
-  { nombre: 'Suplente', minimo: 3,  img: `${BASE}/trofeo_suplente_v2.png`, color: '#cd7c3e' },
+  { nombre: 'Puma',     minimo: 15, img: `${BASE}/trofeo_puma_v2.png` },
+  { nombre: 'Capitán',  minimo: 10, img: `${BASE}/trofeo_capitan_v2.png` },
+  { nombre: 'Titular',  minimo: 6,  img: `${BASE}/trofeo_titular_v2.png` },
+  { nombre: 'Suplente', minimo: 3,  img: `${BASE}/trofeo_suplente_v2.png` },
 ]
 
 function getTrofeo(rachaMaxima) {
   return TROFEOS.find(t => rachaMaxima >= t.minimo) || null
 }
 
-function FilaRanking({ item, idx, esYo, subVista, movimiento, refProp, sticky }) {
-  const av = item.perfiles?.avatar_url
-  const ini = item.perfiles?.username?.[0]?.toUpperCase() || '?'
-  const racha = item.perfiles?.racha_actual || 0
+function RkAvatar({ perfiles, size = 36, style = {} }) {
+  const av = perfiles?.avatar_url
+  const ini = perfiles?.username?.[0]?.toUpperCase() || '?'
+  return (
+    <div className="rk-avatar" style={{ width: size, height: size, ...style }}>
+      {av
+        ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+            onError={e => e.target.style.display = 'none'} />
+        : ini}
+    </div>
+  )
+}
+
+function RkRow({ item, idx, esYo, subVista, movimiento, refProp }) {
+  const racha  = item.perfiles?.racha_actual  || 0
   const trofeo = getTrofeo(item.perfiles?.racha_maxima || 0)
-  const puntos = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
-  const medal = (i) => ['🥇','🥈','🥉'][i] || null
-  const posClass = (i) => i===0?'pos-1':i===1?'pos-2':i===2?'pos-3':''
+  const pts    = subVista === 'anual' ? item.puntos_acumulados : item.total_puntos
+  const medals = ['🥇', '🥈', '🥉']
+  const mov    = movimiento
 
   return (
-    <div
-      ref={refProp || undefined}
-      style={{
-        display:'flex', alignItems:'center', padding:'10px 16px',
-        borderBottom: sticky ? 'none' : '1px solid var(--gris-borde)', gap:0,
-        background: esYo ? 'linear-gradient(135deg,#fff8e6,#fffdf5)' : 'white',
-        ...(sticky ? { borderTop: '2px solid var(--dorado)', borderRadius: '0 0 10px 10px', boxShadow: '0 -3px 10px rgba(0,0,0,0.08)' } : {})
-      }}
-    >
-      <div style={{width:44,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',gap:3}}>
-        <div className={`ranking-pos ${posClass(idx)}`}>{medal(idx) || (idx+1)}</div>
-        {movimiento && movimiento.dir !== 'same' && movimiento.delta > 0 && (
-          <span style={{fontSize:8,fontWeight:700,color:movimiento.dir==='up'?'#16a34a':'#dc2626',lineHeight:1}}>
-            {movimiento.dir==='up'?'▲':'▼'}{movimiento.delta}
-          </span>
-        )}
-      </div>
-      <div className="avatar-circle" style={{width:34,height:34,fontSize:13,flexShrink:0,marginLeft:8}}>
-        {av ? <img src={av} alt={ini} style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
-      </div>
-      <div style={{flex:1,minWidth:0,marginLeft:10}}>
-        <div style={{display:'flex',alignItems:'center',gap:5,flexWrap:'wrap'}}>
-          <span style={{fontWeight:600,fontSize:14,color:'var(--texto)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-            {item.perfiles?.username || 'Usuario'}
-          </span>
-          {esYo && <span style={{fontSize:10,background:'var(--dorado)',color:'var(--azul)',padding:'1px 6px',borderRadius:20,fontWeight:700,flexShrink:0}}>VOS</span>}
-          {racha >= 2 && <span style={{fontSize:11,fontWeight:700,color:'#ea580c',flexShrink:0}}>🔥{racha}</span>}
-          {trofeo && <img src={trofeo.img} alt={trofeo.nombre} title={trofeo.nombre} style={{width:16,height:16,objectFit:'contain',flexShrink:0}} />}
-        </div>
-        {item.perfiles?.club && <div style={{fontSize:11,color:'var(--texto-suave)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.perfiles.club}</div>}
-        {subVista==='fecha' && (
-          <div style={{fontSize:11,color:'var(--texto-suave)'}}>
-            {item.partidos_acertados}/{item.partidos_totales} acertados
-            {item.bonus_pleno>0 && <span style={{marginLeft:4,color:'var(--dorado)',fontWeight:600}}>+{item.bonus_pleno*5} pleno</span>}
+    <div ref={refProp || undefined} className={`rk-row${esYo ? ' rk-row-you' : ''}`}>
+
+      {/* Posición + delta */}
+      <div className="rk-pos">
+        <div className="rk-pos-num">{medals[idx] ?? (idx + 1)}</div>
+        {mov && mov.dir !== 'same' && mov.delta > 0 && (
+          <div className={`rk-delta ${mov.dir === 'up' ? 'rk-delta-up' : 'rk-delta-down'}`}>
+            {mov.dir === 'up' ? '▲' : '▼'}{mov.delta}
           </div>
         )}
       </div>
-      <div style={{flexShrink:0,textAlign:'right',marginLeft:8}}>
-        <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:'var(--azul)'}}>{puntos}</span>
-        <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:2}}>pts</span>
-        {subVista==='anual' && <div style={{fontSize:10,color:'var(--texto-suave)'}}>{item.fechas_jugadas} f.</div>}
+
+      {/* Avatar */}
+      <RkAvatar perfiles={item.perfiles} size={36} />
+
+      {/* Info */}
+      <div className="rk-info">
+        <div className="rk-name">
+          <span>{item.perfiles?.username || 'Usuario'}</span>
+          {esYo && <span className="rk-you-pill">VOS</span>}
+        </div>
+        <div className="rk-meta">
+          {item.perfiles?.club && <span>{item.perfiles.club}</span>}
+          {racha >= 2 && <span className="rk-streak">🔥{racha}</span>}
+          {trofeo && (
+            <img src={trofeo.img} alt={trofeo.nombre} title={trofeo.nombre}
+              style={{ width: 13, height: 13, objectFit: 'contain' }} />
+          )}
+          {subVista === 'fecha' && item.partidos_totales > 0 && (
+            <span>{item.partidos_acertados}/{item.partidos_totales} aciertos</span>
+          )}
+        </div>
+      </div>
+
+      {/* Pts */}
+      <div className="rk-pts-block">
+        <div className="rk-pts">{pts}</div>
+        <div className="rk-pts-lbl">pts</div>
       </div>
     </div>
   )
@@ -74,46 +81,44 @@ function FilaRanking({ item, idx, esYo, subVista, movimiento, refProp, sticky })
 
 export default function Ranking() {
   const { perfil } = useAuth()
-  const [modo, setModo] = useState('anual')
+  const [modo, setModo]           = useState('anual')
   const [movimientos, setMovimientos] = useState({})
-  const [busqueda, setBusqueda] = useState('')
-  const [fechas, setFechas] = useState([])
-  const [fechaNum, setFechaNum] = useState(null)
-  const [lista, setLista] = useState([])
+  const [busqueda, setBusqueda]   = useState('')
+  const [fechas, setFechas]       = useState([])
+  const [fechaNum, setFechaNum]   = useState(null)
+  const [lista, setLista]         = useState([])
   const [listaClubs, setListaClubs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const scrollContainerRef = useRef(null)
-  const miFilaRef = useRef(null)
+  const [loading, setLoading]     = useState(true)
+  const miFilaRef                 = useRef(null)
+  const podioRef                  = useRef(null)
   const [mostrarSticky, setMostrarSticky] = useState(false)
 
   useEffect(() => { cargarFechas() }, [])
+
   useEffect(() => {
     setMovimientos({})
+    setBusqueda('')
     if (modo === 'clubes') cargarClubs()
     else cargarPersonal()
   }, [modo, fechaNum])
 
-  const miIdx = lista.findIndex(item => item.perfiles?.username === perfil?.username)
+  const miIdx  = lista.findIndex(item => item.perfiles?.username === perfil?.username)
   const miItem = miIdx >= 0 ? lista[miIdx] : null
 
+  // Visibility check para sticky "Tu posición"
   useEffect(() => {
     if (!miItem || modo === 'clubes') { setMostrarSticky(false); return }
-
-    const checkVisibility = () => {
-      if (!miFilaRef.current || !scrollContainerRef.current) {
-        setMostrarSticky(false)
-        return
-      }
-      const rowRect = miFilaRef.current.getBoundingClientRect()
-      const containerRect = scrollContainerRef.current.getBoundingClientRect()
-      const visible = rowRect.top < containerRect.bottom && rowRect.bottom > containerRect.top
+    const check = () => {
+      const ref = miIdx < 3 ? podioRef : miFilaRef
+      if (!ref.current) { setMostrarSticky(false); return }
+      const rect = ref.current.getBoundingClientRect()
+      const visible = rect.top >= 0 && rect.bottom <= window.innerHeight - 130
       setMostrarSticky(!visible)
     }
-
-    checkVisibility()
-    document.addEventListener('scroll', checkVisibility, { capture: true })
-    return () => document.removeEventListener('scroll', checkVisibility, { capture: true })
-  }, [miItem, lista, busqueda, modo])
+    check()
+    window.addEventListener('scroll', check, { passive: true })
+    return () => window.removeEventListener('scroll', check)
+  }, [miItem, lista, busqueda, modo, miIdx])
 
   async function cargarFechas() {
     const { data } = await supabase.from('fechas')
@@ -143,17 +148,21 @@ export default function Ranking() {
           agrupado[uid].puntos_acumulados += (item.puntos_acumulados || 0)
           agrupado[uid].fechas_jugadas = Math.max(agrupado[uid].fechas_jugadas, item.fechas_jugadas || 0)
         })
-        const currentList = Object.values(agrupado).sort((a,b) => b.puntos_acumulados - a.puntos_acumulados)
+        const currentList = Object.values(agrupado).sort((a, b) => b.puntos_acumulados - a.puntos_acumulados)
         setLista(currentList)
 
-        const { data: allFechas } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
+        const { data: allFechas } = await supabase.from('fechas').select('id, numero')
+          .eq('resultados_cargados', true).order('numero', { ascending: false })
         const latestNum = allFechas?.[0]?.numero
         if (latestNum != null) {
           const latestIds = (allFechas || []).filter(f => f.numero === latestNum).map(f => f.id)
-          const { data: latestPts } = await supabase.from('puntos_fecha').select('usuario_id, total_puntos').in('fecha_id', latestIds)
+          const { data: latestPts } = await supabase.from('puntos_fecha')
+            .select('usuario_id, total_puntos').in('fecha_id', latestIds)
           const deduct = {}
           latestPts?.forEach(p => { deduct[p.usuario_id] = (deduct[p.usuario_id] || 0) + (p.total_puntos || 0) })
-          const prevList = currentList.map(item => ({ ...item, puntos_acumulados: (item.puntos_acumulados || 0) - (deduct[item.usuario_id] || 0) })).sort((a,b) => b.puntos_acumulados - a.puntos_acumulados)
+          const prevList = currentList
+            .map(item => ({ ...item, puntos_acumulados: (item.puntos_acumulados || 0) - (deduct[item.usuario_id] || 0) }))
+            .sort((a, b) => b.puntos_acumulados - a.puntos_acumulados)
           const prevPos = {}
           prevList.forEach((item, idx) => { prevPos[item.usuario_id] = idx + 1 })
           const movs = {}
@@ -165,6 +174,7 @@ export default function Ranking() {
           })
           setMovimientos(movs)
         }
+
       } else if (modo === 'fecha' && fechaNum !== null) {
         const { data: fechasIds } = await supabase.from('fechas')
           .select('id').eq('numero', fechaNum).eq('resultados_cargados', true)
@@ -182,23 +192,25 @@ export default function Ranking() {
             usuario_id: uid, total_puntos: 0, partidos_acertados: 0,
             partidos_totales: 0, bonus_pleno: 0, bonus_mitad: 0, perfiles: item.perfiles
           }
-          agrupado[uid].total_puntos += (item.total_puntos || 0)
+          agrupado[uid].total_puntos       += (item.total_puntos || 0)
           agrupado[uid].partidos_acertados += (item.partidos_acertados || 0)
-          agrupado[uid].partidos_totales += (item.partidos_totales || 0)
-          agrupado[uid].bonus_pleno += (item.bonus_pleno || 0)
-          agrupado[uid].bonus_mitad += (item.bonus_mitad || 0)
+          agrupado[uid].partidos_totales   += (item.partidos_totales || 0)
+          agrupado[uid].bonus_pleno        += (item.bonus_pleno || 0)
+          agrupado[uid].bonus_mitad        += (item.bonus_mitad || 0)
         })
-        const currentListF = Object.values(agrupado).sort((a,b) => b.total_puntos - a.total_puntos)
+        const currentListF = Object.values(agrupado).sort((a, b) => b.total_puntos - a.total_puntos)
         setLista(currentListF)
 
-        const { data: allFechasF } = await supabase.from('fechas').select('id, numero').eq('resultados_cargados', true).order('numero', { ascending: false })
+        const { data: allFechasF } = await supabase.from('fechas').select('id, numero')
+          .eq('resultados_cargados', true).order('numero', { ascending: false })
         const prevNumF = (allFechasF || []).find(f => f.numero < fechaNum)?.numero
         if (prevNumF != null) {
           const prevIdsF = (allFechasF || []).filter(f => f.numero === prevNumF).map(f => f.id)
-          const { data: prevDataF } = await supabase.from('puntos_fecha').select('usuario_id, total_puntos').in('fecha_id', prevIdsF)
+          const { data: prevDataF } = await supabase.from('puntos_fecha')
+            .select('usuario_id, total_puntos').in('fecha_id', prevIdsF)
           const prevAgrF = {}
           prevDataF?.forEach(p => { prevAgrF[p.usuario_id] = (prevAgrF[p.usuario_id] || 0) + (p.total_puntos || 0) })
-          const prevSortedF = Object.entries(prevAgrF).sort(([,a],[,b]) => b - a)
+          const prevSortedF = Object.entries(prevAgrF).sort(([, a], [, b]) => b - a)
           const prevPosF = {}
           prevSortedF.forEach(([uid], idx) => { prevPosF[uid] = idx + 1 })
           const movsF = {}
@@ -213,7 +225,7 @@ export default function Ranking() {
           setMovimientos({})
         }
       }
-    } catch(e) {
+    } catch (e) {
       console.error('Error ranking:', e)
       setLista([])
     }
@@ -240,16 +252,13 @@ export default function Ranking() {
       })
       setListaClubs(Object.values(agrupado)
         .map(c => ({ ...c, miembros: c.usuarios.size }))
-        .sort((a,b) => b.puntos - a.puntos))
-    } catch(e) {
+        .sort((a, b) => b.puntos - a.puntos))
+    } catch (e) {
       console.error('Error clubs:', e)
       setListaClubs([])
     }
     setLoading(false)
   }
-
-  const medal = (i) => ['🥇','🥈','🥉'][i] || null
-  const posClass = (i) => i===0?'pos-1':i===1?'pos-2':i===2?'pos-3':''
 
   const listaFiltrada = busqueda.trim()
     ? lista.filter(item =>
@@ -258,136 +267,193 @@ export default function Ranking() {
       )
     : lista
 
+  const mostrarPodio = !busqueda.trim() && lista.length >= 3 && modo !== 'clubes' && !loading
+  const medals = ['🥇', '🥈', '🥉']
+
   return (
-    <div className="container">
-      <div className="page-header">
-        <h1 className="page-title">Ranking <span className="page-title-accent">2026</span></h1>
+    <div className="dashboard">
+      <div className="dash-backdrop" aria-hidden="true" />
+
+      {/* ── Header ── */}
+      <header style={{ padding: '20px 20px 6px', position: 'relative', zIndex: 2 }}>
+        <div className="prode-eyebrow">Tabla 2026</div>
+        <h1 className="prode-h1">
+          Ranking
+          <span style={{ color: 'var(--pg-text-mute)', margin: '0 6px' }}>·</span>
+          <em>{modo === 'anual' ? 'Anual' : modo === 'fecha' ? 'Por fecha' : 'Por clubes'}</em>
+        </h1>
+      </header>
+
+      {/* ── Segment control ── */}
+      <div className="rk-seg">
+        {[['anual', 'Anual'], ['fecha', 'Por fecha'], ['clubes', 'Por clubes']].map(([k, l]) => (
+          <button key={k} className={`rk-seg-btn${modo === k ? ' rk-seg-btn-active' : ''}`}
+            onClick={() => setModo(k)}>
+            {l}
+          </button>
+        ))}
       </div>
 
-      <TabsScrollWrapper>
-        <button className={`tab-btn ${modo==='anual'?'active':''}`} onClick={() => setModo('anual')}>Anual 2026</button>
-        <button className={`tab-btn ${modo==='fecha'?'active':''}`} onClick={() => setModo('fecha')}>Por fecha</button>
-        <button className={`tab-btn ${modo==='clubes'?'active':''}`} onClick={() => setModo('clubes')}>Por clubes</button>
-      </TabsScrollWrapper>
-
+      {/* ── Chips de fecha ── */}
       {modo === 'fecha' && fechas.length > 0 && (
-        <TabsScrollWrapper style={{marginBottom:16}}>
+        <div className="prode-chip-row" style={{ position: 'relative', zIndex: 2, paddingTop: 0 }}>
           {fechas.map(f => (
-            <button key={f.numero} className={`tab-btn ${fechaNum===f.numero?'active':''}`}
+            <button key={f.numero}
+              className={`prode-chip${fechaNum === f.numero ? ' prode-chip-active' : ''}`}
               onClick={() => setFechaNum(f.numero)}>
               Fecha {f.numero}
             </button>
           ))}
-        </TabsScrollWrapper>
+        </div>
       )}
 
-      {modo !== 'clubes' && !loading && lista.length > 0 && (
+      {loading && (
+        <div className="loading" style={{ position: 'relative', zIndex: 2 }}>
+          <div className="spinner" />
+        </div>
+      )}
+
+      {/* ── Búsqueda ── */}
+      {!loading && modo !== 'clubes' && lista.length > 0 && (
         <input
-          className="form-input"
-          placeholder="🔍 Buscar por usuario o club..."
+          className="rk-search"
+          placeholder="🔍  Buscar por usuario o club..."
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
-          style={{ marginBottom: 12 }}
         />
       )}
 
-      {loading && <div className="loading"><div className="spinner"></div></div>}
-
-      {!loading && modo !== 'clubes' && (
-        lista.length === 0
-          ? <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
-              <div style={{fontSize:52,marginBottom:10}}>{modo === 'anual' ? '🏆' : '📋'}</div>
-              <div className="empty-title">
-                {modo === 'anual' ? 'El ranking arranca pronto' : `Sin resultados para Fecha ${fechaNum}`}
-              </div>
-              <p style={{fontSize:13,color:'var(--texto-suave)',maxWidth:260,margin:'8px auto 0',lineHeight:1.5}}>
-                {modo === 'anual'
-                  ? 'Aparecerá en cuanto se carguen los primeros resultados de la temporada.'
-                  : 'Los puntos de esta fecha todavía no fueron registrados.'}
-              </p>
-            </div>
-          : <div key={`rank-${modo}-${fechaNum}`} className="seccion-fade card" style={{padding:0}}>
-              <div style={{padding:'12px 16px',background:'linear-gradient(135deg,var(--azul),var(--azul-medio))',display:'flex',justifyContent:'space-between',alignItems:'center',borderRadius:'10px 10px 0 0',overflow:'hidden'}}>
-                <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--dorado)',letterSpacing:1}}>
-                  {modo==='anual' ? 'Ranking anual 2026' : `Fecha ${fechaNum} — todos los torneos`}
-                </span>
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.6)'}}>
-                  {busqueda ? `${listaFiltrada.length} resultados` : `${lista.length} participantes`}
-                </span>
-              </div>
-
-              <div ref={scrollContainerRef} style={{maxHeight:'60vh',overflowY:'auto'}}>
-                {listaFiltrada.map((item, idx) => {
-                  const esYo = item.perfiles?.username === perfil?.username
-                  const idxReal = lista.indexOf(item)
-                  return (
-                    <FilaRanking
-                      key={item.usuario_id}
-                      item={item}
-                      idx={idxReal}
-                      esYo={esYo}
-                      subVista={modo}
-                      movimiento={movimientos[item.usuario_id]}
-                      refProp={esYo ? miFilaRef : null}
-                    />
-                  )
-                })}
-                {busqueda && listaFiltrada.length === 0 && (
-                  <div style={{padding:24,textAlign:'center',color:'var(--texto-suave)',fontSize:13}}>Sin resultados para "{busqueda}"</div>
-                )}
-              </div>
-
-              {mostrarSticky && miItem && (
-                <FilaRanking
-                  item={miItem}
-                  idx={miIdx}
-                  esYo={true}
-                  subVista={modo}
-                  movimiento={movimientos[miItem.usuario_id]}
-                  sticky={true}
-                />
-              )}
-            </div>
+      {/* ── Empty states ── */}
+      {!loading && modo !== 'clubes' && lista.length === 0 && (
+        <div className="seccion-fade empty-state" style={{ padding: '40px 20px', position: 'relative', zIndex: 2 }}>
+          <div style={{ fontSize: 52, marginBottom: 10 }}>{modo === 'anual' ? '🏆' : '📋'}</div>
+          <div className="empty-title">
+            {modo === 'anual' ? 'El ranking arranca pronto' : `Sin resultados para Fecha ${fechaNum}`}
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', maxWidth: 260, margin: '8px auto 0', lineHeight: 1.5 }}>
+            {modo === 'anual'
+              ? 'Aparecerá en cuanto se carguen los primeros resultados de la temporada.'
+              : 'Los puntos de esta fecha todavía no fueron registrados.'}
+          </p>
+        </div>
       )}
 
+      {/* ── Podio top 3 ── */}
+      {mostrarPodio && (
+        <div className="rk-podium seccion-fade">
+          {[lista[1], lista[0], lista[2]].map((item, i) => {
+            const place   = [2, 1, 3][i]
+            const idxReal = place - 1
+            const pts     = modo === 'anual' ? item.puntos_acumulados : item.total_puntos
+            const av      = item.perfiles?.avatar_url
+            const ini     = item.perfiles?.username?.[0]?.toUpperCase() || '?'
+            const esYo    = item.perfiles?.username === perfil?.username
+            return (
+              <div
+                key={item.usuario_id}
+                ref={esYo ? podioRef : undefined}
+                className={`rk-podium-step rk-podium-${place}`}
+              >
+                <div className="rk-podium-medal">{medals[idxReal]}</div>
+                <div className="rk-podium-avatar">
+                  {av
+                    ? <img src={av} alt={ini} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                        onError={e => e.target.style.display = 'none'} />
+                    : ini}
+                </div>
+                <div className="rk-podium-name">
+                  {(item.perfiles?.username || 'Usuario').split(' ')[0]}
+                  {esYo && <span style={{ color: 'var(--pg-gold)', marginLeft: 3 }}>★</span>}
+                </div>
+                <div className="rk-podium-pts">{pts} pts</div>
+                <div className="rk-podium-block"><span>{place}</span></div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ── Lista (desde 4° en adelante, o todos si hay búsqueda) ── */}
+      {!loading && modo !== 'clubes' && listaFiltrada.length > 0 && (
+        <div className="rk-list seccion-fade">
+          {(mostrarPodio ? listaFiltrada.slice(3) : listaFiltrada).map(item => {
+            const idxReal = lista.indexOf(item)
+            const esYo    = item.perfiles?.username === perfil?.username
+            return (
+              <RkRow
+                key={item.usuario_id}
+                item={item}
+                idx={idxReal}
+                esYo={esYo}
+                subVista={modo}
+                movimiento={movimientos[item.usuario_id]}
+                refProp={esYo && miIdx >= 3 ? miFilaRef : null}
+              />
+            )
+          })}
+          {busqueda && listaFiltrada.length === 0 && (
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--pg-text-soft)', fontSize: 13 }}>
+              Sin resultados para "{busqueda}"
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Clubes ── */}
       {!loading && modo === 'clubes' && (
         listaClubs.length === 0
-          ? <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
-              <div style={{fontSize:52,marginBottom:10}}>🏉</div>
+          ? (
+            <div className="seccion-fade empty-state" style={{ padding: '40px 20px', position: 'relative', zIndex: 2 }}>
+              <div style={{ fontSize: 52, marginBottom: 10 }}>🏉</div>
               <div className="empty-title">Sin datos de clubes todavía</div>
-              <p style={{fontSize:13,color:'var(--texto-suave)',maxWidth:260,margin:'8px auto 0',lineHeight:1.5}}>
-                Cada jugador debe elegir su club en su Perfil para aparecer acá. Completá el tuyo si todavía no lo hiciste.
+              <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', maxWidth: 260, margin: '8px auto 0', lineHeight: 1.5 }}>
+                Completá tu club en Perfil para aparecer acá.
               </p>
             </div>
-          : <div key="rank-clubes" className="seccion-fade card" style={{padding:0}}>
-              <div style={{padding:'12px 16px',background:'linear-gradient(135deg,var(--rojo),var(--rojo-vivo))',display:'flex',justifyContent:'space-between',alignItems:'center',borderRadius:'10px 10px 0 0',overflow:'hidden'}}>
-                <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'white',letterSpacing:1}}>Ranking por clubes 2026</span>
-                <span style={{fontSize:12,color:'rgba(255,255,255,0.7)'}}>{listaClubs.length} clubes</span>
-              </div>
-              <div style={{maxHeight:'60vh',overflowY:'auto'}}>
-                {listaClubs.map((item, idx) => (
-                  <div key={item.club} style={{display:'flex',alignItems:'center',padding:'10px 16px',borderBottom:'1px solid var(--gris-borde)',gap:0}}>
-                    <div className={`ranking-pos ${posClass(idx)}`} style={{width:36,flexShrink:0,textAlign:'center'}}>
-                      {medal(idx) || (idx+1)}
-                    </div>
-                    <div style={{width:36,height:36,borderRadius:6,overflow:'hidden',flexShrink:0,marginLeft:8,background:'var(--gris)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>
-                      {item.escudo
-                        ? <img src={item.escudo} alt={item.club} style={{width:'100%',height:'100%',objectFit:'contain'}} />
-                        : '🏉'}
-                    </div>
-                    <div style={{flex:1,minWidth:0,marginLeft:10}}>
-                      <div style={{fontWeight:600,fontSize:14,color:'var(--texto)'}}>{item.abrev || item.club}</div>
-                      <div style={{fontSize:11,color:'var(--texto-suave)'}}>{item.miembros} {item.miembros===1?'participante':'participantes'}</div>
-                    </div>
-                    <div style={{flexShrink:0,textAlign:'right',marginLeft:8}}>
-                      <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:'var(--azul)'}}>{item.puntos}</span>
-                      <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:2}}>pts</span>
+          ) : (
+            <div className="rk-list seccion-fade">
+              {listaClubs.map((item, idx) => (
+                <div key={item.club} className="rk-row">
+                  <div className="rk-pos">
+                    <div className="rk-pos-num">{medals[idx] ?? (idx + 1)}</div>
+                  </div>
+                  <div className="rk-avatar" style={{ borderRadius: 7 }}>
+                    {item.escudo
+                      ? <img src={item.escudo} alt={item.club}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      : <span style={{ fontSize: 16 }}>🏉</span>}
+                  </div>
+                  <div className="rk-info">
+                    <div className="rk-name"><span>{item.abrev || item.club}</span></div>
+                    <div className="rk-meta">
+                      {item.miembros} {item.miembros === 1 ? 'participante' : 'participantes'}
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="rk-pts-block">
+                    <div className="rk-pts">{item.puntos}</div>
+                    <div className="rk-pts-lbl">pts</div>
+                  </div>
+                </div>
+              ))}
             </div>
+          )
       )}
+
+      {/* ── Sticky "Tu posición" ── */}
+      {mostrarSticky && miItem && (
+        <div className="rk-you-sticky">
+          <div className="rk-you-label">Tu posición</div>
+          <RkRow
+            item={miItem}
+            idx={miIdx}
+            esYo={true}
+            subVista={modo}
+            movimiento={movimientos[miItem.usuario_id]}
+          />
+        </div>
+      )}
+
+      <div style={{ height: mostrarSticky ? 120 : 20 }} />
     </div>
   )
 }
