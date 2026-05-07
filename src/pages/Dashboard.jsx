@@ -125,16 +125,17 @@ export default function Dashboard() {
         : []
       const jugadosDeCat = jugados.filter(p => fechasDeCat.includes(p.fecha_id))
 
-      // 6. Calcular puntos propios (W=4, E=2, L=0 + bonus)
+      // 6. Calcular puntos propios (W=4, E=2, L=0 + bonus ofensivo + bonus defensivo)
       let pts = 0
       jugadosDeCat.forEach(p => {
         const esLocal = p.equipo_local_id === eq.id
         const gF = esLocal ? p.resultado_local : p.resultado_visitante
         const gC = esLocal ? p.resultado_visitante : p.resultado_local
         const bon = esLocal ? (p.bonus_of_local || 0) : (p.bonus_of_visitante || 0)
+        const bonDef = (gF < gC && (gC - gF) <= 7) ? 1 : 0
         if (gF > gC) pts += 4 + bon
         else if (gF === gC) pts += 2 + bon
-        else pts += bon
+        else pts += bon + bonDef
       })
 
       // 7. Standings completos de la categoría para encontrar la posición
@@ -148,14 +149,17 @@ export default function Dashboard() {
           const L = p.equipo_local_id, V = p.equipo_visitante_id
           if (!standings[L]) standings[L] = 0
           if (!standings[V]) standings[V] = 0
-          if (p.resultado_local > p.resultado_visitante) {
+          const rl = p.resultado_local, rv = p.resultado_visitante
+          if (rl > rv) {
+            const bonDefV = (rv < rl && (rl - rv) <= 7) ? 1 : 0
             standings[L] += 4 + (p.bonus_of_local || 0)
-            standings[V] += (p.bonus_of_visitante || 0)
-          } else if (p.resultado_local === p.resultado_visitante) {
+            standings[V] += (p.bonus_of_visitante || 0) + bonDefV
+          } else if (rl === rv) {
             standings[L] += 2 + (p.bonus_of_local || 0)
             standings[V] += 2 + (p.bonus_of_visitante || 0)
           } else {
-            standings[L] += (p.bonus_of_local || 0)
+            const bonDefL = (rl < rv && (rv - rl) <= 7) ? 1 : 0
+            standings[L] += (p.bonus_of_local || 0) + bonDefL
             standings[V] += 4 + (p.bonus_of_visitante || 0)
           }
         })
