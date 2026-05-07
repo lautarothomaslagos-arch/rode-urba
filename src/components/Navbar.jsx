@@ -65,7 +65,7 @@ export default function Navbar() {
               <button onClick={signOut} style={{color:'rgba(255,255,255,0.6)',fontSize:12}}>Salir</button>
             </div>
 
-            {/* Mobile: avatar + hamburguesa */}
+            {/* Mobile: avatar + toggle + hamburguesa */}
             <div className="mobile-nav-right">
               <Link to="/perfil" style={{display:'flex',alignItems:'center',gap:6,textDecoration:'none'}}>
                 <div className="avatar-circle" title={perfil?.username}>
@@ -80,6 +80,9 @@ export default function Navbar() {
                   </div>
                 )}
               </Link>
+              <button onClick={toggleTheme} style={{fontSize:17,padding:'4px 7px',borderRadius:8,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)'}}>
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
               <button className="hamburger hamburger-hidden-mobile" onClick={() => setMenuAbierto(!menuAbierto)}>
                 <span className={menuAbierto ? 'bar bar-open-1' : 'bar'}></span>
                 <span className={menuAbierto ? 'bar bar-open-2' : 'bar'}></span>
