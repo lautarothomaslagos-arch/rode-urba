@@ -22,7 +22,7 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(160deg, #0c1a38 0%, #1a2744 55%, #0a1628 100%);
+  background: linear-gradient(160deg, #e8ecf5 0%, #f0f0f2 100%);
   background-attachment: fixed;
   color: var(--texto);
   min-height: 100vh;
@@ -146,23 +146,20 @@ body {
   font-family: 'Rajdhani', sans-serif;
   font-size: 26px;
   font-weight: 700;
-  color: white;
+  color: var(--azul);
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.35);
 }
 
 .page-title-accent { color: var(--rojo-vivo); }
 
 /* ===== CARDS ===== */
 .card {
-  background: rgba(255,255,255,0.91);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.55) inset;
+  background: var(--blanco);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-card);
   padding: 20px;
   margin-bottom: 16px;
-  border: 1px solid rgba(255,255,255,0.5);
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 .card-header {
@@ -403,7 +400,7 @@ body {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
-  .container { padding: 12px; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .container { padding: 12px; }
   .card { padding: 14px; }
   .hero { padding: 28px 20px; }
   .hero h1 { font-size: 28px; }
@@ -662,6 +659,8 @@ html, body, #root {
   .desktop-menu { display: none !important; }
   .mobile-nav-right { display: flex !important; }
   .hamburger-hidden-mobile { display: none !important; }
+  /* Padding global para que el contenido no quede tapado por el bottom nav */
+  #root { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 }
 
 /* ===== BOTTOM NAV (solo móvil) ===== */

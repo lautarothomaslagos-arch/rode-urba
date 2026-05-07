@@ -3,9 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const ROUTES_BASE  = ['/prode', '/ranking', '/torneos', '/perfil']
-const MIN_DIST     = 55    // px mínimos para considerar swipe
-const MAX_DURATION = 450   // ms máximos (descarta scrolls lentos)
-const DIR_RATIO    = 1.4   // cuánto más horizontal que vertical debe ser
+const MIN_DIST     = 75    // px mínimos para considerar swipe
+const MAX_DURATION = 420   // ms máximos (descarta scrolls lentos)
+const DIR_RATIO    = 2.2   // cuánto más horizontal que vertical debe ser
 
 export default function SwipeNavigator({ children }) {
   const { perfil } = useAuth()
@@ -20,16 +20,6 @@ export default function SwipeNavigator({ children }) {
   if (currentIdx < 0) return <>{children}</>
 
   function onTouchStart(e) {
-    // Si el toque empieza dentro de un elemento con scroll horizontal activo, no capturamos
-    let el = e.target
-    while (el && el !== document.body) {
-      const ovX = window.getComputedStyle(el).overflowX
-      if ((ovX === 'auto' || ovX === 'scroll') && el.scrollWidth > el.clientWidth + 4) {
-        touch.current = null
-        return
-      }
-      el = el.parentElement
-    }
     touch.current = {
       x:    e.touches[0].clientX,
       y:    e.touches[0].clientY,
