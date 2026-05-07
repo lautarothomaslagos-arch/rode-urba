@@ -65,22 +65,9 @@ export default function Navbar() {
               <button onClick={signOut} style={{color:'rgba(255,255,255,0.6)',fontSize:12}}>Salir</button>
             </div>
 
-            {/* Mobile: avatar + toggle + hamburguesa */}
+            {/* Mobile: solo toggle de tema */}
             <div className="mobile-nav-right">
-              <Link to="/perfil" style={{display:'flex',alignItems:'center',gap:6,textDecoration:'none'}}>
-                <div className="avatar-circle" title={perfil?.username}>
-                  {perfil?.avatar_url
-                    ? <img src={perfil.avatar_url} alt={perfil.username} />
-                    : (perfil?.username?.[0]?.toUpperCase() || 'U')
-                  }
-                </div>
-                {escudoClub && (
-                  <div style={{width:24,height:24,borderRadius:'50%',overflow:'hidden',border:'1.5px solid rgba(201,162,39,0.5)',background:'white',flexShrink:0}}>
-                    <img src={escudoClub} alt={perfil.club} style={{width:'100%',height:'100%',objectFit:'contain',padding:2}} />
-                  </div>
-                )}
-              </Link>
-              <button onClick={toggleTheme} style={{fontSize:17,padding:'4px 7px',borderRadius:8,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)'}}>
+              <button onClick={toggleTheme} className="navbar-theme-btn">
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
               <button className="hamburger hamburger-hidden-mobile" onClick={() => setMenuAbierto(!menuAbierto)}>
