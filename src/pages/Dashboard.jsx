@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { CATS } from '../lib/constants'
 
 // ── Countdown ────────────────────────────────────────────────
 function Countdown({ cierre }) {
@@ -53,6 +54,7 @@ export default function Dashboard() {
   const { user, perfil } = useAuth()
   const [loading, setLoading] = useState(true)
   const [escudoClub, setEscudoClub] = useState(null)
+  const [equipoStats, setEquipoStats] = useState(null)
 
   // Fecha activa
   const [fechaActiva, setFechaActiva] = useState(null)
@@ -81,6 +83,93 @@ export default function Dashboard() {
     supabase.from('equipos').select('escudo_url').eq('nombre', perfil.club).maybeSingle()
       .then(({ data }) => setEscudoClub(data?.escudo_url || null))
   }, [perfil?.club])
+
+  useEffect(() => {
+    if (!perfil) return
+    if (!perfil.club) { setEquipoStats(false); return }
+    cargarEquipoStats(perfil.club)
+  }, [perfil?.club])
+
+  async function cargarEquipoStats(clubNombre) {
+    try {
+      const { data: eq } = await supabase.from('equipos')
+        .select('id, nombre_corto, escudo_url')
+        .eq('nombre', clubNombre).maybeSingle()
+      if (!eq?.id) { setEquipoStats(false); return }
+
+      const { data: jugados } = await supabase.from('partidos')
+        .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, bonus_of_local, bonus_of_visitante, fechas(categoria_id)')
+        .or(`equipo_local_id.eq.${eq.id},equipo_visitante_id.eq.${eq.id}`)
+        .eq('resultados_cargados', true)
+
+      let pts = 0, categoriaId = null
+      ;(jugados || []).forEach(p => {
+        const esLocal = p.equipo_local_id === eq.id
+        const gF = esLocal ? p.resultado_local : p.resultado_visitante
+        const gC = esLocal ? p.resultado_visitante : p.resultado_local
+        const bon = esLocal ? (p.bonus_of_local || 0) : (p.bonus_of_visitante || 0)
+        if (gF > gC) pts += 4 + bon
+        else if (gF === gC) pts += 2 + bon
+        else pts += bon
+        if (!categoriaId && p.fechas?.categoria_id) categoriaId = p.fechas.categoria_id
+      })
+
+      let posicion = null, totalEquipos = null
+      if (categoriaId) {
+        const { data: fechasCat } = await supabase.from('fechas')
+          .select('id').eq('categoria_id', categoriaId).eq('resultados_cargados', true)
+        const fechaIds = (fechasCat || []).map(f => f.id)
+        if (fechaIds.length) {
+          const { data: todosP } = await supabase.from('partidos')
+            .select('equipo_local_id, equipo_visitante_id, resultado_local, resultado_visitante, bonus_of_local, bonus_of_visitante')
+            .in('fecha_id', fechaIds).eq('resultados_cargados', true)
+          const standings = {}
+          ;(todosP || []).forEach(p => {
+            const L = p.equipo_local_id, V = p.equipo_visitante_id
+            if (!standings[L]) standings[L] = 0
+            if (!standings[V]) standings[V] = 0
+            if (p.resultado_local > p.resultado_visitante) {
+              standings[L] += 4 + (p.bonus_of_local || 0)
+              standings[V] += (p.bonus_of_visitante || 0)
+            } else if (p.resultado_local === p.resultado_visitante) {
+              standings[L] += 2 + (p.bonus_of_local || 0)
+              standings[V] += 2 + (p.bonus_of_visitante || 0)
+            } else {
+              standings[L] += (p.bonus_of_local || 0)
+              standings[V] += 4 + (p.bonus_of_visitante || 0)
+            }
+          })
+          const sorted = Object.entries(standings).sort(([, a], [, b]) => b - a)
+          const pos = sorted.findIndex(([id]) => String(id) === String(eq.id))
+          if (pos >= 0) { posicion = pos + 1; totalEquipos = sorted.length }
+        }
+      }
+
+      const { data: proximo } = await supabase.from('partidos')
+        .select('equipo_local_id, equipo_visitante_id, equipo_local:equipo_local_id(nombre_corto, escudo_url), equipo_visitante:equipo_visitante_id(nombre_corto, escudo_url)')
+        .or(`equipo_local_id.eq.${eq.id},equipo_visitante_id.eq.${eq.id}`)
+        .eq('resultados_cargados', false)
+        .order('fecha_id', { ascending: true })
+        .limit(1).maybeSingle()
+
+      const rival = proximo
+        ? (proximo.equipo_local_id === eq.id ? proximo.equipo_visitante : proximo.equipo_local)
+        : null
+
+      setEquipoStats({
+        nombreCorto: eq.nombre_corto || clubNombre,
+        escudo: eq.escudo_url,
+        pts,
+        posicion,
+        totalEquipos,
+        categoria: categoriaId ? CATS[categoriaId] : null,
+        rival,
+      })
+    } catch (e) {
+      console.error('equipoStats error:', e)
+      setEquipoStats(false)
+    }
+  }
 
   async function cargar() {
     try {
@@ -368,6 +457,53 @@ export default function Dashboard() {
           {mejorFecha && <span className="dash-point-sub">tu mejor fecha</span>}
         </div>
       </section>
+
+      {/* ── Tu equipo ── */}
+      {perfil && !perfil.club ? (
+        <section className="dash-club-card dash-club-card-empty">
+          <div className="dash-club-empty-title">🏉 Sin club asignado</div>
+          <div className="dash-club-empty-sub">Elegí tu club para ver las estadísticas de tu equipo</div>
+          <Link to="/perfil?tab=datos" className="dash-club-empty-btn">Elegí tu club →</Link>
+        </section>
+      ) : equipoStats && typeof equipoStats === 'object' ? (
+        <section className="dash-club-card">
+          {equipoStats.escudo
+            ? <div className="dash-club-crest"><img src={equipoStats.escudo} alt={equipoStats.nombreCorto} onError={e => e.target.style.display = 'none'} /></div>
+            : <div className="dash-club-initials">{equipoStats.nombreCorto?.slice(0, 3)}</div>
+          }
+          <div className="dash-club-info">
+            <div className="dash-club-name">{equipoStats.nombreCorto}</div>
+            {equipoStats.categoria && <div className="dash-club-cat">{equipoStats.categoria}</div>}
+          </div>
+          <div className="dash-club-stats">
+            {equipoStats.posicion != null && (
+              <div className="dash-club-stat">
+                <span className="dash-club-stat-num">#{equipoStats.posicion}</span>
+                <span className="dash-club-stat-lbl">{equipoStats.totalEquipos ? `de ${equipoStats.totalEquipos}` : 'posición'}</span>
+              </div>
+            )}
+            <div className="dash-club-stat">
+              <span className="dash-club-stat-num">{equipoStats.pts}</span>
+              <span className="dash-club-stat-lbl">puntos</span>
+            </div>
+          </div>
+          {equipoStats.rival && (
+            <>
+              <div className="dash-club-divider" />
+              <div className="dash-club-rival">
+                <span className="dash-club-rival-lbl">próximo</span>
+                <div className="dash-club-rival-crest">
+                  {equipoStats.rival.escudo_url
+                    ? <img src={equipoStats.rival.escudo_url} alt={equipoStats.rival.nombre_corto} onError={e => e.target.style.display = 'none'} />
+                    : <span style={{ fontSize: 10, color: 'var(--pg-text-soft)', fontWeight: 700 }}>{equipoStats.rival.nombre_corto?.slice(0, 3)}</span>
+                  }
+                </div>
+                <span className="dash-club-rival-name">{equipoStats.rival.nombre_corto}</span>
+              </div>
+            </>
+          )}
+        </section>
+      ) : null}
 
       <div style={{ height: 20 }} />
     </div>
