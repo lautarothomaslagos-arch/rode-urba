@@ -2675,3 +2675,72 @@ html, body, #root {
   font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
 .torneos-compartir:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════════
+   ADMIN V2 — rediseño V1 Stadium / V2 Magazine
+   ══════════════════════════════════════════════════════════ */
+
+/* Header */
+.admin-header { padding: 20px 16px 4px; }
+.admin-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+[data-theme="dark"]  .admin-eyebrow { color: var(--pg-gold); }
+[data-theme="light"] .admin-eyebrow { color: var(--pg-red); }
+.admin-title {
+  font-family: var(--pg-display); font-size: 30px; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1; color: var(--pg-text);
+  margin: 0; display: inline-flex; align-items: center; gap: 3px;
+}
+.admin-dot { color: var(--pg-gold); font-size: 22px; line-height: 1; }
+
+/* Main nav pills */
+.admin-tabs {
+  display: flex; gap: 8px; padding: 14px 16px 16px;
+  overflow-x: auto; scrollbar-width: none; flex-wrap: wrap;
+}
+.admin-tabs::-webkit-scrollbar { display: none; }
+.admin-tab {
+  flex-shrink: 0; padding: 7px 14px; border-radius: 999px;
+  font-family: var(--pg-display); font-size: 13px; font-weight: 700;
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: all 0.18s; white-space: nowrap; background: none;
+}
+[data-theme="dark"] .admin-tab {
+  background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.55);
+}
+[data-theme="light"] .admin-tab {
+  background: rgba(15,30,54,0.05); border-color: rgba(15,30,54,0.10);
+  color: rgba(15,30,54,0.55);
+}
+.admin-tab.active { background: var(--pg-gold); border-color: var(--pg-gold); color: #07101F; }
+
+/* Section label */
+.admin-section-label {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 2px; margin: 12px 0 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--pg-text-soft);
+}
+
+/* Stats tile grid */
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.admin-stat-tile {
+  border-radius: var(--pg-radius); text-align: center; padding: 16px 12px;
+}
+[data-theme="dark"]  .admin-stat-tile { background: var(--pg-bg-card); border: 1px solid var(--pg-border-soft); }
+[data-theme="light"] .admin-stat-tile { background: #fff; box-shadow: var(--sombra-card); border: 1px solid rgba(15,30,54,0.06); }
+.admin-stat-icon  { font-size: 22px; margin-bottom: 6px; }
+.admin-stat-val   {
+  font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; line-height: 1;
+}
+.admin-stat-lbl   {
+  font-size: 10px; color: var(--pg-text-soft); margin-top: 4px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}

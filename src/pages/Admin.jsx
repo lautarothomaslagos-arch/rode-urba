@@ -4,20 +4,42 @@ import { supabase } from '../lib/supabase'
 const CAT_LABELS = { 1: 'Top 14', 2: 'Primera A', 3: 'Primera B', 4: 'Primera C', 5: 'Segunda División' }
 const CAT_CLASS = { 1: 'cat-top14', 2: 'cat-primera-a', 3: 'cat-primera-b', 4: 'cat-primera-c', 5: 'cat-segunda' }
 
+const SECCIONES = [
+  { id: 'semana',   label: 'Esta semana', icon: '📋' },
+  { id: 'fechas',   label: 'Fechas',      icon: '📅' },
+  { id: 'equipos',  label: 'Equipos',     icon: '🛡️' },
+  { id: 'usuarios', label: 'Usuarios',    icon: '👥' },
+  { id: 'grupos',   label: 'Grupos',      icon: '🏆' },
+  { id: 'stats',    label: 'Stats',       icon: '📊' },
+]
+
 export default function Admin() {
   const [seccion, setSeccion] = useState('semana')
 
   return (
     <div className="container">
-      <h1 className="page-title">Panel de <span className="page-title-accent">administración</span></h1>
-      <div className="tabs-box" style={{ flexWrap: 'wrap', marginBottom: 20 }}>
-        <button className={`tab-btn ${seccion === 'semana' ? 'active' : ''}`} onClick={() => setSeccion('semana')}>📋 Esta semana</button>
-        <button className={`tab-btn ${seccion === 'fechas' ? 'active' : ''}`} onClick={() => setSeccion('fechas')}>📅 Fechas</button>
-        <button className={`tab-btn ${seccion === 'equipos' ? 'active' : ''}`} onClick={() => setSeccion('equipos')}>🛡️ Equipos</button>
-        <button className={`tab-btn ${seccion === 'usuarios' ? 'active' : ''}`} onClick={() => setSeccion('usuarios')}>👥 Usuarios</button>
-        <button className={`tab-btn ${seccion === 'grupos' ? 'active' : ''}`} onClick={() => setSeccion('grupos')}>🏆 Grupos</button>
-        <button className={`tab-btn ${seccion === 'stats' ? 'active' : ''}`} onClick={() => setSeccion('stats')}>📊 Stats</button>
+
+      {/* ── Header ── */}
+      <div className="admin-header">
+        <div className="admin-eyebrow">Pick&Go · Panel Admin</div>
+        <h1 className="admin-title">
+          Administración<span className="admin-dot">•</span>
+        </h1>
       </div>
+
+      {/* ── Nav pills ── */}
+      <div className="admin-tabs">
+        {SECCIONES.map(s => (
+          <button
+            key={s.id}
+            className={`admin-tab${seccion === s.id ? ' active' : ''}`}
+            onClick={() => setSeccion(s.id)}
+          >
+            {s.icon} {s.label}
+          </button>
+        ))}
+      </div>
+
       {seccion === 'semana'   && <div className="seccion-fade"><AdminSemana /></div>}
       {seccion === 'fechas'   && <div className="seccion-fade"><AdminFechas /></div>}
       {seccion === 'equipos'  && <div className="seccion-fade"><AdminEquipos /></div>}
@@ -66,9 +88,9 @@ function AdminSemana() {
 
   return (
     <div>
-      <div className="tabs-box" style={{ marginBottom: 16 }}>
-        <button className={`tab-btn ${subTab === 'fechas' ? 'active' : ''}`} onClick={() => setSubTab('fechas')}>📋 Fechas activas</button>
-        <button className={`tab-btn ${subTab === 'notificaciones' ? 'active' : ''}`} onClick={() => setSubTab('notificaciones')}>🔔 Notificaciones</button>
+      <div className="admin-tabs" style={{ padding: '0 0 14px' }}>
+        <button className={`admin-tab${subTab === 'fechas' ? ' active' : ''}`} onClick={() => setSubTab('fechas')}>📋 Fechas activas</button>
+        <button className={`admin-tab${subTab === 'notificaciones' ? ' active' : ''}`} onClick={() => setSubTab('notificaciones')}>🔔 Notificaciones</button>
       </div>
 
       {subTab === 'notificaciones' && <NotificacionesSemana fechasActivas={fechasActivas} />}
@@ -1268,19 +1290,19 @@ function AdminStats() {
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 16 }}>
+      <div className="admin-stat-grid">
         {[
-          { v: stats.totalUsuarios,        l: 'Usuarios',           icon: '👥', color: 'var(--azul)' },
-          { v: stats.totalGrupos,          l: 'Grupos',             icon: '🏉', color: 'var(--dorado-oscuro)' },
-          { v: stats.fechasActivas.length, l: 'Fechas activas',     icon: '📅', color: '#16a34a' },
+          { v: stats.totalUsuarios,        l: 'Usuarios',              icon: '👥', color: 'var(--azul)' },
+          { v: stats.totalGrupos,          l: 'Grupos',                icon: '🏉', color: 'var(--dorado-oscuro)' },
+          { v: stats.fechasActivas.length, l: 'Fechas activas',        icon: '📅', color: '#16a34a' },
           { v: stats.totalPredsHoy,        l: 'Jugadores esta semana', icon: '✏️', color: 'var(--rojo-vivo)' },
-          { v: stats.promedioPts,          l: 'Avg pts/fecha',      icon: '📈', color: '#0891b2' },
+          { v: stats.promedioPts,          l: 'Avg pts/fecha',         icon: '📈', color: '#0891b2' },
           { v: `${stats.pctUlt}%`,         l: stats.latestNum ? `Partic. F${stats.latestNum}` : 'Partic. ult.', icon: '🎯', color: '#7c3aed' },
         ].map((s, i) => (
-          <div key={i} className="card" style={{ textAlign: 'center', padding: '16px 12px' }}>
-            <div style={{ fontSize: 24, marginBottom: 6 }}>{s.icon}</div>
-            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 28, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.v ?? '—'}</div>
-            <div style={{ fontSize: 11, color: 'var(--texto-suave)', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.l}</div>
+          <div key={i} className="admin-stat-tile">
+            <div className="admin-stat-icon">{s.icon}</div>
+            <div className="admin-stat-val" style={{ color: s.color }}>{s.v ?? '—'}</div>
+            <div className="admin-stat-lbl">{s.l}</div>
           </div>
         ))}
       </div>
