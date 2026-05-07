@@ -4,27 +4,21 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 export default function Navbar() {
-  const { user, perfil, signOut } = useAuth()
+  const { user, perfil, signOut, hayFechaAbierta } = useAuth()
   const location = useLocation()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [escudoClub, setEscudoClub] = useState(null)
-  const [hayFechaAbierta, setHayFechaAbierta] = useState(false)
   const isActive = (path) => location.pathname === path ? 'active' : ''
 
   useEffect(() => { setMenuAbierto(false) }, [location.pathname])
 
   useEffect(() => {
-    if (perfil?.club) {
-      supabase.from('equipos').select('escudo_url').eq('nombre', perfil.club).single()
-        .then(({ data }) => { if (data?.escudo_url) setEscudoClub(data.escudo_url) })
-    }
+    if (!perfil?.club) { setEscudoClub(null); return }
+    let mounted = true
+    supabase.from('equipos').select('escudo_url').eq('nombre', perfil.club).single()
+      .then(({ data }) => { if (mounted && data?.escudo_url) setEscudoClub(data.escudo_url) })
+    return () => { mounted = false }
   }, [perfil?.club])
-
-  useEffect(() => {
-    if (!user) return
-    supabase.from('fechas').select('id', { count: 'exact', head: true }).eq('activa', true)
-      .then(({ count }) => setHayFechaAbierta((count || 0) > 0))
-  }, [user])
 
   return (
     <>

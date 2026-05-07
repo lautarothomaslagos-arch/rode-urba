@@ -7,6 +7,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [perfil, setPerfil] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [hayFechaAbierta, setHayFechaAbierta] = useState(false)
+
+  useEffect(() => {
+    if (!user) { setHayFechaAbierta(false); return }
+    supabase.from('fechas').select('id', { count: 'exact', head: true }).eq('activa', true)
+      .then(({ count }) => setHayFechaAbierta((count || 0) > 0))
+  }, [user])
 
   useEffect(() => {
     // Inicializar sesión
@@ -58,7 +65,11 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch(e) {
+      console.error('Error al cerrar sesión:', e)
+    }
     setUser(null)
     setPerfil(null)
   }
@@ -73,7 +84,7 @@ export function AuthProvider({ children }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, perfil, loading, signIn, signUp, signOut, cargarPerfil }}>
+    <AuthContext.Provider value={{ user, perfil, loading, hayFechaAbierta, signIn, signUp, signOut, cargarPerfil }}>
       {children}
     </AuthContext.Provider>
   )

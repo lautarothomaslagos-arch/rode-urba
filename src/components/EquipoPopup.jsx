@@ -35,7 +35,7 @@ function CardContent({ stats, side, onClose }) {
           boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
         }}>
           {equipo.escudo_url
-            ? <img src={equipo.escudo_url} alt={equipo.nombre} style={{width:'85%',height:'85%',objectFit:'contain'}} />
+            ? <img src={equipo.escudo_url} alt={equipo.nombre} style={{width:'85%',height:'85%',objectFit:'contain'}} onError={e => e.target.style.display='none'} />
             : <span style={{fontSize:8,fontWeight:700,color:'var(--azul)'}}>{ini}</span>
           }
         </div>
@@ -190,7 +190,7 @@ export default function EquipoPopup({ items, onClose, onCloseOne, rivalStats, ri
           }}
         >
           {rivalStats.equipo.escudo_url
-            ? <img src={rivalStats.equipo.escudo_url} alt={rivalStats.equipo.nombre} style={{width:'78%',height:'78%',objectFit:'contain'}} />
+            ? <img src={rivalStats.equipo.escudo_url} alt={rivalStats.equipo.nombre} style={{width:'78%',height:'78%',objectFit:'contain'}} onError={e => e.target.style.display='none'} />
             : <span style={{fontSize:10,fontWeight:700,color:'var(--azul)'}}>
                 {(rivalStats.equipo.nombre_corto||rivalStats.equipo.nombre?.slice(0,3)||'?').toUpperCase()}
               </span>

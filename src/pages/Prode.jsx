@@ -61,6 +61,14 @@ export default function Prode() {
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (hayCAmbios) { e.preventDefault(); e.returnValue = '' }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [hayCAmbios])
+
   async function calcularPendientes() {
     const { data: fechasActivas } = await supabase.from('fechas')
       .select('id, categoria_id').eq('activa', true).eq('resultados_cargados', false)

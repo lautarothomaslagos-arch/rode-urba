@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 
 function IconPredecir() {
   return (
@@ -44,15 +42,8 @@ function IconPerfil() {
 }
 
 export default function BottomNav() {
-  const { user } = useAuth()
+  const { user, hayFechaAbierta } = useAuth()
   const location = useLocation()
-  const [hayFechaAbierta, setHayFechaAbierta] = useState(false)
-
-  useEffect(() => {
-    if (!user) return
-    supabase.from('fechas').select('id', { count: 'exact', head: true }).eq('activa', true)
-      .then(({ count }) => setHayFechaAbierta((count || 0) > 0))
-  }, [user])
 
   const nomostrar = ['/', '/admin']
   if (!user || nomostrar.includes(location.pathname)) return null
