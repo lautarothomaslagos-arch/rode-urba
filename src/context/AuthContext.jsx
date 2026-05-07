@@ -1,13 +1,16 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [perfil, setPerfil] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]                   = useState(null)
+  const [perfil, setPerfil]               = useState(null)
+  const [loading, setLoading]             = useState(true)
   const [hayFechaAbierta, setHayFechaAbierta] = useState(false)
+
+  // Evita que cargarPerfil se llame dos veces (getSession + onAuthStateChange)
+  const perfilCargadoParaRef = useRef(null)
 
   useEffect(() => {
     if (!user) { setHayFechaAbierta(false); return }
@@ -41,6 +44,7 @@ export function AuthProvider({ children }) {
         clearTimeout(timeout)
         setUser(session?.user ?? null)
         if (session?.user) {
+          perfilCargadoParaRef.current = session.user.id
           cargarPerfil(session.user.id).finally(() => setLoading(false))
         } else {
           setLoading(false)
@@ -48,18 +52,26 @@ export function AuthProvider({ children }) {
       })
       .catch(() => { clearTimeout(timeout); setLoading(false) })
 
-    // Escuchar cambios — NO setLoading aquí para no bloquear navegación
+    // Escuchar cambios de sesión
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
         setUser(session.user)
-        cargarPerfil(session.user.id)
+        // Solo cargar perfil si es un usuario distinto al que ya cargamos
+        if (perfilCargadoParaRef.current !== session.user.id) {
+          perfilCargadoParaRef.current = session.user.id
+          cargarPerfil(session.user.id)
+        }
       } else if (event === 'SIGNED_OUT') {
+        perfilCargadoParaRef.current = null
         setUser(null)
         setPerfil(null)
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function cargarPerfil(userId) {
@@ -96,6 +108,13 @@ export function AuthProvider({ children }) {
     setPerfil(null)
   }
 
+  // useMemo evita que todos los consumidores re-rendericen cuando cambia
+  // cualquier cosa en AuthProvider que no les afecta
+  const value = useMemo(
+    () => ({ user, perfil, loading, hayFechaAbierta, signIn, signUp, signOut, cargarPerfil }),
+    [user, perfil, loading, hayFechaAbierta] // eslint-disable-line react-hooks/exhaustive-deps
+  )
+
   if (loading) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d1117'}}>
       <div style={{textAlign:'center'}}>
@@ -106,7 +125,7 @@ export function AuthProvider({ children }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, perfil, loading, hayFechaAbierta, signIn, signUp, signOut, cargarPerfil }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
