@@ -26,12 +26,14 @@ export default function Torneos() {
   const [puntosPorFecha, setPuntosPorFecha] = useState({})
   const [fechaAbierta, setFechaAbierta] = useState(null)
   const [totalFechas, setTotalFechas] = useState(0)
-  const [compartiendo, setCompartiendo] = useState(null) // fechaId que está compartiendo
+  const [compartiendo, setCompartiendo] = useState(null)
+  const [errorCarga, setErrorCarga] = useState(false)
 
   useEffect(() => { cargar(cat) }, [cat])
 
   async function cargar(c) {
     setLoading(true)
+    setErrorCarga(false)
     setTeams([]); setFechas([]); setPartidosPorFecha({})
     setPredsByPartido({}); setPuntosPorFecha({}); setFechaAbierta(null)
     try {
@@ -105,6 +107,7 @@ export default function Torneos() {
       setFechaAbierta(fechasCat[0].id)
     } catch (e) {
       console.error('Torneos error:', e)
+      setErrorCarga(true)
     }
     setLoading(false)
   }
@@ -177,6 +180,13 @@ export default function Torneos() {
       </TabsScrollWrapper>
 
       {loading && <div className="loading"><div className="spinner" /></div>}
+
+      {errorCarga && !loading && (
+        <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span>Error al cargar los datos</span>
+          <button className="btn btn-small btn-secondary" onClick={() => cargar(cat)}>Reintentar</button>
+        </div>
+      )}
 
       {!loading && fechas.length === 0 && (
         <div className="empty-state seccion-fade" style={{ padding: '40px 20px' }}>

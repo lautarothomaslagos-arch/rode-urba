@@ -53,6 +53,7 @@ export default function Prode() {
   const [guardado, setGuardado] = useState(false)
   const [hayCAmbios, setHayCAmbios] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [errorCarga, setErrorCarga] = useState(false)
   const [girando, setGirando] = useState(false)
   const [catsActivas, setCatsActivas] = useState(new Set())
   const [savedPreds, setSavedPreds] = useState(new Set())
@@ -93,20 +94,27 @@ export default function Prode() {
 
   async function cargarFechas(c) {
     setLoading(true)
-    const { data } = await supabase.from('fechas')
-      .select('*').eq('categoria_id', c).eq('activa', true)
-      .eq('resultados_cargados', false).order('numero')
-    setFechas(data || [])
-    if (data?.length) {
-      // Si el fechaId ya era el mismo, el effect no re-dispara → limpiamos loading acá
-      if (fechaId === data[0].id) {
-        cargarPartidos(data[0].id)
+    setErrorCarga(false)
+    try {
+      const { data, error } = await supabase.from('fechas')
+        .select('*').eq('categoria_id', c).eq('activa', true)
+        .eq('resultados_cargados', false).order('numero')
+      if (error) throw error
+      setFechas(data || [])
+      if (data?.length) {
+        if (fechaId === data[0].id) {
+          cargarPartidos(data[0].id)
+        } else {
+          setFechaId(data[0].id)
+        }
       } else {
-        setFechaId(data[0].id)
+        setFechaId(null)
+        setPartidos([])
+        setLoading(false)
       }
-    } else {
-      setFechaId(null)
-      setPartidos([])
+    } catch(e) {
+      console.error('Error cargando fechas:', e)
+      setErrorCarga(true)
       setLoading(false)
     }
   }
@@ -254,6 +262,13 @@ export default function Prode() {
       )}
 
       {loading && <div className="loading"><div className="spinner"></div> Cargando...</div>}
+
+      {errorCarga && !loading && (
+        <div className="alert alert-error" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+          <span>Error al cargar los partidos</span>
+          <button className="btn btn-small btn-secondary" onClick={() => cargarFechas(cat)}>Reintentar</button>
+        </div>
+      )}
 
       {!loading && fechas.length === 0 && (
         <div className="seccion-fade empty-state" style={{padding:'40px 20px'}}>
