@@ -38,24 +38,8 @@ const TABS = [
   { id: 'invitar',        label: '📲 Invitar' },
 ]
 
-function SalirBtn() {
-  const { signOut } = useAuth()
-  return (
-    <div className="salir-mobile">
-      <button onClick={signOut} style={{
-        width:'100%', padding:'13px', borderRadius:10,
-        background:'rgba(178,34,34,0.07)', border:'1px solid rgba(178,34,34,0.2)',
-        color:'#B22222', fontFamily:'Rajdhani,sans-serif', fontSize:15,
-        fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8
-      }}>
-        🚪 Cerrar sesión
-      </button>
-    </div>
-  )
-}
-
 export default function Perfil() {
-  const { perfil, cargarPerfil, user } = useAuth()
+  const { perfil, cargarPerfil, user, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { permiso, suscrito, cargando: cargandoNotif, suscribirse, desuscribirse } = usePushNotifications()
   const [searchParams] = useSearchParams()
@@ -447,349 +431,350 @@ export default function Perfil() {
   const trofeo = getTrofeo(racha.maxima)
   const proximoTrofeo = TROFEOS.slice().reverse().find(t => racha.maxima < t.minimo)
 
+  const trofeosBloqueados = TROFEOS.filter(t => racha.maxima >= t.minimo).length
+
+  const TABS_META = [
+    { id: 'historial',      icon: '📋', label: 'Historial' },
+    { id: 'logros',         icon: '🏅', label: 'Logros' },
+    { id: 'grupos',         icon: '👥', label: 'Grupos' },
+    { id: 'datos',          icon: '👤', label: 'Mis datos' },
+    { id: 'contrasena',     icon: '🔐', label: 'Contraseña' },
+    { id: 'notificaciones', icon: '🔔', label: 'Notificaciones' },
+    { id: 'invitar',        icon: '📲', label: 'Invitar amigos' },
+  ]
+
   return (
-    <div className="container">
-      <div className="page-header">
-        <h1 className="page-title">Mi <span className="page-title-accent">perfil</span></h1>
+    <div className="dashboard">
+      <div className="dash-backdrop" aria-hidden="true" />
+
+      {/* ── Header ── */}
+      <header style={{ padding: '20px 20px 6px', position: 'relative', zIndex: 2 }}>
+        <div className="prode-eyebrow">Mi cuenta</div>
+        <h1 className="prode-h1">Perfil</h1>
+      </header>
+
+      {/* ── Hero card ── */}
+      <div className="pf-card">
+        <div className="pf-card-bg" />
+        <div className="pf-avatar-wrap">
+          <div className="pf-avatar-inner">
+            {preview
+              ? <img src={preview} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              : ini}
+          </div>
+          {stats?.posicion > 0 && (
+            <div className="pf-rank-pill">#{stats.posicion}</div>
+          )}
+        </div>
+        <div className="pf-name">@{perfil?.username}</div>
+        {perfil?.club && <div className="pf-club">{perfil.club}</div>}
+        <div className="pf-tags">
+          {racha.actual >= 2 && <span className="pf-tag">🔥 {racha.actual} racha</span>}
+          {trofeo && <span className="pf-tag">{trofeo.nombre}</span>}
+          {stats?.pctAcierto > 0 && <span className="pf-tag">{stats.pctAcierto}% aciertos</span>}
+          {perfil?.es_admin && <span className="pf-tag pf-tag-admin">Admin</span>}
+        </div>
       </div>
 
-      {/* ===== SECCIÓN FIJA ===== */}
-      <div className="card" style={{marginBottom:12}}>
-        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14,paddingBottom:14,borderBottom:'1px solid var(--gris-borde)'}}>
-          <div style={{width:60,height:60,borderRadius:'50%',background:'linear-gradient(135deg,var(--dorado),var(--dorado-oscuro))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:700,color:'var(--azul)',overflow:'hidden',border:'2.5px solid var(--dorado)',flexShrink:0}}>
-            {preview ? <img src={preview} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:19,fontWeight:700,color:'var(--azul)'}}>@{perfil?.username}</div>
-            <div style={{fontSize:12,color:'var(--texto-suave)',marginTop:1}}>{perfil?.club || 'Sin club asignado'}</div>
-            {perfil?.es_admin && <span className="cat-badge cat-top14" style={{marginTop:4,display:'inline-block'}}>Admin</span>}
-          </div>
-        </div>
-
-        {stats && (
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:10,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Estadísticas 2026</div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
-              {[
-                { v: stats.totalPuntos,              l: 'Total pts',   color: 'var(--azul)' },
-                { v: stats.totalFechas,              l: 'Fechas',      color: 'var(--texto)' },
-                { v: stats.mejorFecha,               l: 'Mejor fecha', color: 'var(--dorado-oscuro)' },
-                { v: `${stats.promedio}`,            l: 'Promedio',    color: 'var(--texto)' },
-                { v: `${stats.pctAcierto}%`,         l: 'Acierto',     color: '#16a34a' },
-                { v: stats.posicion ? `#${stats.posicion}` : '—', l: `de ${stats.totalJugadores}`, color: 'var(--azul)' },
-              ].map((s, i) => (
-                <div key={i} style={{textAlign:'center',padding:'7px 4px',background:'var(--gris)',borderRadius:8,border:'1px solid var(--gris-borde)'}}>
-                  <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:17,fontWeight:700,color:s.color,lineHeight:1}}>{s.v}</div>
-                  <div style={{fontSize:9,color:'var(--texto-suave)',marginTop:2,textTransform:'uppercase',letterSpacing:0.3}}>{s.l}</div>
-                </div>
-              ))}
+      {/* ── Stats grid 2×2 ── */}
+      {stats && (
+        <div className="pf-stats">
+          {[
+            { v: stats.totalPuntos,                               l: 'Puntos 2026' },
+            { v: stats.posicion ? `#${stats.posicion}` : '—',    l: `de ${stats.totalJugadores}` },
+            { v: `${stats.pctAcierto}%`,                          l: 'Aciertos' },
+            { v: stats.mejorFecha,                                l: 'Mejor fecha' },
+          ].map((s, i) => (
+            <div key={i} className="pf-stat">
+              <div className="pf-stat-num">{s.v}</div>
+              <div className="pf-stat-lbl">{s.l}</div>
             </div>
-          </div>
-        )}
-
-        <div style={{fontSize:10,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Racha de fechas jugadas</div>
-        <div style={{display:'flex',gap:8,marginBottom:10}}>
-          <div style={{flex:1,textAlign:'center',padding:'8px 6px',background:'rgba(201,162,39,0.08)',borderRadius:8,border:'1px solid rgba(201,162,39,0.25)'}}>
-            <div style={{fontSize:20,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--azul)',lineHeight:1}}>{racha.actual > 0 ? '🔥' : '—'} {racha.actual}</div>
-            <div style={{fontSize:9,color:'var(--texto-suave)',marginTop:3,textTransform:'uppercase',letterSpacing:0.5}}>Racha actual</div>
-          </div>
-          <div style={{flex:1,textAlign:'center',padding:'8px 6px',background:'rgba(201,162,39,0.08)',borderRadius:8,border:'1px solid rgba(201,162,39,0.25)'}}>
-            <div style={{fontSize:20,fontWeight:700,fontFamily:'Rajdhani,sans-serif',color:'var(--dorado-oscuro)',lineHeight:1}}>🏆 {racha.maxima}</div>
-            <div style={{fontSize:9,color:'var(--texto-suave)',marginTop:3,textTransform:'uppercase',letterSpacing:0.5}}>Racha máxima</div>
-          </div>
+          ))}
         </div>
-        {trofeo ? (
-          <div style={{display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:trofeo.bg,borderRadius:10,border:`1.5px solid ${trofeo.color}40`}}>
-            <img src={trofeo.img} alt={trofeo.nombre} style={{width:44,height:44,objectFit:'contain',flexShrink:0}} />
-            <div>
-              <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:trofeo.color,letterSpacing:1}}>{trofeo.nombre.toUpperCase()}</div>
-              <div style={{fontSize:12,color:'var(--texto)',marginTop:1}}>"{trofeo.desc}"</div>
-              <div style={{fontSize:10,color:'var(--texto-suave)',marginTop:2}}>Con {trofeo.minimo} fechas consecutivas</div>
-            </div>
-          </div>
-        ) : (
-          <div style={{padding:'10px 14px',background:'var(--gris)',borderRadius:8,textAlign:'center'}}>
-            <div style={{fontSize:12,color:'var(--texto-suave)'}}>Completá {proximoTrofeo ? proximoTrofeo.minimo : 3} fechas consecutivas para ganar tu primer trofeo 🏆</div>
+      )}
+
+      {/* ── Trofeos ── */}
+      <div className="pf-trophy-case">
+        <div className="pf-trophy-head">
+          <span className="pf-trophy-title">Trofeos</span>
+          <span className="pf-trophy-sub">{trofeosBloqueados} / {TROFEOS.length} conseguidos</span>
+        </div>
+        <div className="pf-trophy-grid">
+          {TROFEOS.map(t => {
+            const got    = racha.maxima >= t.minimo
+            const active = trofeo?.nombre === t.nombre
+            return (
+              <div key={t.nombre} className={`pf-trophy${got ? ' pf-trophy-got' : ''}${active ? ' pf-trophy-active' : ''}`}>
+                {got && <div className="pf-trophy-check">✓</div>}
+                <img src={t.img} alt={t.nombre} className="pf-trophy-img" />
+                <div className="pf-trophy-name">{t.nombre}</div>
+                <div className="pf-trophy-desc">Racha {t.minimo}+</div>
+              </div>
+            )
+          })}
+        </div>
+        {!trofeo && (
+          <div style={{ marginTop: 10, fontSize: 12, color: 'var(--pg-text-soft)', textAlign: 'center' }}>
+            Completá {proximoTrofeo?.minimo ?? 3} fechas seguidas para tu primer trofeo 🏆
           </div>
         )}
         {trofeo && proximoTrofeo && (
-          <div style={{marginTop:6,padding:'8px 12px',background:'var(--gris)',borderRadius:8,display:'flex',alignItems:'center',gap:8}}>
-            <img src={proximoTrofeo.img} alt={proximoTrofeo.nombre} style={{width:24,height:24,objectFit:'contain',opacity:0.4,flexShrink:0}} />
-            <div style={{fontSize:11,color:'var(--texto-suave)'}}>Próximo: <strong style={{color:'var(--texto)'}}>{proximoTrofeo.nombre}</strong> — {proximoTrofeo.minimo} fechas consecutivas</div>
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--pg-bg-mid)', borderRadius: 10 }}>
+            <img src={proximoTrofeo.img} alt={proximoTrofeo.nombre} style={{ width: 22, height: 22, objectFit: 'contain', opacity: 0.5 }} />
+            <span style={{ fontSize: 11, color: 'var(--pg-text-soft)' }}>
+              Próximo: <strong style={{ color: 'var(--pg-text)' }}>{proximoTrofeo.nombre}</strong> — {proximoTrofeo.minimo} fechas consecutivas
+            </span>
           </div>
         )}
       </div>
 
-      {/* ===== APARIENCIA ===== */}
-      <div className="card" style={{marginBottom:8,padding:'14px 18px'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-          <div>
-            <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--azul)',marginBottom:2}}>
-              🎨 Apariencia
-            </div>
-            <div style={{fontSize:12,color:'var(--texto-suave)'}}>
-              {theme === 'dark' ? 'Modo oscuro · Stadium Broadcast' : 'Modo claro · Match Day Magazine'}
-            </div>
+      {/* ── Apariencia ── */}
+      <div className="pf-appear">
+        <div className="pf-appear-info">
+          <div className="pf-appear-title">🎨 Apariencia</div>
+          <div className="pf-appear-sub">
+            {theme === 'dark' ? 'Modo oscuro · Stadium Broadcast' : 'Modo claro · Match Day Magazine'}
           </div>
-          <button
-            onClick={toggleTheme}
-            style={{
-              display:'flex',alignItems:'center',gap:7,
-              padding:'9px 16px',borderRadius:10,
-              fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,
-              cursor:'pointer',border:'1.5px solid',whiteSpace:'nowrap',flexShrink:0,
-              ...(theme === 'dark'
-                ? {background:'rgba(242,197,65,0.10)',borderColor:'rgba(242,197,65,0.35)',color:'#F2C541'}
-                : {background:'rgba(15,30,54,0.06)',borderColor:'rgba(15,30,54,0.18)',color:'var(--azul)'}
-              )
-            }}
-          >
-            {theme === 'dark' ? '☀️ Modo claro' : '🌙 Modo oscuro'}
-          </button>
         </div>
+        <button className="pf-appear-btn" onClick={toggleTheme}>
+          {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
+        </button>
       </div>
 
-      {/* ===== ACORDEÓN ===== */}
-      {TABS.map(t => (
-        <div key={t.id} className="card" style={{marginBottom:8,padding:0,overflow:'hidden'}}>
-          <button
-            onClick={() => toggleTab(t.id)}
-            style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',background:'none',border:'none',cursor:'pointer',textAlign:'left',gap:10}}
-          >
-            <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:15,fontWeight:700,color:'var(--azul)'}}>
-              {t.label}
-            </span>
-            <span style={{fontSize:11,color:'var(--texto-suave)',transition:'transform 0.2s',transform:pestaña === t.id ? 'rotate(180deg)' : 'rotate(0deg)',flexShrink:0,display:'inline-block'}}>
-              ▼
-            </span>
-          </button>
+      {/* ── Secciones acordeón ── */}
+      <div className="pf-actions">
+        {TABS_META.map(t => (
+          <div key={t.id} className="pf-action-item">
+            <button
+              className={`pf-action${pestaña === t.id ? ' pf-action-open' : ''}`}
+              onClick={() => toggleTab(t.id)}
+            >
+              <span className="pf-action-icon">{t.icon}</span>
+              <span className="pf-action-lbl">{t.label}</span>
+              <span className="pf-action-arrow">›</span>
+            </button>
 
-          {pestaña === t.id && (
-            <div className="seccion-fade" style={{padding:'0 18px 18px',borderTop:'1px solid var(--gris-borde)'}}>
+            {pestaña === t.id && (
+              <div className="pf-action-body seccion-fade">
 
-              {/* HISTORIAL */}
-              {t.id === 'historial' && (
-                loadingPestaña
-                  ? <div className="loading" style={{padding:'24px 0'}}><div className="spinner"></div></div>
-                  : historial.length === 0
-                    ? <div className="empty-state" style={{padding:'28px 20px'}}>
-                        <div style={{fontSize:46,marginBottom:10}}>📋</div>
-                        <div className="empty-title">Sin historial todavía</div>
-                        <p style={{fontSize:13,color:'var(--texto-suave)',marginTop:6,maxWidth:220,margin:'8px auto 0',lineHeight:1.5}}>
-                          Aparecerá después de tu primera fecha con resultados cargados.
-                        </p>
-                      </div>
-                    : <div style={{paddingTop:12}}>
-                        {historial.map(f => (
-                          <div key={f.numero} style={{display:'flex',alignItems:'center',padding:'10px 0',borderBottom:'1px solid var(--gris-borde)',gap:10}}>
-                            <div style={{minWidth:60}}>
-                              <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,color:'var(--azul)'}}>Fecha {f.numero}</div>
-                              <div style={{display:'flex',gap:3,flexWrap:'wrap',marginTop:3}}>
-                                {f.cats.map(cat => (
-                                  <span key={cat} className={`cat-badge ${CAT_CLASS[cat]}`} style={{fontSize:9,padding:'1px 5px'}}>{CATS_SHORT[cat]}</span>
+                {/* HISTORIAL */}
+                {t.id === 'historial' && (
+                  loadingPestaña
+                    ? <div className="loading" style={{ padding: '24px 0' }}><div className="spinner" /></div>
+                    : historial.length === 0
+                      ? <div className="empty-state" style={{ padding: '28px 0' }}>
+                          <div style={{ fontSize: 40, marginBottom: 8 }}>📋</div>
+                          <div className="empty-title">Sin historial todavía</div>
+                          <p style={{ fontSize: 12, color: 'var(--pg-text-soft)', marginTop: 6, lineHeight: 1.5 }}>
+                            Aparecerá después de tu primera fecha con resultados cargados.
+                          </p>
+                        </div>
+                      : <div style={{ paddingTop: 10 }}>
+                          {historial.map(f => (
+                            <div key={f.numero} style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--pg-border-soft)', gap: 10 }}>
+                              <div style={{ minWidth: 60 }}>
+                                <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--pg-text)' }}>Fecha {f.numero}</div>
+                                <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 3 }}>
+                                  {f.cats.map(cat => (
+                                    <span key={cat} className={`cat-badge ${CAT_CLASS[cat]}`} style={{ fontSize: 9, padding: '1px 5px' }}>{CATS_SHORT[cat]}</span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div style={{ flex: 1 }} />
+                              <div style={{ textAlign: 'right' }}>
+                                <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--pg-gold)' }}>{f.totalPts}</span>
+                                <span style={{ fontSize: 11, color: 'var(--pg-text-soft)', marginLeft: 3 }}>pts</span>
+                                {f.pleno > 0 && <div style={{ fontSize: 10, color: 'var(--pg-gold)', fontWeight: 700 }}>💥 pleno</div>}
+                              </div>
+                              {f.pos > 0 && (
+                                <div style={{ textAlign: 'center', minWidth: 40, background: 'var(--pg-bg-mid)', borderRadius: 8, padding: '4px 6px', flexShrink: 0 }}>
+                                  <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 13, fontWeight: 700, color: f.pos <= 3 ? 'var(--pg-gold)' : 'var(--pg-text)' }}>
+                                    {f.pos <= 3 ? ['🥇', '🥈', '🥉'][f.pos - 1] : `#${f.pos}`}
+                                  </div>
+                                  <div style={{ fontSize: 9, color: 'var(--pg-text-mute)' }}>de {f.total}</div>
+                                </div>
+                              )}
+                              <button
+                                disabled={compartiendoFecha === f.numero}
+                                onClick={() => {
+                                  setCompartiendoFecha(f.numero)
+                                  const posTexto = f.pos === 1 ? '🥇 1ro' : f.pos === 2 ? '🥈 2do' : f.pos === 3 ? '🥉 3ro' : `#${f.pos}`
+                                  const msgShare = encodeURIComponent(
+                                    `🏉 Pick&Go · Fecha ${f.numero} · URBA 2026\n` +
+                                    `${f.pos > 0 ? `Quedé ${posTexto} de ${f.total} con ` : ''}${f.totalPts} pts${f.pleno > 0 ? ' 💥' : ''}\n\n` +
+                                    `¿Jugás también? → pickandgo-prode.vercel.app`
+                                  )
+                                  window.open(`https://wa.me/?text=${msgShare}`, '_blank')
+                                  registrarShare()
+                                  setCompartiendoFecha(null)
+                                }}
+                                style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '4px', opacity: compartiendoFecha === f.numero ? 0.4 : 0.6 }}
+                                title="Compartir resultado"
+                              >📲</button>
+                            </div>
+                          ))}
+                        </div>
+                )}
+
+                {/* LOGROS */}
+                {t.id === 'logros' && (
+                  loadingPestaña
+                    ? <div className="loading" style={{ padding: '24px 0' }}><div className="spinner" /></div>
+                    : <div style={{ paddingTop: 10 }}>
+                        {LOGROS_CATS.map(cat => {
+                          const catLogros    = logros.filter(l => l.cat === cat)
+                          const desbloqueados = catLogros.filter(l => l.desbloqueado).length
+                          return (
+                            <div key={cat} style={{ marginBottom: 18 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1 }}>{cat}</div>
+                                <div style={{ fontSize: 10, color: 'var(--pg-text-mute)' }}>{desbloqueados}/{catLogros.length}</div>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7 }}>
+                                {catLogros.map(l => (
+                                  <div key={l.id} style={{
+                                    textAlign: 'center', padding: '10px 6px', borderRadius: 10, position: 'relative',
+                                    background: l.desbloqueado ? 'linear-gradient(135deg,rgba(242,197,65,0.15),rgba(242,197,65,0.04))' : 'var(--pg-bg-mid)',
+                                    border: l.desbloqueado ? '1.5px solid rgba(242,197,65,0.35)' : '1px solid var(--pg-border-soft)',
+                                    opacity: l.desbloqueado ? 1 : 0.5,
+                                  }}>
+                                    {l.desbloqueado && (
+                                      <div style={{ position: 'absolute', top: 5, right: 5, width: 13, height: 13, borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: 'white', fontWeight: 700 }}>✓</div>
+                                    )}
+                                    <div style={{ fontSize: 22, marginBottom: 3 }}>{l.icon}</div>
+                                    <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 11, fontWeight: 700, color: 'var(--pg-text)', lineHeight: 1.2, marginBottom: 3 }}>{l.nombre}</div>
+                                    <div style={{ fontSize: 9, color: 'var(--pg-text-mute)', lineHeight: 1.3 }}>{l.desc}</div>
+                                    {l.progreso && <div style={{ marginTop: 5, fontSize: 10, fontWeight: 700, color: 'var(--pg-gold)', background: 'rgba(242,197,65,0.1)', borderRadius: 4, padding: '2px 6px', display: 'inline-block' }}>{l.progreso}</div>}
+                                  </div>
                                 ))}
                               </div>
                             </div>
-                            <div style={{flex:1}} />
-                            <div style={{textAlign:'right'}}>
-                              <span style={{fontFamily:'Rajdhani,sans-serif',fontSize:20,fontWeight:700,color:'var(--azul)'}}>{f.totalPts}</span>
-                              <span style={{fontSize:11,color:'var(--texto-suave)',marginLeft:3}}>pts</span>
-                              {f.pleno > 0 && <div style={{fontSize:10,color:'var(--dorado-oscuro)',fontWeight:700}}>💥 pleno</div>}
-                            </div>
-                            {f.pos > 0 && (
-                              <div style={{textAlign:'center',minWidth:44,background:'var(--gris)',borderRadius:8,padding:'4px 6px',flexShrink:0}}>
-                                <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:14,fontWeight:700,color: f.pos <= 3 ? 'var(--dorado-oscuro)' : 'var(--azul)'}}>{f.pos <= 3 ? ['🥇','🥈','🥉'][f.pos-1] : `#${f.pos}`}</div>
-                                <div style={{fontSize:9,color:'var(--texto-suave)'}}>de {f.total}</div>
-                              </div>
-                            )}
-                            <button
-                              disabled={compartiendoFecha === f.numero}
-                              onClick={() => {
-                                setCompartiendoFecha(f.numero)
-                                const posTexto = f.pos === 1 ? '🥇 1ro' : f.pos === 2 ? '🥈 2do' : f.pos === 3 ? '🥉 3ro' : `#${f.pos}`
-                                const msg = encodeURIComponent(
-                                  `🏉 Pick&Go · Fecha ${f.numero} · URBA 2026\n` +
-                                  `${f.pos > 0 ? `Quedé ${posTexto} de ${f.total} con ` : ''}${f.totalPts} pts${f.pleno > 0 ? ' 💥' : ''}\n\n` +
-                                  `¿Jugás también? → pickandgo-prode.vercel.app`
-                                )
-                                window.open(`https://wa.me/?text=${msg}`, '_blank')
-                                registrarShare()
-                                setCompartiendoFecha(null)
-                              }}
-                              style={{flexShrink:0,background:'none',border:'none',cursor:'pointer',fontSize:16,padding:'4px',opacity:compartiendoFecha===f.numero?0.4:0.6,transition:'opacity 0.15s'}}
-                              title="Compartir resultado"
-                            >
-                              📲
-                            </button>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
-              )}
+                )}
 
-              {/* LOGROS */}
-              {t.id === 'logros' && (
-                loadingPestaña
-                  ? <div className="loading" style={{padding:'24px 0'}}><div className="spinner"></div></div>
-                  : <div style={{paddingTop:12}}>
-                      {LOGROS_CATS.map(cat => {
-                        const catLogros = logros.filter(l => l.cat === cat)
-                        const desbloqueados = catLogros.filter(l => l.desbloqueado).length
-                        return (
-                          <div key={cat} style={{marginBottom:20}}>
-                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                              <div style={{fontSize:10,fontWeight:700,color:'var(--texto-suave)',textTransform:'uppercase',letterSpacing:1}}>{cat}</div>
-                              <div style={{fontSize:10,color:'var(--texto-suave)'}}>{desbloqueados}/{catLogros.length}</div>
-                            </div>
-                            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:7}}>
-                              {catLogros.map(l => (
-                                <div key={l.id} style={{
-                                  textAlign:'center', padding:'10px 6px', borderRadius:10, position:'relative',
-                                  background: l.desbloqueado ? 'linear-gradient(135deg,var(--dorado-claro),#fff)' : 'var(--gris)',
-                                  border: l.desbloqueado ? '1.5px solid rgba(201,162,39,0.4)' : '1px solid var(--gris-borde)',
-                                  opacity: l.desbloqueado ? 1 : 0.55,
-                                }}>
-                                  {l.desbloqueado && (
-                                    <div style={{position:'absolute',top:5,right:5,width:14,height:14,borderRadius:'50%',background:'#16a34a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'white',fontWeight:700}}>✓</div>
-                                  )}
-                                  <div style={{fontSize:22,marginBottom:3}}>{l.icon}</div>
-                                  <div style={{fontFamily:'Rajdhani,sans-serif',fontSize:11,fontWeight:700,color:l.desbloqueado ? 'var(--azul)' : 'var(--texto-suave)',lineHeight:1.2,marginBottom:3}}>{l.nombre}</div>
-                                  <div style={{fontSize:9,color:'var(--texto-suave)',lineHeight:1.3}}>{l.desc}</div>
-                                  {l.progreso && <div style={{marginTop:5,fontSize:10,fontWeight:700,color:'var(--dorado-oscuro)',background:'rgba(201,162,39,0.1)',borderRadius:4,padding:'2px 6px',display:'inline-block'}}>{l.progreso}</div>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-              )}
+                {/* GRUPOS */}
+                {t.id === 'grupos' && <GruposContenido />}
 
-              {/* GRUPOS */}
-              {t.id === 'grupos' && (
-                <GruposContenido />
-              )}
-
-              {/* MIS DATOS */}
-              {t.id === 'datos' && (
-                <div style={{paddingTop:14}}>
-                  <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:16,paddingBottom:14,borderBottom:'1px solid var(--gris-borde)'}}>
-                    <div style={{position:'relative',flexShrink:0}}>
-                      <div style={{width:58,height:58,borderRadius:'50%',background:'linear-gradient(135deg,var(--dorado),var(--dorado-oscuro))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:700,color:'var(--azul)',overflow:'hidden',border:'2px solid var(--dorado)'}}>
-                        {preview ? <img src={preview} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} /> : ini}
-                      </div>
-                      <label style={{position:'absolute',bottom:-2,right:-2,width:22,height:22,background:'var(--rojo-vivo)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',border:'2px solid white',fontSize:14,color:'white',fontWeight:700}}>
-                        {subiendo ? '⟳' : '+'}
-                        <input type="file" accept="image/jpeg,image/png,image/webp" style={{display:'none'}} onChange={subirFoto} disabled={subiendo} />
-                      </label>
-                    </div>
-                    <div style={{fontSize:12,color:'var(--texto-suave)'}}>Cambiá tu foto de perfil. Máximo 2MB.</div>
-                  </div>
-                  {msg && <div className={`alert ${msg.startsWith('Error')||msg.startsWith('La imagen')?'alert-error':'alert-success'}`}>{msg}</div>}
-                  <form onSubmit={guardar}>
-                    <div className="form-group">
-                      <label className="form-label">Nombre completo</label>
-                      <input className="form-input" type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Tu nombre" />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Club al que pertenecés</label>
-                      <select className="form-select" value={club} onChange={e => setClub(e.target.value)}>
-                        <option value="">Seleccioná tu club</option>
-                        {CLUBES_URBA.map((c,i) => (
-                          c.startsWith('---')
-                            ? <option key={i} disabled style={{fontWeight:700,color:'#999'}}>{c}</option>
-                            : <option key={i} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                      {loading ? 'Guardando...' : 'Guardar cambios'}
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* CONTRASEÑA */}
-              {t.id === 'contrasena' && (
-                <div style={{paddingTop:14}}>
-                  {msgPass && <div className={`alert ${msgPass.startsWith('Error')||msgPass==='Mínimo 6 caracteres'||msgPass==='Las contraseñas no coinciden'?'alert-error':'alert-success'}`}>{msgPass}</div>}
-                  <form onSubmit={cambiarPassword}>
-                    <div className="form-group">
-                      <label className="form-label">Nueva contraseña</label>
-                      <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" value={pass1} onChange={e => setPass1(e.target.value)} minLength={6} required />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Repetir contraseña</label>
-                      <input className="form-input" type="password" placeholder="Repetí la contraseña" value={pass2} onChange={e => setPass2(e.target.value)} minLength={6} required />
-                    </div>
-                    <button type="submit" className="btn btn-secondary" disabled={loadingPass}>
-                      {loadingPass ? 'Guardando...' : 'Cambiar contraseña'}
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* NOTIFICACIONES */}
-              {t.id === 'notificaciones' && (
-                <div style={{paddingTop:14}}>
-                  {'Notification' in window ? (
-                    permiso === 'denied'
-                      ? <div className="alert alert-error">Bloqueaste las notificaciones. Para activarlas andá a la configuración de tu navegador y permitilas para este sitio.</div>
-                      : <div>
-                          <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>Recibí recordatorios antes del cierre del prode y avisos cuando se cargan los resultados.</p>
-                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',background:'var(--gris)',borderRadius:10,marginBottom:8}}>
-                            <div>
-                              <div style={{fontWeight:600,fontSize:14}}>{suscrito ? '✅ Notificaciones activadas' : '🔕 Notificaciones desactivadas'}</div>
-                              <div style={{fontSize:12,color:'var(--texto-suave)',marginTop:2}}>{suscrito ? 'Vas a recibir recordatorios y resultados' : 'No estás recibiendo avisos'}</div>
-                            </div>
-                            <button className={`btn ${suscrito?'btn-secondary':'btn-primary'} btn-small`} onClick={suscrito?desuscribirse:suscribirse} disabled={cargandoNotif}>
-                              {cargandoNotif ? '...' : suscrito ? 'Desactivar' : 'Activar'}
-                            </button>
-                          </div>
-                          {suscrito && <div style={{fontSize:12,color:'var(--texto-suave)',lineHeight:1.8}}>Vas a recibir avisos: 24hs, 12hs, 4hs y 2hs antes del cierre · Al cargarse los resultados</div>}
+                {/* MIS DATOS */}
+                {t.id === 'datos' && (
+                  <div style={{ paddingTop: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--pg-border-soft)' }}>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--pg-gold-glow),var(--pg-gold-dim))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#07101F', overflow: 'hidden', border: '2px solid var(--pg-gold)' }}>
+                          {preview ? <img src={preview} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : ini}
                         </div>
-                  ) : (
-                    <div className="alert alert-info">Tu navegador no soporta notificaciones push.</div>
-                  )}
-                </div>
-              )}
-
-              {/* INVITAR */}
-              {t.id === 'invitar' && (
-                <div style={{paddingTop:14}}>
-                  <p style={{fontSize:13,color:'var(--texto-suave)',marginBottom:16,lineHeight:1.7}}>¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.</p>
-                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                    <button className="btn btn-primary" onClick={() => {
-                      const msg = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
-                      window.open(`https://wa.me/?text=${msg}`, '_blank')
-                      registrarShare()
-                    }}>
-                      📲 Invitar por WhatsApp
-                    </button>
-                    <button className="btn btn-secondary" onClick={async () => {
-                      const texto = "🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app"
-                      if (navigator.share) {
-                        try {
-                          await navigator.share({ text: texto })
-                          registrarShare()
-                        } catch(e) { /* usuario canceló */ }
-                      } else {
-                        await navigator.clipboard.writeText("https://pickandgo-prode.vercel.app")
-                        alert("Link copiado. Pegalo en Instagram.")
-                      }
-                    }}>
-                      📸 Compartir en Instagram
-                    </button>
+                        <label style={{ position: 'absolute', bottom: -2, right: -2, width: 22, height: 22, background: 'var(--pg-red)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid var(--pg-bg-card)', fontSize: 14, color: 'white', fontWeight: 700 }}>
+                          {subiendo ? '⟳' : '+'}
+                          <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={subirFoto} disabled={subiendo} />
+                        </label>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--pg-text-soft)' }}>Cambiá tu foto de perfil. Máximo 2MB.</div>
+                    </div>
+                    {msg && <div className={`alert ${msg.startsWith('Error') || msg.startsWith('La imagen') ? 'alert-error' : 'alert-success'}`}>{msg}</div>}
+                    <form onSubmit={guardar}>
+                      <div className="form-group">
+                        <label className="form-label">Nombre completo</label>
+                        <input className="form-input" type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Tu nombre" />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Club al que pertenecés</label>
+                        <select className="form-select" value={club} onChange={e => setClub(e.target.value)}>
+                          <option value="">Seleccioná tu club</option>
+                          {CLUBES_URBA.map((c, i) => (
+                            c.startsWith('---')
+                              ? <option key={i} disabled style={{ fontWeight: 700, color: '#999' }}>{c}</option>
+                              : <option key={i} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <button type="submit" className="btn btn-primary" disabled={loading}>
+                        {loading ? 'Guardando...' : 'Guardar cambios'}
+                      </button>
+                    </form>
                   </div>
-                </div>
-              )}
+                )}
 
-            </div>
-          )}
-        </div>
-      ))}
+                {/* CONTRASEÑA */}
+                {t.id === 'contrasena' && (
+                  <div style={{ paddingTop: 14 }}>
+                    {msgPass && <div className={`alert ${msgPass.startsWith('Error') || msgPass === 'Mínimo 6 caracteres' || msgPass === 'Las contraseñas no coinciden' ? 'alert-error' : 'alert-success'}`}>{msgPass}</div>}
+                    <form onSubmit={cambiarPassword}>
+                      <div className="form-group">
+                        <label className="form-label">Nueva contraseña</label>
+                        <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" value={pass1} onChange={e => setPass1(e.target.value)} minLength={6} required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Repetir contraseña</label>
+                        <input className="form-input" type="password" placeholder="Repetí la contraseña" value={pass2} onChange={e => setPass2(e.target.value)} minLength={6} required />
+                      </div>
+                      <button type="submit" className="btn btn-secondary" disabled={loadingPass}>
+                        {loadingPass ? 'Guardando...' : 'Cambiar contraseña'}
+                      </button>
+                    </form>
+                  </div>
+                )}
 
-      {/* Salir — visible solo en móvil (desktop usa el botón de la navbar) */}
-      <SalirBtn />
+                {/* NOTIFICACIONES */}
+                {t.id === 'notificaciones' && (
+                  <div style={{ paddingTop: 14 }}>
+                    {'Notification' in window ? (
+                      permiso === 'denied'
+                        ? <div className="alert alert-error">Bloqueaste las notificaciones. Para activarlas andá a la configuración de tu navegador y permitilas para este sitio.</div>
+                        : <div>
+                            <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', marginBottom: 14, lineHeight: 1.7 }}>Recibí recordatorios antes del cierre del prode y avisos cuando se cargan los resultados.</p>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--pg-bg-mid)', borderRadius: 10, marginBottom: 8 }}>
+                              <div>
+                                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--pg-text)' }}>{suscrito ? '✅ Activadas' : '🔕 Desactivadas'}</div>
+                                <div style={{ fontSize: 12, color: 'var(--pg-text-soft)', marginTop: 2 }}>{suscrito ? 'Recibís recordatorios y resultados' : 'No estás recibiendo avisos'}</div>
+                              </div>
+                              <button className={`btn ${suscrito ? 'btn-secondary' : 'btn-primary'} btn-small`} onClick={suscrito ? desuscribirse : suscribirse} disabled={cargandoNotif}>
+                                {cargandoNotif ? '...' : suscrito ? 'Desactivar' : 'Activar'}
+                              </button>
+                            </div>
+                          </div>
+                    ) : (
+                      <div className="alert alert-info">Tu navegador no soporta notificaciones push.</div>
+                    )}
+                  </div>
+                )}
+
+                {/* INVITAR */}
+                {t.id === 'invitar' && (
+                  <div style={{ paddingTop: 14 }}>
+                    <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', marginBottom: 14, lineHeight: 1.7 }}>¿Conocés a alguien que le guste el rugby? Mandales el link para que se sumen al prode.</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <button className="btn btn-primary" onClick={() => {
+                        const msgWa = encodeURIComponent("🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app")
+                        window.open(`https://wa.me/?text=${msgWa}`, '_blank')
+                        registrarShare()
+                      }}>📲 Invitar por WhatsApp</button>
+                      <button className="btn btn-secondary" onClick={async () => {
+                        const texto = "🏉 Pick&Go — Prode URBA 2026\nPredecí los partidos de Top 14, Primera A, B, C y Segunda. Hay ranking semanal y anual.\n\n¡Sumate! 👇\nhttps://pickandgo-prode.vercel.app"
+                        if (navigator.share) {
+                          try { await navigator.share({ text: texto }); registrarShare() } catch (e) { /* canceló */ }
+                        } else {
+                          await navigator.clipboard.writeText("https://pickandgo-prode.vercel.app")
+                          alert("Link copiado. Pegalo en Instagram.")
+                        }
+                      }}>📸 Compartir en Instagram</button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Cerrar sesión ── */}
+      <button className="pf-logout" onClick={signOut}>
+        <span style={{ fontSize: 18 }}>🚪</span>
+        <span style={{ fontFamily: 'var(--pg-display)', fontSize: 15, fontWeight: 700 }}>Cerrar sesión</span>
+      </button>
+
     </div>
   )
 }
