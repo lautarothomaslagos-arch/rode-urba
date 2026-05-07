@@ -660,7 +660,7 @@ html, body, #root {
   .mobile-nav-right { display: flex !important; }
   .hamburger-hidden-mobile { display: none !important; }
   /* Padding global para que el contenido no quede tapado por el bottom nav */
-  #root { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  #root { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
 }
 
 /* ===== BOTTOM NAV (solo móvil) ===== */
@@ -672,17 +672,17 @@ html, body, #root {
     align-items: center;
     justify-content: space-around;
     position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: calc(64px + env(safe-area-inset-bottom));
-    padding: 0 10px;
-    padding-bottom: env(safe-area-inset-bottom);
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 12px; right: 12px;
+    height: 64px;
+    padding: 0 6px;
     background: rgba(8, 14, 38, 0.87);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    border-top: 1px solid rgba(201,162,39,0.22);
-    border-radius: 20px 20px 0 0;
+    border: 1px solid rgba(201,162,39,0.22);
+    border-radius: 20px;
     z-index: 150;
-    box-shadow: 0 -4px 28px rgba(0,0,0,0.35);
+    box-shadow: 0 4px 28px rgba(0,0,0,0.35);
   }
 }
 

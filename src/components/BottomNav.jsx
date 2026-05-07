@@ -54,7 +54,8 @@ export default function BottomNav() {
       .then(({ count }) => setHayFechaAbierta((count || 0) > 0))
   }, [user])
 
-  if (!user) return null
+  const nomostrar = ['/', '/admin']
+  if (!user || nomostrar.includes(location.pathname)) return null
 
   const items = [
     { path: '/prode',   Icon: IconPredecir, label: 'Predecir', dot: hayFechaAbierta },
