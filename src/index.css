@@ -2698,7 +2698,7 @@ html, body, #root {
 /* Main nav pills */
 .admin-tabs {
   display: flex; gap: 8px; padding: 14px 16px 16px;
-  overflow-x: auto; scrollbar-width: none; flex-wrap: wrap;
+  overflow-x: auto; scrollbar-width: none;
 }
 .admin-tabs::-webkit-scrollbar { display: none; }
 .admin-tab {

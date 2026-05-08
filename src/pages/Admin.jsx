@@ -243,72 +243,159 @@ function NotificacionesSemana({ fechasActivas }) {
   )
 }
 
-function FechaActiva({ fecha, equipos, onRefresh }) {
+// ─────────────────────────────────────────────
+// GESTOR DE PARTIDOS — componente reutilizable
+// Usado en FechaActiva (activas) y FilaFecha (inactivas)
+// ─────────────────────────────────────────────
+
+function GestorPartidos({ fecha, equiposProp = [], onPartidosChange }) {
   const [partidos, setPartidos] = useState([])
-  const [resultados, setResultados] = useState({})
+  const [equipos, setEquipos] = useState(equiposProp)
   const [mostrarForm, setMostrarForm] = useState(false)
-  const [mostrarResultados, setMostrarResultados] = useState(false)
-  const [form, setForm] = useState({ local: '', visitante: '', hora: '', especial: false })
-  const [guardando, setGuardando] = useState(false)
+  const [form, setForm] = useState({ local: '', visitante: '', especial: false })
   const [msg, setMsg] = useState('')
-  const [editandoPartido, setEditandoPartido] = useState(null)
+  const [editando, setEditando] = useState(null)
   const [editForm, setEditForm] = useState({ local: '', visitante: '' })
 
-  useEffect(() => { cargarPartidos() }, [fecha.id])
+  useEffect(() => { cargar() }, [fecha.id])
 
-  async function cargarPartidos() {
+  useEffect(() => {
+    if (equiposProp?.length) { setEquipos(equiposProp); return }
+    supabase.from('equipos').select('*').eq('categoria_id', fecha.categoria_id).order('nombre')
+      .then(({ data }) => data && setEquipos(data))
+  }, [fecha.id])
+
+  async function cargar() {
     const { data } = await supabase.from('partidos')
       .select('*, equipo_local:equipo_local_id(id,nombre), equipo_visitante:equipo_visitante_id(id,nombre)')
       .eq('fecha_id', fecha.id).order('id')
     setPartidos(data || [])
+    onPartidosChange?.(data || [])
+  }
+
+  function flash(t) { setMsg(t); setTimeout(() => setMsg(''), 3000) }
+
+  async function agregar() {
+    if (!form.local || !form.visitante || form.local === form.visitante) { flash('Seleccioná dos equipos distintos'); return }
+    const { error } = await supabase.from('partidos').insert({
+      fecha_id: fecha.id, equipo_local_id: parseInt(form.local),
+      equipo_visitante_id: parseInt(form.visitante), es_especial: form.especial
+    })
+    if (!error) { flash('✓ Partido agregado'); setForm({ local: '', visitante: '', especial: false }); setMostrarForm(false); cargar() }
+    else flash('Error: ' + error.message)
+  }
+
+  async function eliminar(id) {
+    if (!confirm('¿Eliminar este partido?')) return
+    await supabase.from('partidos').delete().eq('id', id)
+    cargar()
+  }
+
+  async function toggleEspecial(p) {
+    await supabase.from('partidos').update({ es_especial: !p.es_especial }).eq('id', p.id)
+    cargar()
+  }
+
+  const equiposCat = equipos.filter(e => e.categoria_id === fecha.categoria_id)
+
+  return (
+    <div>
+      {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: 8 }}>{msg}</div>}
+      {partidos.length === 0
+        ? <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '0 0 10px' }}>Sin partidos cargados aún.</p>
+        : <div style={{ marginBottom: 10 }}>
+            {partidos.map(p => (
+              <div key={p.id}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: editando === p.id ? 'none' : '1px solid var(--gris-borde)', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                    {p.es_especial && <span style={{ flexShrink: 0 }}>⭐</span>}
+                    <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)', fontSize: 12 }}>vs</span> {p.equipo_visitante?.nombre}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button className="btn btn-small btn-secondary" onClick={() => toggleEspecial(p)} title={p.es_especial ? 'Quitar especial' : 'Marcar especial'}>{p.es_especial ? '★' : '☆'}</button>
+                    <button className="btn btn-small btn-secondary" onClick={() => { setEditando(editando === p.id ? null : p.id); setEditForm({ local: String(p.equipo_local_id), visitante: String(p.equipo_visitante_id) }) }}>✏️</button>
+                    <button className="btn btn-small btn-danger" onClick={() => eliminar(p.id)}>×</button>
+                  </div>
+                </div>
+                {editando === p.id && (
+                  <div style={{ padding: '8px 0 10px', borderBottom: '1px solid var(--gris-borde)', background: 'rgba(201,162,39,0.04)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                      <select className="form-select" style={{ fontSize: 13 }} value={editForm.local} onChange={e => setEditForm(f => ({ ...f, local: e.target.value }))}>
+                        {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
+                      </select>
+                      <select className="form-select" style={{ fontSize: 13 }} value={editForm.visitante} onChange={e => setEditForm(f => ({ ...f, visitante: e.target.value }))}>
+                        {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
+                      </select>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-primary btn-small" onClick={async () => {
+                          if (editForm.local === editForm.visitante) { flash('Equipos deben ser distintos'); return }
+                          await supabase.from('partidos').update({ equipo_local_id: parseInt(editForm.local), equipo_visitante_id: parseInt(editForm.visitante) }).eq('id', p.id)
+                          setEditando(null); cargar()
+                        }}>✓</button>
+                        <button className="btn btn-secondary btn-small" onClick={() => setEditando(null)}>✕</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+      }
+      {!mostrarForm
+        ? <button className="btn btn-secondary btn-small" onClick={() => setMostrarForm(true)}>➕ Agregar partido</button>
+        : <div style={{ background: 'var(--gris)', borderRadius: 8, padding: 12, marginBottom: 4 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Local</label>
+                <select className="form-select" value={form.local} onChange={e => setForm({ ...form, local: e.target.value })}>
+                  <option value="">— Local —</option>
+                  {equiposCat.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                </select>
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Visitante</label>
+                <select className="form-select" value={form.visitante} onChange={e => setForm({ ...form, visitante: e.target.value })}>
+                  <option value="">— Visitante —</option>
+                  {equiposCat.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <input type="checkbox" id={`especial-gp-${fecha.id}`} checked={form.especial} onChange={e => setForm({ ...form, especial: e.target.checked })} style={{ width: 16, height: 16 }} />
+              <label htmlFor={`especial-gp-${fecha.id}`} style={{ fontSize: 13, cursor: 'pointer', color: 'var(--dorado-oscuro)', fontWeight: 600 }}>⭐ Partido especial (puntaje doble)</label>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-primary btn-small" onClick={agregar}>Guardar</button>
+              <button className="btn btn-secondary btn-small" onClick={() => { setMostrarForm(false); setForm({ local: '', visitante: '', especial: false }) }}>Cancelar</button>
+            </div>
+          </div>
+      }
+    </div>
+  )
+}
+
+function FechaActiva({ fecha, equipos, onRefresh }) {
+  const [partidos, setPartidos] = useState([])
+  const [resultados, setResultados] = useState({})
+  const [mostrarResultados, setMostrarResultados] = useState(false)
+  const [guardando, setGuardando] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  function handlePartidosChange(data) {
+    setPartidos(data)
     const res = {}
-    data?.forEach(p => {
+    data.forEach(p => {
       if (p.resultado_local !== null) res[p.id] = {
-        local: p.resultado_local,
-        visitante: p.resultado_visitante,
-        bonus_of_local:    p.bonus_of_local    ?? false,
-        bonus_of_visitante: p.bonus_of_visitante ?? false,
+        local: p.resultado_local, visitante: p.resultado_visitante,
+        bonus_of_local: p.bonus_of_local ?? false, bonus_of_visitante: p.bonus_of_visitante ?? false,
       }
     })
     setResultados(res)
   }
 
-  const equiposCat = equipos.filter(e => e.categoria_id === fecha.categoria_id)
-
-  function flash(texto) {
-    setMsg(texto)
-    setTimeout(() => setMsg(''), 3000)
-  }
-
-  async function agregarPartido() {
-    if (!form.local || !form.visitante || form.local === form.visitante) { flash('Seleccioná dos equipos distintos'); return }
-    const { error } = await supabase.from('partidos').insert({
-      fecha_id: fecha.id,
-      equipo_local_id: parseInt(form.local),
-      equipo_visitante_id: parseInt(form.visitante),
-      hora_estimada: form.hora || null,
-      es_especial: form.especial
-    })
-    if (!error) {
-      flash('✓ Partido agregado')
-      setForm({ local: '', visitante: '', hora: '', especial: false })
-      setMostrarForm(false)
-      cargarPartidos()
-    } else {
-      flash('Error: ' + error.message)
-    }
-  }
-
-  async function eliminarPartido(id) {
-    if (!confirm('¿Eliminar este partido?')) return
-    await supabase.from('partidos').delete().eq('id', id)
-    cargarPartidos()
-  }
-
-  async function toggleEspecial(p) {
-    await supabase.from('partidos').update({ es_especial: !p.es_especial }).eq('id', p.id)
-    cargarPartidos()
-  }
+  function flash(texto) { setMsg(texto); setTimeout(() => setMsg(''), 3000) }
 
   async function guardarResultados() {
     setGuardando(true); setMsg('')
@@ -355,89 +442,7 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
 
       {msg && <div className={`alert ${msg.startsWith('Error') ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: 8 }}>{msg}</div>}
 
-      {partidos.length === 0 ? (
-        <p style={{ fontSize: 13, color: 'var(--texto-suave)', margin: '0 0 10px' }}>Sin partidos cargados aún.</p>
-      ) : (
-        <div style={{ marginBottom: 10 }}>
-          {partidos.map(p => (
-            <div key={p.id}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: editandoPartido === p.id ? 'none' : '1px solid var(--gris-borde)', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                  {p.es_especial && <span title="Especial" style={{ flexShrink: 0 }}>⭐</span>}
-                  <span style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.equipo_local?.nombre} <span style={{ color: 'var(--texto-suave)', fontSize: 12 }}>vs</span> {p.equipo_visitante?.nombre}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button className="btn btn-small btn-secondary" onClick={() => toggleEspecial(p)} title={p.es_especial ? 'Quitar especial' : 'Marcar especial'}>
-                    {p.es_especial ? '★' : '☆'}
-                  </button>
-                  <button className="btn btn-small btn-secondary" title="Editar equipos" onClick={() => {
-                    setEditandoPartido(editandoPartido === p.id ? null : p.id)
-                    setEditForm({ local: String(p.equipo_local_id), visitante: String(p.equipo_visitante_id) })
-                  }}>✏️</button>
-                  <button className="btn btn-small btn-danger" onClick={() => eliminarPartido(p.id)}>×</button>
-                </div>
-              </div>
-              {editandoPartido === p.id && (
-                <div style={{ padding: '8px 0 10px', borderBottom: '1px solid var(--gris-borde)', background: 'rgba(201,162,39,0.04)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
-                    <select className="form-select" style={{ fontSize: 13 }} value={editForm.local} onChange={e => setEditForm(f => ({ ...f, local: e.target.value }))}>
-                      {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
-                    </select>
-                    <select className="form-select" style={{ fontSize: 13 }} value={editForm.visitante} onChange={e => setEditForm(f => ({ ...f, visitante: e.target.value }))}>
-                      {equiposCat.map(e => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
-                    </select>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn btn-primary btn-small" onClick={async () => {
-                        if (editForm.local === editForm.visitante) { flash('Equipos deben ser distintos'); return }
-                        await supabase.from('partidos').update({
-                          equipo_local_id: parseInt(editForm.local),
-                          equipo_visitante_id: parseInt(editForm.visitante)
-                        }).eq('id', p.id)
-                        setEditandoPartido(null)
-                        cargarPartidos()
-                      }}>✓</button>
-                      <button className="btn btn-secondary btn-small" onClick={() => setEditandoPartido(null)}>✕</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!mostrarForm ? (
-        <button className="btn btn-secondary btn-small" onClick={() => setMostrarForm(true)}>➕ Agregar partido</button>
-      ) : (
-        <div style={{ background: 'var(--gris)', borderRadius: 8, padding: 12, marginBottom: 4 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Local</label>
-              <select className="form-select" value={form.local} onChange={e => setForm({ ...form, local: e.target.value })}>
-                <option value="">— Local —</option>
-                {equiposCat.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-              </select>
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Visitante</label>
-              <select className="form-select" value={form.visitante} onChange={e => setForm({ ...form, visitante: e.target.value })}>
-                <option value="">— Visitante —</option>
-                {equiposCat.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-              </select>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <input type="checkbox" id={`especial-${fecha.id}`} checked={form.especial} onChange={e => setForm({ ...form, especial: e.target.checked })} style={{ width: 16, height: 16 }} />
-            <label htmlFor={`especial-${fecha.id}`} style={{ fontSize: 13, cursor: 'pointer', color: 'var(--dorado-oscuro)', fontWeight: 600 }}>⭐ Partido especial (puntaje doble)</label>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary btn-small" onClick={agregarPartido}>Guardar</button>
-            <button className="btn btn-secondary btn-small" onClick={() => { setMostrarForm(false); setForm({ local: '', visitante: '', hora: '', especial: false }) }}>Cancelar</button>
-          </div>
-        </div>
-      )}
+      <GestorPartidos fecha={fecha} equiposProp={equipos} onPartidosChange={handlePartidosChange} />
 
       {partidos.length > 0 && (
         <div style={{ borderTop: '1px solid var(--gris-borde)', marginTop: 12, paddingTop: 12 }}>
@@ -623,6 +628,7 @@ function FilaFecha({ f, onToggle, onRefresh }) {
   const [editCierre, setEditCierre] = useState(f.cierre_predicciones ? f.cierre_predicciones.slice(0, 16) : '')
   const [guardando, setGuardando] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(false)
+  const [gestionandoPartidos, setGestionandoPartidos] = useState(false)
   const [editandoBonus, setEditandoBonus] = useState(false)
   const [partidosBonus, setPartidosBonus] = useState([])
   const [bonusEdit, setBonusEdit] = useState({})
@@ -741,6 +747,11 @@ function FilaFecha({ f, onToggle, onRefresh }) {
                 style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {f.activa ? '🔴 Desactivar' : '🟢 Activar'}
               </button>
+              <button
+                onClick={() => { setGestionandoPartidos(v => !v); setMenuAbierto(false) }}
+                style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                ➕ Gestionar partidos
+              </button>
               {f.resultados_cargados && (
                 <button
                   onClick={abrirEditorResultados}
@@ -841,6 +852,15 @@ function FilaFecha({ f, onToggle, onRefresh }) {
             </button>
             <button className="btn btn-secondary btn-small" onClick={() => setEditandoBonus(false)}>Cancelar</button>
           </div>
+        </div>
+      )}
+      {gestionandoPartidos && (
+        <div style={{ padding: '10px 16px 14px', background: 'rgba(201,162,39,0.04)', borderTop: '1px solid var(--gris-borde)' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--texto-suave)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>➕ Partidos</span>
+            <button onClick={() => setGestionandoPartidos(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--texto-suave)', padding: '0 2px' }}>✕</button>
+          </div>
+          <GestorPartidos fecha={f} />
         </div>
       )}
       {editando && (
