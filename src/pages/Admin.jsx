@@ -1182,24 +1182,10 @@ function AdminStats() {
     const latestNum = fechasConResultados?.[0]?.numero
     const latestIds = (fechasConResultados || []).filter(f => f.numero === latestNum).map(f => f.id)
 
-    // Fechas activas por separado para reusar en el conteo de jugadores
+    // Fechas activas por separado
     const { data: fechasActivasData } = await supabase
       .from('fechas').select('id, categoria_id, numero, fecha_partido')
       .eq('activa', true).eq('resultados_cargados', false)
-
-    // Partidos de fechas activas para contar jugadores de esta semana
-    const activaIds = (fechasActivasData || []).map(f => f.id)
-    let totalPredsHoy = 0
-    if (activaIds.length) {
-      const { data: partidosActivos } = await supabase
-        .from('partidos').select('id').in('fecha_id', activaIds)
-      const pIds = (partidosActivos || []).map(p => p.id)
-      if (pIds.length) {
-        const { data: predsActivas } = await supabase
-          .from('predicciones').select('usuario_id').in('partido_id', pIds)
-        totalPredsHoy = new Set((predsActivas || []).map(p => p.usuario_id)).size
-      }
-    }
 
     const [
       { count: totalUsuarios },
@@ -1255,9 +1241,10 @@ function AdminStats() {
       ? Math.round((valsUF.reduce((s, v) => s + v, 0) / valsUF.length) * 10) / 10
       : 0
 
-    // % participación última fecha (usuarios únicos)
+    // Participación última fecha (usuarios únicos con puntos cargados)
     const participacionUlt = new Set(participacionUltRes.data?.map(r => r.usuario_id) || []).size
     const pctUlt = totalUsuarios > 0 ? Math.round((participacionUlt / totalUsuarios) * 100) : 0
+    const totalPredsHoy = participacionUlt   // reusar para el tile "jugadores"
 
     // Top exactos acumulados
     const exactosPorUsuario = {}
@@ -1315,7 +1302,7 @@ function AdminStats() {
           { v: stats.totalUsuarios,        l: 'Usuarios',              icon: '👥', color: 'var(--azul)' },
           { v: stats.totalGrupos,          l: 'Grupos',                icon: '🏉', color: 'var(--dorado-oscuro)' },
           { v: stats.fechasActivas.length, l: 'Fechas activas',        icon: '📅', color: '#16a34a' },
-          { v: stats.totalPredsHoy,        l: 'Jugadores esta semana', icon: '✏️', color: 'var(--rojo-vivo)' },
+          { v: stats.totalPredsHoy,        l: stats.latestNum ? `Jugadores F${stats.latestNum}` : 'Jugadores ult.', icon: '✏️', color: 'var(--rojo-vivo)' },
           { v: stats.promedioPts,          l: 'Avg pts/fecha',         icon: '📈', color: '#0891b2' },
           { v: `${stats.pctUlt}%`,         l: stats.latestNum ? `Partic. F${stats.latestNum}` : 'Partic. ult.', icon: '🎯', color: '#7c3aed' },
         ].map((s, i) => (
