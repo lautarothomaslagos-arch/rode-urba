@@ -11,6 +11,8 @@ import Perfil from './pages/Perfil'
 import Torneos from './pages/Torneos'
 import Dashboard from './pages/Dashboard'
 import NuevaContrasena from './pages/NuevaContrasena'
+import Privacidad from './pages/Privacidad'
+import Terminos from './pages/Terminos'
 import SwipeNavigator from './components/SwipeNavigator'
 import BottomNav from './components/BottomNav'
 import './index.css'
@@ -60,6 +62,8 @@ function AppRoutes() {
         <Route path="/estadisticas" element={<Navigate to="/torneos" />} />
         <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
         <Route path="/grupos" element={<GruposRedirect />} />
+        <Route path="/privacidad" element={<Privacidad />} />
+        <Route path="/terminos" element={<Terminos />} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
@@ -22,6 +22,7 @@ export default function Login({ modoInicial = 'login' }) {
   const [username, setUsername]     = useState('')
   const [nombre, setNombre]         = useState('')
   const [msgRecupero, setMsgRecupero] = useState('')
+  const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
 
@@ -37,6 +38,11 @@ export default function Login({ modoInicial = 'login' }) {
     } else if (modo === 'registro') {
       if (!username || username.length < 3) {
         setError('El usuario debe tener al menos 3 caracteres')
+        setLoading(false)
+        return
+      }
+      if (!aceptaTerminos) {
+        setError('Debés aceptar los Términos de Uso y la Política de Privacidad')
         setLoading(false)
         return
       }
@@ -210,6 +216,24 @@ export default function Login({ modoInicial = 'login' }) {
             </label>
           )}
 
+          {modo === 'registro' && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', margin: '4px 0' }}>
+              <input
+                type="checkbox"
+                checked={aceptaTerminos}
+                onChange={e => setAceptaTerminos(e.target.checked)}
+                style={{ marginTop: 3, accentColor: 'var(--pg-gold)', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 12, color: 'var(--pg-text-soft)', lineHeight: 1.5 }}>
+                Leí y acepto los{' '}
+                <Link to="/terminos" target="_blank" style={{ color: 'var(--pg-gold)' }}>Términos de Uso</Link>
+                {' '}y la{' '}
+                <Link to="/privacidad" target="_blank" style={{ color: 'var(--pg-gold)' }}>Política de Privacidad</Link>.
+                {' '}Si soy menor de edad, cuento con autorización de mis padres o tutor.
+              </span>
+            </label>
+          )}
+
           <button type="submit" className="login-cta" disabled={loading}>
             <span>{ctaLabel}</span>
             {!loading && (
@@ -249,7 +273,9 @@ export default function Login({ modoInicial = 'login' }) {
 
         {/* ── Footer ── */}
         <div className="login-foot">
-          Al continuar aceptás las reglas del juego. Ningún try queda sin contar.
+          <Link to="/terminos" target="_blank" style={{ color: 'var(--pg-text-mute)' }}>Términos de Uso</Link>
+          {' · '}
+          <Link to="/privacidad" target="_blank" style={{ color: 'var(--pg-text-mute)' }}>Privacidad</Link>
         </div>
 
       </div>
