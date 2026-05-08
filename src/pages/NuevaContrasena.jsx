@@ -8,16 +8,21 @@ export default function NuevaContrasena() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [listo, setListo] = useState(false)
+  const [tokenValido, setTokenValido] = useState(null) // null = chequeando, true = ok, false = inválido
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Supabase maneja el token de recuperación automáticamente via URL hash
+    // Esperar el evento PASSWORD_RECOVERY que Supabase dispara al procesar el hash de la URL
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
-        // Usuario autenticado con token de recuperación, puede cambiar contraseña
+        setTokenValido(true)
       }
     })
-    return () => subscription.unsubscribe()
+    // Si en 3 segundos no llegó el evento, el usuario llegó sin link válido
+    const timeout = setTimeout(() => {
+      setTokenValido(prev => prev === null ? false : prev)
+    }, 3000)
+    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
   }, [])
 
   async function handleSubmit(e) {
@@ -30,6 +35,34 @@ export default function NuevaContrasena() {
     if (error) setError('Error al actualizar la contraseña. El link puede haber expirado.')
     else setListo(true)
     setLoading(false)
+  }
+
+  if (tokenValido === null) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card" style={{textAlign:'center'}}>
+          <div className="spinner" style={{margin:'0 auto 16px'}} />
+          <p style={{color:'var(--pg-text-soft)'}}>Verificando link...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (tokenValido === false) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card" style={{textAlign:'center'}}>
+          <div style={{fontSize:48,marginBottom:12}}>🔒</div>
+          <h2 style={{marginBottom:8}}>Link inválido o expirado</h2>
+          <p style={{color:'var(--pg-text-soft)',marginBottom:24,fontSize:14}}>
+            Este link de recuperación no es válido o ya fue usado. Solicitá uno nuevo desde la pantalla de login.
+          </p>
+          <button className="btn btn-primary" style={{width:'100%',padding:13}} onClick={() => navigate('/login')}>
+            Volver al login
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (listo) {
