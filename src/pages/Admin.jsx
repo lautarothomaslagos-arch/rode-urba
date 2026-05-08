@@ -1172,6 +1172,7 @@ function AdminStats() {
 
   async function cargar() {
     setLoading(true)
+    try {
 
     const { data: fechasConResultados } = await supabase.from('fechas')
       .select('id, numero')
@@ -1181,11 +1182,28 @@ function AdminStats() {
     const latestNum = fechasConResultados?.[0]?.numero
     const latestIds = (fechasConResultados || []).filter(f => f.numero === latestNum).map(f => f.id)
 
+    // Fechas activas por separado para reusar en el conteo de jugadores
+    const { data: fechasActivasData } = await supabase
+      .from('fechas').select('id, categoria_id, numero, fecha_partido')
+      .eq('activa', true).eq('resultados_cargados', false)
+
+    // Partidos de fechas activas para contar jugadores de esta semana
+    const activaIds = (fechasActivasData || []).map(f => f.id)
+    let totalPredsHoy = 0
+    if (activaIds.length) {
+      const { data: partidosActivos } = await supabase
+        .from('partidos').select('id').in('fecha_id', activaIds)
+      const pIds = (partidosActivos || []).map(p => p.id)
+      if (pIds.length) {
+        const { data: predsActivas } = await supabase
+          .from('predicciones').select('usuario_id').in('partido_id', pIds)
+        totalPredsHoy = new Set((predsActivas || []).map(p => p.usuario_id)).size
+      }
+    }
+
     const [
       { count: totalUsuarios },
       { count: totalGrupos },
-      { data: fechasActivas },
-      { data: predsData },
       { data: topFecha },
       { data: allPuntosFecha },
       participacionUltRes,
@@ -1194,13 +1212,12 @@ function AdminStats() {
     ] = await Promise.all([
       supabase.from('perfiles').select('*', { count: 'exact', head: true }),
       supabase.from('grupos').select('*', { count: 'exact', head: true }),
-      supabase.from('fechas').select('id, categoria_id, numero, fecha_partido').eq('activa', true).eq('resultados_cargados', false),
-      supabase.from('predicciones').select('usuario_id')
-        .gte('updated_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       supabase.from('puntos_fecha')
-        .select('usuario_id, total_puntos, perfiles(username), fechas(numero, fecha_partido)'),
+        .select('usuario_id, total_puntos, perfiles(username), fechas(numero, fecha_partido)')
+        .limit(5000),
       supabase.from('puntos_fecha')
-        .select('usuario_id, total_puntos, puntos_exactos, perfiles(username), fechas(numero)'),
+        .select('usuario_id, total_puntos, puntos_exactos, perfiles(username), fechas(numero)')
+        .limit(5000),
       latestIds.length
         ? supabase.from('puntos_fecha').select('usuario_id').in('fecha_id', latestIds)
         : Promise.resolve({ data: [] }),
@@ -1223,8 +1240,6 @@ function AdminStats() {
       if (!mejorPorFecha[g.numero] || g.total > mejorPorFecha[g.numero].total) mejorPorFecha[g.numero] = g
     })
     const topPorFecha = Object.values(mejorPorFecha).sort((a, b) => b.total - a.total).slice(0, 10)
-
-    const totalPredsHoy = new Set(predsData?.map(p => p.usuario_id) || []).size
 
     // Promedio pts por usuario por fecha (agrupado por usuario+número de fecha)
     const porUsuarioFecha = {}
@@ -1272,7 +1287,7 @@ function AdminStats() {
 
     setStats({
       totalUsuarios, totalGrupos,
-      fechasActivas: fechasActivas || [],
+      fechasActivas: fechasActivasData || [],
       totalPredsHoy,
       topFecha: topPorFecha,
       promedioPts,
@@ -1282,7 +1297,12 @@ function AdminStats() {
       racha3, racha5, racha10,
       topClubes,
     })
-    setLoading(false)
+
+    } catch(e) {
+      console.error('AdminStats error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (loading) return <div className="loading"><div className="spinner"></div></div>
