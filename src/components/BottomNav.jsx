@@ -11,15 +11,14 @@ function IconHome() {
 
 function IconPredecir() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      {/* Pelota ovalada inclinada */}
-      <path d="M13 2C18.5 2.5 23 7.5 22 13.5C21 19.5 16 23 10 22C4 21 1 16.5 1.5 10.5C2 5 7 1.5 13 2Z" strokeWidth="1.6"/>
-      {/* Franja diagonal gruesa */}
-      <path d="M4.5 4C8 8 14.5 14.5 20 20.5" strokeWidth="4" strokeLinecap="round"/>
-      {/* Costura superior izquierda */}
-      <path d="M2.5 9C4 7.5 6 8.5 6.5 11" strokeWidth="1.2"/>
-      {/* Costura inferior derecha */}
-      <path d="M17.5 13.5C19.5 16 20 18.5 18 21.5" strokeWidth="1.2"/>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {/* Cuerpo del silbato */}
+      <path d="M14 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/>
+      {/* Boquilla */}
+      <path d="M2 12h8"/>
+      <path d="M2 9h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H2"/>
+      {/* Argolla superior */}
+      <path d="M18 8a2 2 0 0 1 2-2"/>
     </svg>
   )
 }
