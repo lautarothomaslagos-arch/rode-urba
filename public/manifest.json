@@ -26,12 +26,11 @@
     { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [
-    {
-      "src": "/og-image.png",
-      "sizes": "1200x630",
-      "type": "image/png",
-      "label": "Pick&Go — Pantalla principal"
-    }
+    { "src": "/screenshots/screen-inicio.jpg",   "sizes": "720x1560", "type": "image/jpeg", "platform": "narrow", "label": "Inicio — resumen y picks del día" },
+    { "src": "/screenshots/screen-predecir.jpg", "sizes": "720x1560", "type": "image/jpeg", "platform": "narrow", "label": "Predecir — cargá tus picks" },
+    { "src": "/screenshots/screen-ranking.jpg",  "sizes": "720x1560", "type": "image/jpeg", "platform": "narrow", "label": "Ranking — tabla anual" },
+    { "src": "/screenshots/screen-torneos.jpg",  "sizes": "720x1560", "type": "image/jpeg", "platform": "narrow", "label": "Torneos — posiciones URBA" },
+    { "src": "/screenshots/screen-perfil.jpg",   "sizes": "720x1560", "type": "image/jpeg", "platform": "narrow", "label": "Perfil — estadísticas y trofeos" }
   ],
   "prefer_related_applications": false
 }
