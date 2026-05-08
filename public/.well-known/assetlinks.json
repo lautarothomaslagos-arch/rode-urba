@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.pickandgo_prode.twa",
+        "sha256_cert_fingerprints": ["4A:42:1B:03:52:A4:4E:A4:CD:D5:E1:59:5A:21:22:1B:8B:F4:64:7B:5D:61:AD:78:31:C6:6D:38:03:7C:D0:6A"]
+      }
+    }]
