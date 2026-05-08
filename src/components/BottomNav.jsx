@@ -12,13 +12,7 @@ function IconHome() {
 function IconPredecir() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      {/* Cuerpo del silbato */}
-      <path d="M14 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/>
-      {/* Boquilla */}
-      <path d="M2 12h8"/>
-      <path d="M2 9h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H2"/>
-      {/* Argolla superior */}
-      <path d="M18 8a2 2 0 0 1 2-2"/>
+      <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
     </svg>
   )
 }
