@@ -622,10 +622,17 @@ function AdminFechas() {
   )
 }
 
+function utcToLocal(utcStr) {
+  if (!utcStr) return ''
+  const d = new Date(utcStr.endsWith('Z') ? utcStr : utcStr + 'Z')
+  const offset = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - offset).toISOString().slice(0, 16)
+}
+
 function FilaFecha({ f, onToggle, onRefresh }) {
   const [editando, setEditando] = useState(false)
   const [editFecha, setEditFecha] = useState(f.fecha_partido || '')
-  const [editCierre, setEditCierre] = useState(f.cierre_predicciones ? f.cierre_predicciones.slice(0, 16) : '')
+  const [editCierre, setEditCierre] = useState(utcToLocal(f.cierre_predicciones))
   const [guardando, setGuardando] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [gestionandoPartidos, setGestionandoPartidos] = useState(false)
