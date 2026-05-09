@@ -11,9 +11,14 @@ function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
 }
 
+function toUTC(cierre) {
+  if (!cierre) return null
+  return cierre.endsWith('Z') ? cierre : cierre + 'Z'
+}
+
 function estaAbierto(cierre) {
   if (!cierre) return true
-  return new Date() < new Date(cierre)
+  return new Date() < new Date(toUTC(cierre))
 }
 
 function useCountdown(cierre) {
@@ -22,7 +27,7 @@ function useCountdown(cierre) {
   useEffect(() => {
     if (!cierre) return
     function actualizar() {
-      const diff = new Date(cierre) - new Date()
+      const diff = new Date(toUTC(cierre)) - new Date()
       if (diff <= 0) { setTexto('Cerradas'); setUrgente(false); return }
       const d = Math.floor(diff / 86400000)
       const h = Math.floor((diff % 86400000) / 3600000)
