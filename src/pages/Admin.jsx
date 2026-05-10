@@ -1328,8 +1328,8 @@ function AdminStats() {
     <div>
       <div className="admin-stat-grid">
         {[
-          { v: stats.totalUsuarios,        l: 'Usuarios',              icon: '👥', color: 'var(--azul)' },
-          { v: stats.totalGrupos,          l: 'Grupos',                icon: '🏉', color: 'var(--dorado-oscuro)' },
+          { v: stats.totalUsuarios,        l: 'Usuarios',              icon: '👥', color: '#60a5fa' },
+          { v: stats.totalGrupos,          l: 'Grupos',                icon: '🏉', color: 'var(--pg-gold)' },
           { v: stats.fechasActivas.length, l: 'Fechas activas',        icon: '📅', color: '#16a34a' },
           { v: stats.totalPredsHoy,        l: stats.latestNum ? `Jugadores F${stats.latestNum}` : 'Jugadores ult.', icon: '✏️', color: 'var(--rojo-vivo)' },
           { v: stats.promedioPts,          l: 'Avg pts/fecha',         icon: '📈', color: '#0891b2' },
@@ -1500,12 +1500,12 @@ function AdminSugerencias() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13 }}>@{s.perfiles?.username || '—'}</span>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--pg-text)' }}>@{s.perfiles?.username || '—'}</span>
                     <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>
                       {new Date(s.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--texto)', lineHeight: 1.6 }}>{s.mensaje}</div>
+                  <div style={{ fontSize: 13, color: 'var(--pg-text)', lineHeight: 1.6 }}>{s.mensaje}</div>
                 </div>
                 <button
                   onClick={() => marcarLeida(s.id, !s.leida)}
