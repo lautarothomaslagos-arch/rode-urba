@@ -1429,10 +1429,11 @@ function AdminSugerencias() {
 
   async function cargar() {
     setLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('sugerencias')
       .select('id, mensaje, leida, created_at, usuario_id, perfiles(username)')
       .order('created_at', { ascending: false })
+    if (error) console.error('Error sugerencias:', error)
     setSugerencias(data || [])
     setLoading(false)
   }
