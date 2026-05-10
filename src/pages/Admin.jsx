@@ -5,12 +5,13 @@ const CAT_LABELS = { 1: 'Top 14', 2: 'Primera A', 3: 'Primera B', 4: 'Primera C'
 const CAT_CLASS = { 1: 'cat-top14', 2: 'cat-primera-a', 3: 'cat-primera-b', 4: 'cat-primera-c', 5: 'cat-segunda' }
 
 const SECCIONES = [
-  { id: 'semana',   label: 'Esta semana', icon: '📋' },
-  { id: 'fechas',   label: 'Fechas',      icon: '📅' },
-  { id: 'equipos',  label: 'Equipos',     icon: '🛡️' },
-  { id: 'usuarios', label: 'Usuarios',    icon: '👥' },
-  { id: 'grupos',   label: 'Grupos',      icon: '🏆' },
-  { id: 'stats',    label: 'Stats',       icon: '📊' },
+  { id: 'semana',      label: 'Esta semana', icon: '📋' },
+  { id: 'fechas',      label: 'Fechas',      icon: '📅' },
+  { id: 'equipos',     label: 'Equipos',     icon: '🛡️' },
+  { id: 'usuarios',    label: 'Usuarios',    icon: '👥' },
+  { id: 'grupos',      label: 'Grupos',      icon: '🏆' },
+  { id: 'stats',       label: 'Stats',       icon: '📊' },
+  { id: 'sugerencias', label: 'Sugerencias', icon: '💬' },
 ]
 
 export default function Admin() {
@@ -40,12 +41,13 @@ export default function Admin() {
         ))}
       </div>
 
-      {seccion === 'semana'   && <div className="seccion-fade"><AdminSemana /></div>}
-      {seccion === 'fechas'   && <div className="seccion-fade"><AdminFechas /></div>}
-      {seccion === 'equipos'  && <div className="seccion-fade"><AdminEquipos /></div>}
-      {seccion === 'usuarios' && <div className="seccion-fade"><AdminUsuarios /></div>}
-      {seccion === 'grupos'   && <div className="seccion-fade"><AdminGrupos /></div>}
-      {seccion === 'stats'    && <div className="seccion-fade"><AdminStats /></div>}
+      {seccion === 'semana'      && <div className="seccion-fade"><AdminSemana /></div>}
+      {seccion === 'fechas'      && <div className="seccion-fade"><AdminFechas /></div>}
+      {seccion === 'equipos'     && <div className="seccion-fade"><AdminEquipos /></div>}
+      {seccion === 'usuarios'    && <div className="seccion-fade"><AdminUsuarios /></div>}
+      {seccion === 'grupos'      && <div className="seccion-fade"><AdminGrupos /></div>}
+      {seccion === 'stats'       && <div className="seccion-fade"><AdminStats /></div>}
+      {seccion === 'sugerencias' && <div className="seccion-fade"><AdminSugerencias /></div>}
     </div>
   )
 }
@@ -1413,6 +1415,113 @@ function AdminStats() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Admin Sugerencias ─────────────────────────────────────────────────────
+function AdminSugerencias() {
+  const [sugerencias, setSugerencias] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filtro, setFiltro] = useState('todas') // 'todas' | 'pendientes' | 'leidas'
+
+  useEffect(() => { cargar() }, [])
+
+  async function cargar() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('sugerencias')
+      .select('id, mensaje, leida, created_at, usuario_id, perfiles(username)')
+      .order('created_at', { ascending: false })
+    setSugerencias(data || [])
+    setLoading(false)
+  }
+
+  async function marcarLeida(id, leida) {
+    await supabase.from('sugerencias').update({ leida }).eq('id', id)
+    setSugerencias(prev => prev.map(s => s.id === id ? { ...s, leida } : s))
+  }
+
+  const filtradas = sugerencias.filter(s => {
+    if (filtro === 'pendientes') return !s.leida
+    if (filtro === 'leidas') return s.leida
+    return true
+  })
+
+  const pendientes = sugerencias.filter(s => !s.leida).length
+
+  if (loading) return <div className="loading" style={{ padding: 40 }}><div className="spinner" /></div>
+
+  return (
+    <div>
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">💬 Buzón de sugerencias</span>
+          {pendientes > 0 && (
+            <span style={{ background: 'var(--rojo)', color: 'white', borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>
+              {pendientes} sin leer
+            </span>
+          )}
+        </div>
+
+        {/* Filtros */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          {[
+            { id: 'todas',     label: `Todas (${sugerencias.length})` },
+            { id: 'pendientes',label: `Pendientes (${pendientes})` },
+            { id: 'leidas',    label: `Leídas (${sugerencias.length - pendientes})` },
+          ].map(f => (
+            <button
+              key={f.id}
+              onClick={() => setFiltro(f.id)}
+              style={{
+                padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                background: filtro === f.id ? 'var(--azul)' : 'var(--gris-card)',
+                color: filtro === f.id ? 'white' : 'var(--texto-suave)',
+              }}
+            >{f.label}</button>
+          ))}
+        </div>
+
+        {filtradas.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--texto-suave)', fontSize: 13 }}>
+            No hay sugerencias en esta categoría.
+          </div>
+        ) : (
+          filtradas.map(s => (
+            <div key={s.id} style={{
+              padding: '12px 14px',
+              background: s.leida ? 'var(--gris-fondo)' : 'rgba(139,0,0,0.06)',
+              borderRadius: 10,
+              marginBottom: 10,
+              borderLeft: `3px solid ${s.leida ? 'var(--gris-borde)' : 'var(--rojo)'}`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: 13 }}>@{s.perfiles?.username || '—'}</span>
+                    <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>
+                      {new Date(s.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--texto)', lineHeight: 1.6 }}>{s.mensaje}</div>
+                </div>
+                <button
+                  onClick={() => marcarLeida(s.id, !s.leida)}
+                  style={{
+                    flexShrink: 0, padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    fontSize: 12, fontWeight: 600,
+                    background: s.leida ? 'var(--gris-card)' : '#16a34a',
+                    color: s.leida ? 'var(--texto-suave)' : 'white',
+                  }}
+                >
+                  {s.leida ? 'Marcar pendiente' : '✓ Marcar leída'}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }

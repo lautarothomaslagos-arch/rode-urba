@@ -36,6 +36,7 @@ const TABS = [
   { id: 'contrasena',     label: '🔐 Contraseña' },
   { id: 'notificaciones', label: '🔔 Notificaciones' },
   { id: 'invitar',        label: '📲 Invitar' },
+  { id: 'sugerencias',    label: '💬 Sugerencias' },
 ]
 
 export default function Perfil() {
@@ -65,6 +66,10 @@ export default function Perfil() {
   const [logros, setLogros] = useState([])
   const [loadingPestaña, setLoadingPestaña] = useState(false)
   const [compartiendoFecha, setCompartiendoFecha] = useState(null)
+  const [sugerencias, setSugerencias] = useState([])
+  const [textoSug, setTextoSug] = useState('')
+  const [enviandoSug, setEnviandoSug] = useState(false)
+  const [msgSug, setMsgSug] = useState('')
 
   useEffect(() => {
     if (perfil) {
@@ -82,6 +87,7 @@ export default function Perfil() {
     if (!user || !pestaña) return
     if (pestaña === 'historial') cargarHistorial()
     else if (pestaña === 'logros') cargarLogros()
+    else if (pestaña === 'sugerencias') cargarSugerencias()
   }, [user, pestaña])
 
   async function cargarRacha() {
@@ -423,6 +429,32 @@ export default function Perfil() {
     setTimeout(() => setMsg(''), 4000)
   }
 
+  async function cargarSugerencias() {
+    setLoadingPestaña(true)
+    const { data } = await supabase.from('sugerencias')
+      .select('id, mensaje, leida, created_at')
+      .eq('usuario_id', user.id)
+      .order('created_at', { ascending: false })
+    setSugerencias(data || [])
+    setLoadingPestaña(false)
+  }
+
+  async function enviarSugerencia(e) {
+    e.preventDefault()
+    if (textoSug.trim().length < 10) { setMsgSug('Mínimo 10 caracteres'); return }
+    setEnviandoSug(true)
+    const { error } = await supabase.from('sugerencias').insert({ usuario_id: user.id, mensaje: textoSug.trim() })
+    if (error) {
+      setMsgSug('Error al enviar: ' + error.message)
+    } else {
+      setMsgSug('✓ Sugerencia enviada, ¡gracias!')
+      setTextoSug('')
+      cargarSugerencias()
+    }
+    setEnviandoSug(false)
+    setTimeout(() => setMsgSug(''), 4000)
+  }
+
   async function registrarShare() {
     const { data } = await supabase.from('perfiles').select('invitaciones').eq('id', user.id).single()
     await supabase.from('perfiles').update({ invitaciones: (data?.invitaciones || 0) + 1 }).eq('id', user.id)
@@ -445,6 +477,7 @@ export default function Perfil() {
     { id: 'contrasena',     icon: '🔐', label: 'Contraseña' },
     { id: 'notificaciones', icon: '🔔', label: 'Notificaciones' },
     { id: 'invitar',        icon: '📲', label: 'Invitar amigos' },
+    { id: 'sugerencias',    icon: '💬', label: 'Sugerencias' },
   ]
 
   return (
@@ -741,6 +774,70 @@ export default function Perfil() {
                     ) : (
                       <div className="alert alert-info">Tu navegador no soporta notificaciones push.</div>
                     )}
+                  </div>
+                )}
+
+                {/* SUGERENCIAS */}
+                {t.id === 'sugerencias' && (
+                  <div style={{ paddingTop: 14 }}>
+                    <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', marginBottom: 14, lineHeight: 1.7 }}>
+                      ¿Tenés alguna idea, sugerencia o encontraste algo que no funciona bien? ¡Contanos!
+                    </p>
+                    {msgSug && (
+                      <div className={`alert ${msgSug.startsWith('Error') || msgSug.startsWith('Mínimo') ? 'alert-error' : 'alert-success'}`}>
+                        {msgSug}
+                      </div>
+                    )}
+                    <form onSubmit={enviarSugerencia}>
+                      <div className="form-group">
+                        <textarea
+                          className="form-input"
+                          rows={4}
+                          placeholder="Escribí tu sugerencia (mín. 10 caracteres)..."
+                          value={textoSug}
+                          onChange={e => setTextoSug(e.target.value)}
+                          maxLength={500}
+                          style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+                        />
+                        <div style={{ textAlign: 'right', fontSize: 11, color: 'var(--pg-text-mute)', marginTop: 4 }}>
+                          {textoSug.length}/500
+                        </div>
+                      </div>
+                      <button type="submit" className="btn btn-primary" disabled={enviandoSug}>
+                        {enviandoSug ? 'Enviando...' : '📨 Enviar sugerencia'}
+                      </button>
+                    </form>
+
+                    {/* Historial de sugerencias del usuario */}
+                    {loadingPestaña
+                      ? <div className="loading" style={{ padding: '20px 0' }}><div className="spinner" /></div>
+                      : sugerencias.length > 0 && (
+                        <div style={{ marginTop: 22 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                            Mis sugerencias enviadas
+                          </div>
+                          {sugerencias.map(s => (
+                            <div key={s.id} style={{
+                              padding: '10px 12px',
+                              background: 'var(--pg-bg-mid)',
+                              borderRadius: 10,
+                              marginBottom: 8,
+                              borderLeft: `3px solid ${s.leida ? '#16a34a' : 'var(--pg-gold)'}`,
+                            }}>
+                              <div style={{ fontSize: 13, color: 'var(--pg-text)', lineHeight: 1.5, marginBottom: 6 }}>{s.mensaje}</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: 10, color: 'var(--pg-text-mute)' }}>
+                                  {new Date(s.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </span>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: s.leida ? '#16a34a' : 'var(--pg-gold)' }}>
+                                  {s.leida ? '✅ Leída' : '⏳ Pendiente'}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    }
                   </div>
                 )}
 
