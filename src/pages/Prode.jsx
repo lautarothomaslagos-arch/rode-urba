@@ -7,6 +7,7 @@ import { CATS } from '../lib/constants'
 import EquipoPopup from '../components/EquipoPopup'
 import { computeEquipoStats } from '../lib/equipoStats'
 import { hayCAmbiosRef } from '../lib/prodeState'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
@@ -66,6 +67,8 @@ export default function Prode() {
   const [statsEquipos, setStatsEquipos] = useState({})
   const [popupData, setPopupData] = useState(null) // { equipos: [stats, stats?], partido }
   const [mostrarInfo, setMostrarInfo] = useState(false)
+  const [mostrarNotifPrompt, setMostrarNotifPrompt] = useState(false)
+  const { permiso, suscrito, suscribirse } = usePushNotifications()
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
@@ -208,6 +211,10 @@ export default function Prode() {
       setHayCAmbios(false)
       calcularPendientes()
       setTimeout(() => setGuardado(false), 3000)
+      // Mostrar prompt de notificaciones si nunca se pidió y nunca se mostró
+      if (permiso === 'default' && !suscrito && !localStorage.getItem('pg-notif-prompt-shown')) {
+        setTimeout(() => setMostrarNotifPrompt(true), 1500)
+      }
     }
     setGuardando(false)
   }
@@ -259,6 +266,33 @@ export default function Prode() {
   return (
     <div className="dashboard">
       <div className="dash-backdrop" aria-hidden="true" />
+
+      {/* ── Prompt notificaciones ── */}
+      {mostrarNotifPrompt && (
+        <div onClick={() => { localStorage.setItem('pg-notif-prompt-shown', '1'); setMostrarNotifPrompt(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--pg-bg-card)', borderRadius: '20px 20px 0 0', padding: '28px 20px 44px' }}>
+            <div style={{ width: 40, height: 4, background: 'var(--pg-border)', borderRadius: 2, margin: '0 auto 24px' }} />
+            <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>🔔</div>
+            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--pg-text)', marginBottom: 10, textAlign: 'center' }}>¿Querés que te avisemos?</div>
+            <p style={{ fontSize: 14, color: 'var(--pg-text-soft)', lineHeight: 1.6, textAlign: 'center', marginBottom: 24, maxWidth: 280, margin: '0 auto 24px' }}>
+              Te mandamos una notificación cuando se abre una nueva fecha para predecir y cuando se cargan los resultados.
+            </p>
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', marginBottom: 12 }}
+              onClick={async () => {
+                localStorage.setItem('pg-notif-prompt-shown', '1')
+                setMostrarNotifPrompt(false)
+                await suscribirse()
+              }}
+            >Activar notificaciones</button>
+            <button
+              style={{ width: '100%', background: 'none', border: 'none', color: 'var(--pg-text-soft)', fontSize: 14, cursor: 'pointer', padding: '8px 0' }}
+              onClick={() => { localStorage.setItem('pg-notif-prompt-shown', '1'); setMostrarNotifPrompt(false) }}
+            >Ahora no</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Modal cómo funciona ── */}
       {mostrarInfo && (
