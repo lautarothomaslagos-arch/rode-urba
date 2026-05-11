@@ -65,6 +65,7 @@ export default function Prode() {
   const [savedPreds, setSavedPreds] = useState(new Set())
   const [statsEquipos, setStatsEquipos] = useState({})
   const [popupData, setPopupData] = useState(null) // { equipos: [stats, stats?], partido }
+  const [mostrarInfo, setMostrarInfo] = useState(false)
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
@@ -242,8 +243,6 @@ export default function Prode() {
   const rivalSide  = popupData?.items.length === 1
     ? (popupData.items[0].side === 'left' ? 'right' : 'left')
     : null
-
-  const [mostrarInfo, setMostrarInfo] = useState(false)
 
   const fi = fechas.find(f => f.id === fechaId)
   const abierto = estaAbierto(fi?.cierre_predicciones)
