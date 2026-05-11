@@ -50,8 +50,9 @@ export function usePushNotifications() {
 
       await supabase.from('push_subscriptions').upsert({
         usuario_id: user.id,
+        endpoint: sub.endpoint,
         subscription: sub.toJSON()
-      }, { onConflict: 'usuario_id' })
+      }, { onConflict: 'endpoint' })
 
       setSuscrito(true)
     } catch(e) {
@@ -65,8 +66,10 @@ export function usePushNotifications() {
     try {
       const reg = await navigator.serviceWorker.ready
       const sub = await reg.pushManager.getSubscription()
-      if (sub) await sub.unsubscribe()
-      await supabase.from('push_subscriptions').delete().eq('usuario_id', user.id)
+      if (sub) {
+        await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+        await sub.unsubscribe()
+      }
       setSuscrito(false)
     } catch(e) {}
     setCargando(false)
