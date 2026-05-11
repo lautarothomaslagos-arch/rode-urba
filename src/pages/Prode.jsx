@@ -71,7 +71,7 @@ export default function Prode() {
   const [notifDismissed, setNotifDismissed] = useState(() => !!localStorage.getItem('pg-notif-dismissed'))
   const { permiso, suscrito, suscribirse } = usePushNotifications()
   function dismissNotif() { localStorage.setItem('pg-notif-dismissed', '1'); setNotifDismissed(true) }
-  const mostrarBannerNotif = !notifDismissed && !suscrito && permiso === 'default' && 'Notification' in window
+  const mostrarBannerNotif = !notifDismissed && !suscrito && (permiso === 'default' || permiso === 'granted') && 'Notification' in window
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
@@ -215,7 +215,7 @@ export default function Prode() {
       calcularPendientes()
       setTimeout(() => setGuardado(false), 3000)
       // Mostrar prompt de notificaciones si nunca se pidió y nunca se cerró el banner
-      if (permiso === 'default' && !suscrito && !localStorage.getItem('pg-notif-dismissed')) {
+      if ((permiso === 'default' || permiso === 'granted') && !suscrito && !localStorage.getItem('pg-notif-dismissed')) {
         setTimeout(() => setMostrarNotifPrompt(true), 1500)
       }
     }

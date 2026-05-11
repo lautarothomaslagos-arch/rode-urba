@@ -81,7 +81,7 @@ export default function Dashboard() {
   const { permiso, suscrito, suscribirse } = usePushNotifications()
   const [notifDismissed, setNotifDismissed] = useState(() => !!localStorage.getItem('pg-notif-dismissed'))
   function dismissNotif() { localStorage.setItem('pg-notif-dismissed', '1'); setNotifDismissed(true) }
-  const mostrarBannerNotif = !notifDismissed && !suscrito && permiso === 'default' && 'Notification' in window
+  const mostrarBannerNotif = !notifDismissed && !suscrito && (permiso === 'default' || permiso === 'granted') && 'Notification' in window
 
   useEffect(() => { if (user) cargar() }, [user])
 
