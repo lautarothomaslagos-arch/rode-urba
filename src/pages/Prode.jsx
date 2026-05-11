@@ -327,9 +327,9 @@ export default function Prode() {
         </div>
         <button
           onClick={() => setMostrarInfo(true)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, padding: '4px', opacity: 0.55, lineHeight: 1, marginTop: 18 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: '4px', lineHeight: 1, marginTop: 18, color: 'var(--pg-text-soft)', fontWeight: 700, fontFamily: 'Georgia, serif', fontStyle: 'italic' }}
           title="¿Cómo funciona?"
-        >ℹ️</button>
+        >i</button>
       </header>
 
       {/* ── Chips de categoría ── */}
