@@ -4,14 +4,7 @@ function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
 }
 
-const estilosMoneda = `
-@keyframes flipMoneda {
-  0%   { transform: perspective(300px) rotateY(0deg); }
-  100% { transform: perspective(300px) rotateY(1440deg); }
-}
-.moneda-flip { animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
-.moneda-flip-global { animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
-`
+// Los estilos de .moneda-flip están en index.css
 
 function SvgMoneda({ size }) {
   const cx = size / 2
@@ -181,8 +174,6 @@ export function PartidoCardPrediccion({ partido, pred, abierto, saved, onUpdate,
 
   return (
     <div className={cardClass} style={{position:'relative'}}>
-      <style>{estilosMoneda}</style>
-
       {/* Flame badge (destacado) */}
       {partido.es_especial && (
         <div className="prode-match-flame">★ DESTACADO 2× · exacto 6 pts</div>

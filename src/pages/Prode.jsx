@@ -6,6 +6,7 @@ import { PartidoCardPrediccion } from '../components/PartidoCard'
 import { CATS } from '../lib/constants'
 import EquipoPopup from '../components/EquipoPopup'
 import { computeEquipoStats } from '../lib/equipoStats'
+import { hayCAmbiosRef } from '../lib/prodeState'
 
 function scoreRandom() {
   return Math.floor(Math.random() * 46) + 3
@@ -55,7 +56,8 @@ export default function Prode() {
   const [preds, setPreds] = useState({})
   const [guardando, setGuardando] = useState(false)
   const [guardado, setGuardado] = useState(false)
-  const [hayCAmbios, setHayCAmbios] = useState(false)
+  const [hayCAmbios, setHayCAmbiosState] = useState(false)
+  function setHayCAmbios(v) { setHayCAmbiosState(v); hayCAmbiosRef.current = v }
   const [loading, setLoading] = useState(true)
   const [errorCarga, setErrorCarga] = useState(false)
   const [girando, setGirando] = useState(false)

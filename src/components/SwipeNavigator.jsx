@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { hayCAmbiosRef } from '../lib/prodeState'
 
 const ROUTES_BASE  = ['/home', '/prode', '/ranking', '/torneos', '/perfil']
 const MIN_DIST     = 75    // px mínimos para considerar swipe
@@ -41,6 +42,11 @@ export default function SwipeNavigator({ children }) {
     if (elapsed > MAX_DURATION)            return
     if (Math.abs(dx) < MIN_DIST)           return
     if (Math.abs(dx) < Math.abs(dy) * DIR_RATIO) return
+
+    // Si hay cambios sin guardar en Prode, pedir confirmación
+    if (hayCAmbiosRef.current && location.pathname === '/prode') {
+      if (!window.confirm('Tenés picks sin guardar. ¿Salir igual?')) return
+    }
 
     if (dx < 0 && currentIdx < routes.length - 1) {
       // Deslizar izquierda → siguiente página

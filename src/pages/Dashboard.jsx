@@ -75,6 +75,8 @@ export default function Dashboard() {
 
   const racha = perfil?.racha_actual || 0
   const nombre = perfil?.nombre_completo?.split(' ')[0] || perfil?.username || 'jugador'
+  const hora = new Date().getHours()
+  const saludo = hora < 12 ? 'Buenos días,' : hora < 20 ? 'Buenas tardes,' : 'Buenas noches,'
 
   useEffect(() => { if (user) cargar() }, [user])
 
@@ -328,7 +330,7 @@ export default function Dashboard() {
       {/* ── Header ── */}
       <header className="dash-header">
         <div>
-          <div className="dash-greet">Buen día,</div>
+          <div className="dash-greet">{saludo}</div>
           <div className="dash-name">
             {nombre}
             {posicion && <span className="dash-pos"> · <span className="dash-pos-num">#{posicion}</span></span>}

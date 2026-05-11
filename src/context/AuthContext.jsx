@@ -90,10 +90,18 @@ export function AuthProvider({ children }) {
   async function signUp({ email, password, username, nombreCompleto }) {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (!error && data.user) {
-      await supabase.from('perfiles').upsert({
+      const { error: perfilError } = await supabase.from('perfiles').upsert({
         id: data.user.id, username,
         nombre_completo: nombreCompleto || '', es_admin: false,
       })
+      if (perfilError) {
+        console.error('Error creando perfil:', perfilError)
+        // Intentar de nuevo una vez
+        await supabase.from('perfiles').upsert({
+          id: data.user.id, username,
+          nombre_completo: nombreCompleto || '', es_admin: false,
+        })
+      }
     }
     return { error }
   }

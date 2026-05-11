@@ -2744,3 +2744,8 @@ html, body, #root {
   font-size: 10px; color: var(--pg-text-soft); margin-top: 4px;
   text-transform: uppercase; letter-spacing: 0.5px;
 }
+
+/* ===== MONEDA FLIP ===== */
+@keyframes flipMoneda { 0% { transform: perspective(300px) rotateY(0deg); } 100% { transform: perspective(300px) rotateY(1440deg); } }
+.moneda-flip { animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+.moneda-flip-global { animation: flipMoneda 1.4s cubic-bezier(0.4,0,0.2,1) forwards; }

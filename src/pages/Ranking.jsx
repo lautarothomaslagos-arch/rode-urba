@@ -313,14 +313,30 @@ export default function Ranking() {
         </div>
       )}
 
-      {/* ── Búsqueda ── */}
+      {/* ── Búsqueda + ir a mi posición ── */}
       {!loading && modo !== 'clubes' && lista.length > 0 && (
-        <input
-          className="rk-search"
-          placeholder="🔍  Buscar por usuario o club..."
-          value={busqueda}
-          onChange={e => setBusqueda(e.target.value)}
-        />
+        <div style={{ display: 'flex', gap: 8, padding: '0 16px', position: 'relative', zIndex: 2 }}>
+          <input
+            className="rk-search"
+            style={{ flex: 1, margin: 0 }}
+            placeholder="🔍  Buscar por usuario o club..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+          />
+          {miItem && !busqueda && (
+            <button
+              onClick={() => {
+                const ref = miIdx < 3 ? podioRef : miFilaRef
+                ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }}
+              style={{
+                flexShrink: 0, padding: '8px 12px', borderRadius: 10, border: 'none',
+                background: 'var(--pg-gold)', color: '#07101F',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >📍 Mi pos.</button>
+          )}
+        </div>
       )}
 
       {/* ── Empty states ── */}

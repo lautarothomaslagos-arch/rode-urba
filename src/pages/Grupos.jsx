@@ -73,10 +73,11 @@ export default function Grupos() {
 // ---- MIS GRUPOS ----
 function MisGrupos({ grupos, loading, userId, onSelect, onRefresh }) {
   const [copiado, setCopiado] = useState(null)
+  const [confirmAbandonar, setConfirmAbandonar] = useState(null) // grupoId
 
   async function abandonar(grupoId) {
-    if (!confirm('¿Abandonar este grupo?')) return
     await supabase.from('grupo_miembros').delete().eq('grupo_id', grupoId).eq('usuario_id', userId)
+    setConfirmAbandonar(null)
     onRefresh()
   }
 
@@ -136,10 +137,15 @@ function MisGrupos({ grupos, loading, userId, onSelect, onRefresh }) {
               }}
             >{copiado === `link-${g.id}` ? '✓ Link copiado' : '🔗 Copiar link'}</button>
             {g.creador_id !== userId && (
-              <button
-                className="btn btn-small btn-danger"
-                onClick={() => abandonar(g.id)}
-              >Salir</button>
+              confirmAbandonar === g.id ? (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: 'var(--texto-suave)' }}>¿Abandonar?</span>
+                  <button className="btn btn-small btn-danger" onClick={() => abandonar(g.id)}>Sí</button>
+                  <button className="btn btn-small" style={{ background: 'transparent', border: '1px solid var(--gris-borde)' }} onClick={() => setConfirmAbandonar(null)}>No</button>
+                </div>
+              ) : (
+                <button className="btn btn-small btn-danger" onClick={() => setConfirmAbandonar(g.id)}>Salir</button>
+              )
             )}
           </div>
         </div>
@@ -167,6 +173,8 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   const [loadingHistorial, setLoadingHistorial] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const [expulsando, setExpulsando] = useState(false)
+  const [confirmExpulsar, setConfirmExpulsar] = useState(null) // uid
+  const [confirmEliminar, setConfirmEliminar] = useState(false)
   const menuRef = useRef(null)
   const scrollContainerRef = useRef(null)
   const miFilaRef = useRef(null)
@@ -362,14 +370,14 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
   }
 
   async function expulsarMiembro(uid) {
-    if (!confirm('¿Expulsar a este usuario del grupo?')) return
     await supabase.from('grupo_miembros').delete().eq('grupo_id', grupo.id).eq('usuario_id', uid)
+    setConfirmExpulsar(null)
     cargarMiembros()
   }
 
   async function eliminarGrupo() {
-    if (!confirm('¿Eliminar el grupo permanentemente? Esta acción no se puede deshacer.')) return
     await supabase.from('grupos').delete().eq('id', grupo.id)
+    setConfirmEliminar(false)
     onRefresh()
     onVolver()
   }
@@ -487,7 +495,7 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
                     👤 Expulsar miembro
                   </button>
                   <div style={{ borderTop: '1px solid var(--gris-borde)' }} />
-                  <button onClick={() => { setMenuAbierto(false); eliminarGrupo() }}
+                  <button onClick={() => { setMenuAbierto(false); setConfirmEliminar(true) }}
                     style={{ width: '100%', padding: '11px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: 13, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 8 }}>
                     🗑️ Eliminar grupo
                   </button>
@@ -518,12 +526,28 @@ function RankingGrupo({ grupo, userId, perfil, onVolver, onRefresh }) {
                   </div>
                   <span style={{ fontSize: 13 }}>{m.perfiles?.username}</span>
                 </div>
-                <button className="btn btn-small btn-danger" onClick={() => { expulsarMiembro(m.usuario_id); setExpulsando(false) }}>
-                  Expulsar
-                </button>
+                {confirmExpulsar === m.usuario_id ? (
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'var(--texto-suave)' }}>¿Expulsar?</span>
+                    <button className="btn btn-small btn-danger" onClick={() => { expulsarMiembro(m.usuario_id); setExpulsando(false) }}>Sí</button>
+                    <button className="btn btn-small" style={{ background: 'transparent', border: '1px solid var(--gris-borde)' }} onClick={() => setConfirmExpulsar(null)}>No</button>
+                  </div>
+                ) : (
+                  <button className="btn btn-small btn-danger" onClick={() => setConfirmExpulsar(m.usuario_id)}>Expulsar</button>
+                )}
               </div>
             ))}
             <button className="btn btn-small btn-secondary" style={{ marginTop: 10 }} onClick={() => setExpulsando(false)}>Cancelar</button>
+          </div>
+        )}
+
+        {confirmEliminar && (
+          <div style={{ marginTop: 12, padding: 14, background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#dc2626', marginBottom: 10 }}>⚠️ ¿Eliminar el grupo permanentemente? Esta acción no se puede deshacer.</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-small btn-danger" onClick={eliminarGrupo}>Sí, eliminar</button>
+              <button className="btn btn-small btn-secondary" onClick={() => setConfirmEliminar(false)}>Cancelar</button>
+            </div>
           </div>
         )}
 
