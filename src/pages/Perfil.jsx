@@ -456,8 +456,7 @@ export default function Perfil() {
   }
 
   async function registrarShare() {
-    const { data } = await supabase.from('perfiles').select('invitaciones').eq('id', user.id).single()
-    await supabase.from('perfiles').update({ invitaciones: (data?.invitaciones || 0) + 1 }).eq('id', user.id)
+    await supabase.rpc('increment_invitaciones', { p_user_id: user.id })
     if (pestaña === 'logros') cargarLogros()
   }
 
