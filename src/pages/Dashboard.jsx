@@ -77,7 +77,6 @@ export default function Dashboard() {
   const nombre = perfil?.nombre_completo?.split(' ')[0] || perfil?.username || 'jugador'
   const hora = new Date().getHours()
   const saludo = hora < 12 ? 'Buenos días,' : hora < 20 ? 'Buenas tardes,' : 'Buenas noches,'
-  const [mostrarInfo, setMostrarInfo] = useState(false)
 
   useEffect(() => { if (user) cargar() }, [user])
 
@@ -329,75 +328,6 @@ export default function Dashboard() {
     <div className="dashboard">
       <div className="dash-backdrop" aria-hidden="true" />
 
-      {/* ── Modal cómo funciona ── */}
-      {mostrarInfo && (
-        <div
-          onClick={() => setMostrarInfo(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ width: '100%', background: 'var(--pg-bg-card)', borderRadius: '20px 20px 0 0', padding: '24px 20px 40px', maxHeight: '85vh', overflowY: 'auto' }}
-          >
-            <div style={{ width: 40, height: 4, background: 'var(--pg-border)', borderRadius: 2, margin: '0 auto 20px' }} />
-            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--pg-text)', marginBottom: 20 }}>
-              ¿Cómo funciona?
-            </div>
-
-            {/* Puntaje */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Puntaje por partido</div>
-              {[
-                { icon: '🎯', label: 'Resultado exacto', pts: '3 pts' },
-                { icon: '🤝', label: 'Exacto en empate', pts: '4 pts' },
-                { icon: '✅', label: 'Signo correcto (ganador)', pts: '1 pt' },
-                { icon: '🤝', label: 'Signo empate (sin exacto)', pts: '2 pts' },
-              ].map(r => (
-                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--pg-border-soft)' }}>
-                  <span style={{ fontSize: 13, color: 'var(--pg-text)' }}>{r.icon} {r.label}</span>
-                  <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--pg-gold)' }}>{r.pts}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Partido destacado */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Partido destacado ⭐</div>
-              <div style={{ fontSize: 13, color: 'var(--pg-text-soft)', lineHeight: 1.6, padding: '8px 12px', background: 'var(--pg-bg-mid)', borderRadius: 10 }}>
-                Los puntos del partido destacado valen el <strong style={{ color: 'var(--pg-gold)' }}>doble</strong>. Si acertás el exacto, sumás 6 pts. Si acertás el empate exacto, sumás 8 pts.
-              </div>
-            </div>
-
-            {/* Bonuses */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Bonuses de fecha</div>
-              {[
-                { icon: '💥', label: 'Pleno — todos los partidos acertados', pts: '+5 pts' },
-                { icon: '⚡', label: 'Mitad — la mitad o más acertados', pts: '+2 pts' },
-              ].map(r => (
-                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--pg-border-soft)' }}>
-                  <span style={{ fontSize: 13, color: 'var(--pg-text)' }}>{r.icon} {r.label}</span>
-                  <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--pg-gold)' }}>{r.pts}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Rachas */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Rachas 🔥</div>
-              <div style={{ fontSize: 13, color: 'var(--pg-text-soft)', lineHeight: 1.6, padding: '8px 12px', background: 'var(--pg-bg-mid)', borderRadius: 10 }}>
-                Participá en fechas consecutivas para aumentar tu racha. Desbloqueá trofeos con rachas de <strong style={{ color: 'var(--pg-text)' }}>3, 6, 10 y 15</strong> fechas seguidas.
-              </div>
-            </div>
-
-            <button
-              onClick={() => setMostrarInfo(false)}
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: 4 }}
-            >Entendido</button>
-          </div>
-        </div>
-      )}
 
       {/* ── Header ── */}
       <header className="dash-header">
@@ -409,11 +339,6 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="dash-header-right">
-          <button
-            onClick={() => setMostrarInfo(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: '4px', opacity: 0.6, lineHeight: 1 }}
-            title="¿Cómo funciona?"
-          >ℹ️</button>
           <div className="dash-avatar-wrap">
             {perfil?.avatar_url
               ? <img src={perfil.avatar_url} alt={nombre} />

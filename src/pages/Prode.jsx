@@ -243,6 +243,8 @@ export default function Prode() {
     ? (popupData.items[0].side === 'left' ? 'right' : 'left')
     : null
 
+  const [mostrarInfo, setMostrarInfo] = useState(false)
+
   const fi = fechas.find(f => f.id === fechaId)
   const abierto = estaAbierto(fi?.cierre_predicciones)
   const { texto: countdownTexto, urgente: countdownUrgente } = useCountdown(fi?.cierre_predicciones)
@@ -259,15 +261,76 @@ export default function Prode() {
     <div className="dashboard">
       <div className="dash-backdrop" aria-hidden="true" />
 
+      {/* ── Modal cómo funciona ── */}
+      {mostrarInfo && (
+        <div onClick={() => setMostrarInfo(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--pg-bg-card)', borderRadius: '20px 20px 0 0', padding: '24px 20px 40px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ width: 40, height: 4, background: 'var(--pg-border)', borderRadius: 2, margin: '0 auto 20px' }} />
+            <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--pg-text)', marginBottom: 20 }}>¿Cómo funciona?</div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Puntaje por partido</div>
+              {[
+                { icon: '🎯', label: 'Resultado exacto', pts: '3 pts' },
+                { icon: '🤝', label: 'Exacto en empate', pts: '4 pts' },
+                { icon: '✅', label: 'Signo correcto (ganador)', pts: '1 pt' },
+                { icon: '🤝', label: 'Signo empate (sin exacto)', pts: '2 pts' },
+              ].map(r => (
+                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--pg-border-soft)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--pg-text)' }}>{r.icon} {r.label}</span>
+                  <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--pg-gold)' }}>{r.pts}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Partido destacado ⭐</div>
+              <div style={{ fontSize: 13, color: 'var(--pg-text-soft)', lineHeight: 1.6, padding: '8px 12px', background: 'var(--pg-bg-mid)', borderRadius: 10 }}>
+                Los puntos del partido destacado valen el <strong style={{ color: 'var(--pg-gold)' }}>doble</strong>. Exacto normal → 6 pts. Exacto empate → 8 pts.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Bonuses de fecha</div>
+              {[
+                { icon: '💥', label: 'Pleno — todos acertados', pts: '+5 pts' },
+                { icon: '⚡', label: 'Mitad — la mitad o más', pts: '+2 pts' },
+              ].map(r => (
+                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid var(--pg-border-soft)' }}>
+                  <span style={{ fontSize: 13, color: 'var(--pg-text)' }}>{r.icon} {r.label}</span>
+                  <span style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--pg-gold)' }}>{r.pts}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--pg-text-soft)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Rachas 🔥</div>
+              <div style={{ fontSize: 13, color: 'var(--pg-text-soft)', lineHeight: 1.6, padding: '8px 12px', background: 'var(--pg-bg-mid)', borderRadius: 10 }}>
+                Participá en fechas consecutivas para aumentar tu racha. Desbloqueá trofeos con rachas de <strong style={{ color: 'var(--pg-text)' }}>3, 6, 10 y 15</strong> fechas seguidas.
+              </div>
+            </div>
+
+            <button onClick={() => setMostrarInfo(false)} className="btn btn-primary" style={{ width: '100%', marginTop: 4 }}>Entendido</button>
+          </div>
+        </div>
+      )}
+
       {/* ── Header ── */}
-      <header style={{padding:'20px 20px 6px',position:'relative',zIndex:2}}>
-        <div className="prode-eyebrow">Mis predicciones</div>
-        <h1 className="prode-h1">
-          {fi
-            ? <>{`Fecha ${fi.numero}`}<span style={{color:'var(--pg-text-mute)',margin:'0 6px'}}>·</span><em>{CATS[cat]}</em></>
-            : CATS[cat]
-          }
-        </h1>
+      <header style={{ padding: '20px 20px 6px', position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div className="prode-eyebrow">Mis predicciones</div>
+          <h1 className="prode-h1">
+            {fi
+              ? <>{`Fecha ${fi.numero}`}<span style={{ color: 'var(--pg-text-mute)', margin: '0 6px' }}>·</span><em>{CATS[cat]}</em></>
+              : CATS[cat]
+            }
+          </h1>
+        </div>
+        <button
+          onClick={() => setMostrarInfo(true)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, padding: '4px', opacity: 0.55, lineHeight: 1, marginTop: 18 }}
+          title="¿Cómo funciona?"
+        >ℹ️</button>
       </header>
 
       {/* ── Chips de categoría ── */}
