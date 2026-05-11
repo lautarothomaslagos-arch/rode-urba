@@ -204,6 +204,7 @@ export default function Dashboard() {
         .from('puntos_totales')
         .select('usuario_id, puntos_acumulados, fechas_jugadas')
         .eq('temporada_id', 1)
+        .limit(500)
 
       let misPuntosAcum = 0
       if (statsData?.length) {

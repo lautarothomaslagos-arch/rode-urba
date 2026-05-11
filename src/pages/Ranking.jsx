@@ -137,6 +137,7 @@ export default function Ranking() {
         const { data, error } = await supabase.from('puntos_totales')
           .select('puntos_acumulados, fechas_jugadas, usuario_id, perfiles(username, nombre_completo, avatar_url, club, racha_actual, racha_maxima)')
           .eq('temporada_id', 1)
+          .limit(500)
         if (error) throw error
         const agrupado = {}
         data?.forEach(item => {
@@ -236,7 +237,7 @@ export default function Ranking() {
     setLoading(true)
     try {
       const [{ data, error }, { data: equiposData }] = await Promise.all([
-        supabase.from('puntos_totales').select('puntos_acumulados, usuario_id, perfiles(club)').eq('temporada_id', 1),
+        supabase.from('puntos_totales').select('puntos_acumulados, usuario_id, perfiles(club)').eq('temporada_id', 1).limit(500),
         supabase.from('equipos').select('nombre, nombre_corto, escudo_url')
       ])
       if (error) throw error
