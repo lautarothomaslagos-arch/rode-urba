@@ -179,6 +179,10 @@ export default function Prode() {
   }
 
   async function guardar() {
+    if (!navigator.onLine) {
+      alert('📵 Sin conexión — tus picks no fueron guardados. Conectate a internet e intentá de nuevo.')
+      return
+    }
     setGuardando(true)
     const fi = fechas.find(f => f.id === fechaId)
     if (!estaAbierto(fi?.cierre_predicciones)) { alert('Las predicciones están cerradas'); setGuardando(false); return }
@@ -190,7 +194,12 @@ export default function Prode() {
         updated_at: new Date().toISOString()
       }))
     if (upserts.length) {
-      await supabase.from('predicciones').upsert(upserts, { onConflict: 'usuario_id,partido_id' })
+      const { error } = await supabase.from('predicciones').upsert(upserts, { onConflict: 'usuario_id,partido_id' })
+      if (error) {
+        alert('❌ Error al guardar. Verificá tu conexión e intentá de nuevo.')
+        setGuardando(false)
+        return
+      }
       setSavedPreds(prev => new Set([...prev, ...upserts.map(u => u.partido_id)]))
       setGuardado(true)
       setHayCAmbios(false)
