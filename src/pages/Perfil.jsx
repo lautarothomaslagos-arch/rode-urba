@@ -756,20 +756,39 @@ export default function Perfil() {
                 {t.id === 'notificaciones' && (
                   <div style={{ paddingTop: 14 }}>
                     {'Notification' in window ? (
-                      permiso === 'denied'
-                        ? <div className="alert alert-error">Bloqueaste las notificaciones. Para activarlas andá a la configuración de tu navegador y permitilas para este sitio.</div>
-                        : <div>
-                            <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', marginBottom: 14, lineHeight: 1.7 }}>Recibí recordatorios antes del cierre del prode y avisos cuando se cargan los resultados.</p>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--pg-bg-mid)', borderRadius: 10, marginBottom: 8 }}>
-                              <div>
-                                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--pg-text)' }}>{suscrito ? '✅ Activadas' : '🔕 Desactivadas'}</div>
-                                <div style={{ fontSize: 12, color: 'var(--pg-text-soft)', marginTop: 2 }}>{suscrito ? 'Recibís recordatorios y resultados' : 'No estás recibiendo avisos'}</div>
-                              </div>
-                              <button className={`btn ${suscrito ? 'btn-secondary' : 'btn-primary'} btn-small`} onClick={suscrito ? desuscribirse : suscribirse} disabled={cargandoNotif}>
-                                {cargandoNotif ? '...' : suscrito ? 'Desactivar' : 'Activar'}
-                              </button>
-                            </div>
+                      permiso === 'denied' ? (
+                        <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                          <div style={{ fontSize: 40, marginBottom: 12 }}>🔕</div>
+                          <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--pg-text)', marginBottom: 8 }}>Notificaciones bloqueadas</div>
+                          <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
+                            Para activarlas andá a la configuración de tu navegador y permitilas para este sitio.
+                          </p>
+                        </div>
+                      ) : suscrito ? (
+                        <div>
+                          <div style={{ textAlign: 'center', padding: '20px 0 16px' }}>
+                            <div style={{ fontSize: 40, marginBottom: 10 }}>✅</div>
+                            <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--pg-text)', marginBottom: 4 }}>Notificaciones activas</div>
+                            <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', lineHeight: 1.5 }}>Recibís avisos cuando abre una fecha y cuando se cargan resultados.</p>
                           </div>
+                          <button className="btn btn-secondary" style={{ width: '100%' }} onClick={desuscribirse} disabled={cargandoNotif}>
+                            {cargandoNotif ? '...' : 'Desactivar notificaciones'}
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ textAlign: 'center', padding: '20px 0 20px' }}>
+                            <div style={{ fontSize: 40, marginBottom: 12 }}>🔔</div>
+                            <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--pg-text)', marginBottom: 8 }}>Mantenete al día</div>
+                            <p style={{ fontSize: 13, color: 'var(--pg-text-soft)', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
+                              Avisamos cuando se abre una nueva fecha para predecir y cuando se cargan los resultados.
+                            </p>
+                          </div>
+                          <button className="btn btn-primary" style={{ width: '100%' }} onClick={async () => { localStorage.removeItem('pg-notif-dismissed'); await suscribirse() }} disabled={cargandoNotif}>
+                            {cargandoNotif ? 'Activando...' : 'Activar notificaciones'}
+                          </button>
+                        </div>
+                      )
                     ) : (
                       <div className="alert alert-info">Tu navegador no soporta notificaciones push.</div>
                     )}

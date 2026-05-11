@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { CATS } from '../lib/constants'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 // ── Countdown ────────────────────────────────────────────────
 function Countdown({ cierre }) {
@@ -77,6 +78,10 @@ export default function Dashboard() {
   const nombre = perfil?.nombre_completo?.split(' ')[0] || perfil?.username || 'jugador'
   const hora = new Date().getHours()
   const saludo = hora < 12 ? 'Buenos días,' : hora < 20 ? 'Buenas tardes,' : 'Buenas noches,'
+  const { permiso, suscrito, suscribirse } = usePushNotifications()
+  const [notifDismissed, setNotifDismissed] = useState(() => !!localStorage.getItem('pg-notif-dismissed'))
+  function dismissNotif() { localStorage.setItem('pg-notif-dismissed', '1'); setNotifDismissed(true) }
+  const mostrarBannerNotif = !notifDismissed && !suscrito && permiso === 'default' && 'Notification' in window
 
   useEffect(() => { if (user) cargar() }, [user])
 
@@ -387,6 +392,27 @@ export default function Dashboard() {
           <p className="dash-hero-sub">Las predicciones aparecerán cuando se abra la próxima fecha.</p>
           <Link to="/torneos" className="dash-cta-secondary">Ver posiciones</Link>
         </section>
+      )}
+
+      {/* ── Banner notificaciones ── */}
+      {mostrarBannerNotif && (
+        <div style={{ margin: '0 16px 14px', background: 'var(--pg-bg-card)', border: '1px solid var(--pg-border)', borderRadius: 14, padding: '14px 14px 14px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2 }}>
+          <span style={{ fontSize: 24, flexShrink: 0 }}>🔔</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--pg-text)', marginBottom: 2 }}>Activá las notificaciones</div>
+            <div style={{ fontSize: 12, color: 'var(--pg-text-soft)', lineHeight: 1.4 }}>Avisamos cuando abre una fecha y cuando se cargan resultados</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={async () => { dismissNotif(); await suscribirse() }}
+              style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: 'var(--pg-gold)', color: '#07101F', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >Activar</button>
+            <button
+              onClick={dismissNotif}
+              style={{ padding: '6px 8px', borderRadius: 8, border: 'none', background: 'var(--pg-bg-mid)', color: 'var(--pg-text-soft)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
+            >×</button>
+          </div>
+        </div>
       )}
 
       {/* ── Stats strip ── */}

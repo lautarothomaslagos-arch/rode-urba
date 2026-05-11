@@ -68,7 +68,10 @@ export default function Prode() {
   const [popupData, setPopupData] = useState(null) // { equipos: [stats, stats?], partido }
   const [mostrarInfo, setMostrarInfo] = useState(false)
   const [mostrarNotifPrompt, setMostrarNotifPrompt] = useState(false)
+  const [notifDismissed, setNotifDismissed] = useState(() => !!localStorage.getItem('pg-notif-dismissed'))
   const { permiso, suscrito, suscribirse } = usePushNotifications()
+  function dismissNotif() { localStorage.setItem('pg-notif-dismissed', '1'); setNotifDismissed(true) }
+  const mostrarBannerNotif = !notifDismissed && !suscrito && permiso === 'default' && 'Notification' in window
 
   useEffect(() => { if (user) calcularPendientes() }, [user])
 
@@ -211,8 +214,8 @@ export default function Prode() {
       setHayCAmbios(false)
       calcularPendientes()
       setTimeout(() => setGuardado(false), 3000)
-      // Mostrar prompt de notificaciones si nunca se pidió y nunca se mostró
-      if (permiso === 'default' && !suscrito && !localStorage.getItem('pg-notif-prompt-shown')) {
+      // Mostrar prompt de notificaciones si nunca se pidió y nunca se cerró el banner
+      if (permiso === 'default' && !suscrito && !localStorage.getItem('pg-notif-dismissed')) {
         setTimeout(() => setMostrarNotifPrompt(true), 1500)
       }
     }
@@ -269,26 +272,22 @@ export default function Prode() {
 
       {/* ── Prompt notificaciones ── */}
       {mostrarNotifPrompt && (
-        <div onClick={() => { localStorage.setItem('pg-notif-prompt-shown', '1'); setMostrarNotifPrompt(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
+        <div onClick={() => { dismissNotif(); setMostrarNotifPrompt(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'var(--pg-bg-card)', borderRadius: '20px 20px 0 0', padding: '28px 20px 44px' }}>
             <div style={{ width: 40, height: 4, background: 'var(--pg-border)', borderRadius: 2, margin: '0 auto 24px' }} />
             <div style={{ fontSize: 36, marginBottom: 12, textAlign: 'center' }}>🔔</div>
             <div style={{ fontFamily: 'Rajdhani,sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--pg-text)', marginBottom: 10, textAlign: 'center' }}>¿Querés que te avisemos?</div>
-            <p style={{ fontSize: 14, color: 'var(--pg-text-soft)', lineHeight: 1.6, textAlign: 'center', marginBottom: 24, maxWidth: 280, margin: '0 auto 24px' }}>
+            <p style={{ fontSize: 14, color: 'var(--pg-text-soft)', lineHeight: 1.6, textAlign: 'center', maxWidth: 280, margin: '0 auto 24px' }}>
               Te mandamos una notificación cuando se abre una nueva fecha para predecir y cuando se cargan los resultados.
             </p>
             <button
               className="btn btn-primary"
               style={{ width: '100%', marginBottom: 12 }}
-              onClick={async () => {
-                localStorage.setItem('pg-notif-prompt-shown', '1')
-                setMostrarNotifPrompt(false)
-                await suscribirse()
-              }}
+              onClick={async () => { dismissNotif(); setMostrarNotifPrompt(false); await suscribirse() }}
             >Activar notificaciones</button>
             <button
               style={{ width: '100%', background: 'none', border: 'none', color: 'var(--pg-text-soft)', fontSize: 14, cursor: 'pointer', padding: '8px 0' }}
-              onClick={() => { localStorage.setItem('pg-notif-prompt-shown', '1'); setMostrarNotifPrompt(false) }}
+              onClick={() => { dismissNotif(); setMostrarNotifPrompt(false) }}
             >Ahora no</button>
           </div>
         </div>
@@ -448,6 +447,16 @@ export default function Prode() {
               <span>{predsCompletas}/{totalPartidos}</span>
             </div>
           </div>
+
+          {/* ── Banner notificaciones ── */}
+          {mostrarBannerNotif && (
+            <div style={{ margin: '0 16px 10px', background: 'var(--pg-bg-card)', border: '1px solid var(--pg-border)', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 2 }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>🔔</span>
+              <div style={{ flex: 1, fontSize: 12, color: 'var(--pg-text-soft)', lineHeight: 1.4 }}>Activá notificaciones para saber cuándo cierran las predicciones</div>
+              <button onClick={async () => { dismissNotif(); await suscribirse() }} style={{ padding: '5px 10px', borderRadius: 7, border: 'none', background: 'var(--pg-gold)', color: '#07101F', fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>Activar</button>
+              <button onClick={dismissNotif} style={{ padding: '5px 7px', borderRadius: 7, border: 'none', background: 'var(--pg-bg-mid)', color: 'var(--pg-text-soft)', fontSize: 13, cursor: 'pointer', lineHeight: 1, flexShrink: 0 }}>×</button>
+            </div>
+          )}
 
           {/* ── Coin row ── */}
           {abierto && totalPartidos > 0 && (
