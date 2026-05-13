@@ -85,6 +85,17 @@ body {
   color: var(--pg-text);
 }
 
+/* ===== DESKTOP WRAPPER ===== */
+.app-content-wrapper {
+  width: 100%;
+}
+@media (min-width: 600px) {
+  .app-content-wrapper {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
 /* ===== NAVBAR ===== */
 .navbar {
   padding: 0 20px;

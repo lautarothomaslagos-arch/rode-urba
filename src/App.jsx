@@ -48,6 +48,7 @@ function AppRoutes() {
       <Navbar />
       <LogroToast />
       <BottomNav />
+      <div className="app-content-wrapper">
       <SwipeNavigator>
       <Routes>
         <Route path="/" element={<HomeRoute />} />
@@ -68,6 +69,7 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       </SwipeNavigator>
+      </div>
     </>
   )
 }
