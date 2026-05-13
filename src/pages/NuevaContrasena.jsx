@@ -12,17 +12,29 @@ export default function NuevaContrasena() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Esperar el evento PASSWORD_RECOVERY que Supabase dispara al procesar el hash de la URL
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setTokenValido(true)
+    async function procesarToken() {
+      // Nuevo flow de Supabase: token_hash en query params
+      const params = new URLSearchParams(window.location.search)
+      const tokenHash = params.get('token_hash')
+      const type = params.get('type')
+
+      if (tokenHash && type === 'recovery') {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+        setTokenValido(!error)
+        return
       }
-    })
-    // Si en 3 segundos no llegó el evento, el usuario llegó sin link válido
-    const timeout = setTimeout(() => {
-      setTokenValido(prev => prev === null ? false : prev)
-    }, 3000)
-    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
+
+      // Flow anterior: evento PASSWORD_RECOVERY via hash de URL
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') setTokenValido(true)
+      })
+      const timeout = setTimeout(() => {
+        setTokenValido(prev => prev === null ? false : prev)
+      }, 4000)
+      return () => { subscription.unsubscribe(); clearTimeout(timeout) }
+    }
+
+    procesarToken()
   }, [])
 
   async function handleSubmit(e) {
