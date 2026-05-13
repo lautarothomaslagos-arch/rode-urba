@@ -12,29 +12,44 @@ export default function NuevaContrasena() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    let suscripcion = null
+    let timeout = null
+
     async function procesarToken() {
-      // Nuevo flow de Supabase: token_hash en query params
+      // Caso 1: nuevo flow PKCE — token_hash en query params
       const params = new URLSearchParams(window.location.search)
       const tokenHash = params.get('token_hash')
       const type = params.get('type')
-
       if (tokenHash && type === 'recovery') {
         const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
         setTokenValido(!error)
         return
       }
 
-      // Flow anterior: evento PASSWORD_RECOVERY via hash de URL
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Caso 2: Supabase ya procesó el hash y hay sesión activa
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setTokenValido(true)
+        return
+      }
+
+      // Caso 3: flow hash clásico — esperar evento PASSWORD_RECOVERY
+      const { data } = supabase.auth.onAuthStateChange((event) => {
         if (event === 'PASSWORD_RECOVERY') setTokenValido(true)
       })
-      const timeout = setTimeout(() => {
+      suscripcion = data.subscription
+
+      timeout = setTimeout(() => {
         setTokenValido(prev => prev === null ? false : prev)
-      }, 4000)
-      return () => { subscription.unsubscribe(); clearTimeout(timeout) }
+      }, 5000)
     }
 
     procesarToken()
+
+    return () => {
+      if (suscripcion) suscripcion.unsubscribe()
+      if (timeout) clearTimeout(timeout)
+    }
   }, [])
 
   async function handleSubmit(e) {
