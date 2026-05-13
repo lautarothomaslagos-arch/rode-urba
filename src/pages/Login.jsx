@@ -23,6 +23,7 @@ export default function Login({ modoInicial = 'login' }) {
   const [nombre, setNombre]         = useState('')
   const [msgRecupero, setMsgRecupero] = useState('')
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
+  const [verPass, setVerPass] = useState(false)
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
 
@@ -204,15 +205,22 @@ export default function Login({ modoInicial = 'login' }) {
           {modo !== 'recuperar' && (
             <label className="login-field">
               <span className="login-field-lbl">Contraseña</span>
-              <input
-                className="login-field-input"
-                type="password"
-                placeholder={modo === 'registro' ? 'Mínimo 6 caracteres' : '••••••••'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
+              <div style={{position:'relative'}}>
+                <input
+                  className="login-field-input"
+                  type={verPass ? 'text' : 'password'}
+                  placeholder={modo === 'registro' ? 'Mínimo 6 caracteres' : '••••••••'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  style={{paddingRight:42}}
+                />
+                <button type="button" onClick={() => setVerPass(v => !v)}
+                  style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--pg-text-soft)',padding:0,lineHeight:1,fontSize:16}}>
+                  {verPass ? '🙈' : '👁️'}
+                </button>
+              </div>
             </label>
           )}
 
