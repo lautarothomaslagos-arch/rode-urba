@@ -22,9 +22,12 @@ export default function NuevaContrasena() {
       const type = params.get('type')
       if (tokenHash && type === 'recovery') {
         const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+        if (error) console.error('[Recovery] verifyOtp error:', error.message, error.status)
         setTokenValido(!error)
         return
       }
+
+      console.log('[Recovery] No token_hash found. search:', window.location.search, 'hash:', window.location.hash)
 
       // Caso 2: Supabase ya procesó el hash y hay sesión activa
       const { data: { session } } = await supabase.auth.getSession()
