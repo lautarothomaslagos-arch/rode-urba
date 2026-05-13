@@ -11,6 +11,8 @@ export default function NuevaContrasena() {
   // null = chequeando, 'pendiente' = tiene token pero no verificado, true = verificado, false = inválido
   const [tokenValido, setTokenValido] = useState(null)
   const [tokenHash, setTokenHash] = useState(null)
+  const [verPass, setVerPass] = useState(false)
+  const [verConfirm, setVerConfirm] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -137,13 +139,27 @@ export default function NuevaContrasena() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Nueva contraseña</label>
-            <input className="form-input" type="password" placeholder="Mínimo 6 caracteres"
-              value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+            <div style={{position:'relative'}}>
+              <input className="form-input" type={verPass ? 'text' : 'password'} placeholder="Mínimo 6 caracteres"
+                value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
+                style={{paddingRight:42}} />
+              <button type="button" onClick={() => setVerPass(v => !v)}
+                style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--pg-text-soft)',padding:0,lineHeight:1}}>
+                {verPass ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">Confirmar contraseña</label>
-            <input className="form-input" type="password" placeholder="Repetí la contraseña"
-              value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={6} />
+            <div style={{position:'relative'}}>
+              <input className="form-input" type={verConfirm ? 'text' : 'password'} placeholder="Repetí la contraseña"
+                value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={6}
+                style={{paddingRight:42}} />
+              <button type="button" onClick={() => setVerConfirm(v => !v)}
+                style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--pg-text-soft)',padding:0,lineHeight:1}}>
+                {verConfirm ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
           <button type="submit" className="btn btn-primary" style={{width:'100%',padding:13}} disabled={loading}>
             {loading ? <><span className="spinner"></span> Guardando...</> : 'Guardar nueva contraseña'}
