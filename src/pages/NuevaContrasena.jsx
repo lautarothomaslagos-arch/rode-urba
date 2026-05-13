@@ -56,7 +56,7 @@ export default function NuevaContrasena() {
     if (password !== confirmPassword) { setError('Las contraseñas no coinciden'); return }
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password })
-    if (error) setError('Error al actualizar la contraseña. El link puede haber expirado.')
+    if (error) setError(`Error: ${error.message}`)
     else setListo(true)
     setLoading(false)
   }
