@@ -8,56 +8,46 @@ export default function NuevaContrasena() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [listo, setListo] = useState(false)
-  const [tokenValido, setTokenValido] = useState(null) // null = chequeando, true = ok, false = inválido
+  // null = chequeando, 'pendiente' = tiene token pero no verificado, true = verificado, false = inválido
+  const [tokenValido, setTokenValido] = useState(null)
+  const [tokenHash, setTokenHash] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Caso 0: error en el hash (otp_expired, etc.)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+    if (hashParams.get('error')) { setTokenValido(false); return }
+
+    // Caso 1: token_hash en query params — NO verificar automáticamente
+    // (evita que Gmail pre-scan consuma el token)
+    const params = new URLSearchParams(window.location.search)
+    const hash = params.get('token_hash')
+    const type = params.get('type')
+    if (hash && type === 'recovery') {
+      setTokenHash(hash)
+      setTokenValido('pendiente')
+      return
+    }
+
+    // Caso 2: flow hash clásico — esperar evento PASSWORD_RECOVERY
     let suscripcion = null
-    let timeout = null
-
-    async function procesarToken() {
-      // Caso 0: Supabase redirigió con error en el hash (ej: otp_expired)
-      const hashParams = new URLSearchParams(window.location.hash.slice(1))
-      if (hashParams.get('error')) {
-        setTokenValido(false)
-        return
-      }
-
-      // Caso 1: nuevo flow PKCE — token_hash en query params
-      const params = new URLSearchParams(window.location.search)
-      const tokenHash = params.get('token_hash')
-      const type = params.get('type')
-      if (tokenHash && type === 'recovery') {
-        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
-        setTokenValido(!error)
-        return
-      }
-
-      // Caso 2: Supabase ya procesó el hash y hay sesión activa
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setTokenValido(true)
-        return
-      }
-
-      // Caso 3: flow hash clásico — esperar evento PASSWORD_RECOVERY
-      const { data } = supabase.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') setTokenValido(true)
-      })
-      suscripcion = data.subscription
-
-      timeout = setTimeout(() => {
-        setTokenValido(prev => prev === null ? false : prev)
-      }, 5000)
-    }
-
-    procesarToken()
-
-    return () => {
-      if (suscripcion) suscripcion.unsubscribe()
-      if (timeout) clearTimeout(timeout)
-    }
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setTokenValido(true)
+    })
+    suscripcion = data.subscription
+    const timeout = setTimeout(() => {
+      setTokenValido(prev => prev === null ? false : prev)
+    }, 5000)
+    return () => { suscripcion.unsubscribe(); clearTimeout(timeout) }
   }, [])
+
+  async function confirmarToken() {
+    setLoading(true)
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+    if (error) setTokenValido(false)
+    else setTokenValido(true)
+    setLoading(false)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -77,6 +67,23 @@ export default function NuevaContrasena() {
         <div className="auth-card" style={{textAlign:'center'}}>
           <div className="spinner" style={{margin:'0 auto 16px'}} />
           <p style={{color:'var(--pg-text-soft)'}}>Verificando link...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (tokenValido === 'pendiente') {
+    return (
+      <div className="auth-container">
+        <div className="auth-card" style={{textAlign:'center'}}>
+          <div style={{fontSize:48,marginBottom:12}}>🔑</div>
+          <h2 style={{marginBottom:8}}>Restaurar contraseña</h2>
+          <p style={{color:'var(--pg-text-soft)',marginBottom:24,fontSize:14}}>
+            Hacé click para continuar y crear tu nueva contraseña.
+          </p>
+          <button className="btn btn-primary" style={{width:'100%',padding:13}} onClick={confirmarToken} disabled={loading}>
+            {loading ? <><span className="spinner"></span> Verificando...</> : 'Continuar'}
+          </button>
         </div>
       </div>
     )
