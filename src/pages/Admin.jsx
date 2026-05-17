@@ -414,8 +414,12 @@ function FechaActiva({ fecha, equipos, onRefresh }) {
     )
     await supabase.from('fechas').update({ resultados_cargados: true }).eq('id', fecha.id)
     const { error } = await supabase.rpc('calcular_puntos_fecha', { p_fecha_id: fecha.id })
-    if (!error) flash('✓ Resultados guardados y puntos calculados')
-    else flash('Resultados guardados. Error al calcular: ' + error.message)
+    if (!error) {
+      await supabase.rpc('actualizar_puntos_totales', { p_temporada_id: 1 })
+      flash('✓ Resultados guardados y puntos calculados')
+    } else {
+      flash('Resultados guardados. Error al calcular: ' + error.message)
+    }
     setGuardando(false)
     onRefresh()
   }
@@ -699,6 +703,7 @@ function FilaFecha({ f, onToggle, onRefresh }) {
       )
     )
     const { error } = await supabase.rpc('calcular_puntos_fecha', { p_fecha_id: f.id })
+    if (!error) await supabase.rpc('actualizar_puntos_totales', { p_temporada_id: 1 })
     setMsgRes(error ? 'Resultados guardados. Error al recalcular: ' + error.message : '✓ Resultados actualizados y puntos recalculados')
     setGuardandoRes(false)
   }
