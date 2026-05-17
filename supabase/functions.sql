@@ -236,26 +236,48 @@ BEGIN
 
   -- ── PASO 2: Actualizar rachas (racha_actual y racha_maxima) ──
   --
-  -- Racha actual: cantidad de fechas consecutivas (del más reciente
-  -- hacia atrás) en las que el usuario tuvo al menos 1 acierto.
-  -- Se agrupa por f.numero (no por f.id) para que participar en
-  -- varias categorías del mismo fin de semana cuente como una sola fecha.
-  --
-  -- Racha máxima: la racha más larga en toda la temporada.
+  -- Racha actual: fechas consecutivas desde la más reciente hacia
+  -- atrás en las que el usuario tuvo ≥1 acierto.
+  -- Regla: si el usuario NO predijo en una fecha → acertados = 0
+  --        → rompe la racha (se cuenta como miss).
+  -- Agrupado por f.numero para que varias categorías del mismo
+  -- fin de semana cuenten como una sola fecha.
 
   WITH
 
-  -- Historial de cada usuario por número de fecha
-  historial AS (
-    SELECT
-      pf.usuario_id,
-      f.numero,
-      SUM(pf.partidos_acertados) AS acertados
+  -- Todos los usuarios que alguna vez participaron en la temporada
+  all_usuarios AS (
+    SELECT DISTINCT pf.usuario_id
     FROM puntos_fecha pf
     JOIN fechas f ON f.id = pf.fecha_id
     WHERE f.temporada_id = v_temporada_id
-      AND f.resultados_cargados = true
-    GROUP BY pf.usuario_id, f.numero
+  ),
+
+  -- Todos los números de fecha con resultados cargados en la temporada
+  all_numeros AS (
+    SELECT DISTINCT numero
+    FROM fechas
+    WHERE temporada_id = v_temporada_id
+      AND resultados_cargados = true
+  ),
+
+  -- Cruzar usuarios × fechas y completar con 0 si no participó
+  -- (no participar en una fecha rompe la racha)
+  historial AS (
+    SELECT
+      u.usuario_id,
+      an.numero,
+      COALESCE(SUM(pf.partidos_acertados), 0) AS acertados
+    FROM all_usuarios u
+    CROSS JOIN all_numeros an
+    LEFT JOIN fechas f
+      ON f.numero = an.numero
+     AND f.temporada_id = v_temporada_id
+     AND f.resultados_cargados = true
+    LEFT JOIN puntos_fecha pf
+      ON pf.usuario_id = u.usuario_id
+     AND pf.fecha_id = f.id
+    GROUP BY u.usuario_id, an.numero
   ),
 
   -- Acumular misses desde la fecha más reciente hacia atrás
